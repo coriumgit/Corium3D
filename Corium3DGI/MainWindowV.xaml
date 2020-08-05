@@ -1,0 +1,399 @@
+﻿<Window x:Class="Corium3DGI.MainWindowV"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:dx="clr-namespace:Microsoft.Wpf.Interop.DirectX;assembly=Microsoft.Wpf.Interop.DirectX"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        xmlns:local="clr-namespace:Corium3DGI" 
+        xmlns:utils="clr-namespace:Corium3DGI.Utils"
+        xmlns:cc="clr-namespace:Corium3DGI.CustomCtrls"
+        xmlns:behaviours="clr-namespace:Corium3DGI.Behaviours"
+        mc:Ignorable="d"
+        behaviours:InputBehaviours.OnMouseDown="{Binding Path=ClearFocusCmd}"
+        Closing="OnWindowClosing"
+        Title="MainWindow" WindowStartupLocation="CenterScreen" Width="1400" Height="800">
+    <Window.Resources>
+       <!-- <local:IsEnabledToTextColor x:Key="IsEnabledToTextColor"/>-->
+        <sys:String x:Key="scenesComboBoxOptionAddItemLabel">&lt;&lt;&lt;ADD SCENE&gt;&gt;&gt;</sys:String>
+    </Window.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition Width="4*"/>
+        </Grid.ColumnDefinitions>
+        
+        <!-- MENUES -->
+        <Grid Grid.Column="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="3*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- MODELS PANELS -->
+            <Grid Grid.Column="0" PreviewMouseDown="ExposeModelViewport">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                
+                <!-- models list -->
+                <Border Grid.Row="0" BorderThickness="5" BorderBrush="DarkGray">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Bottom" BorderThickness="0 2 0 2" BorderBrush="DarkGray">
+                            <UniformGrid Columns="4">
+                                <cc:ImageButton Grid.Column="0" 
+                                                Source="Resources\Imgs\SaveToDisk.png"
+                                                Width="30"
+                                                Height="30"
+                                                Command="{Binding Path=SaveImportedModelsCmd}"/>
+                                
+                                <cc:ImageButton Grid.Column="1"                       
+                                                Source="Resources\Imgs\LoadFromDisk.png"
+                                                Width="30"
+                                                Height="30"                                       
+                                                Command="{Binding Path=ImportModelCmd}"/>
+                                
+                                <cc:ImageButton Grid.Column="2" 
+                                                Source="Resources\Imgs\RedX.png"
+                                                Width="30"
+                                                Height="30"
+                                                Command="{Binding Path=RemoveModelCmd}"/>
+                                
+                                <cc:ImageButton Grid.Column="3" 
+                                                Source="Resources\Imgs\BlueArrow.png"
+                                                Width="30"
+                                                Height="30"
+                                                Rotation="90"
+                                                Command="{Binding Path=AddSceneModelCmd}"/>
+                            </UniformGrid>
+                        </Border>
+                        
+                        <Label DockPanel.Dock="Top" Style="{StaticResource SectionHeader}">Models</Label>
+                        
+                        <ListBox DockPanel.Dock="Top"                                  
+                                 ItemsSource="{Binding Path=ModelMs}"
+                                 SelectedItem="{Binding Path=SelectedModel, Mode=TwoWay}"
+                                 BorderThickness="0">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Label Content="{Binding Path=Name}"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+                </Border>
+
+                <!-- model collision primitives panes -->
+                <Border Grid.Row="1" BorderThickness="5" BorderBrush="DarkGray">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Path=SelectedModel}" Value="{x:Null}">
+                                        <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+                        <!-- collision primitive 3D pane -->
+                        <Border Grid.Row="0" BorderThickness="2" BorderBrush="DarkGray">
+                            <DockPanel Grid.Row="0">
+                                <Label DockPanel.Dock="Top" Style="{StaticResource SubsectionHeader}">Collision Primitive 3D</Label>
+                                
+                                <Border DockPanel.Dock="Top" BorderThickness="0 2 0 2" BorderBrush="LightGray">
+                                    <DockPanel>
+                                        <Label DockPanel.Dock="Left" Style="{StaticResource MasterPropertyHeader}">Type</Label>
+                                        
+                                        <ComboBox ItemsSource="{Binding Path=SelectedModel.CollisionPrimitives3DCache}"
+                                                  SelectedItem="{Binding Path=SelectedModel.CollisionPrimitive3DSelected, Mode=TwoWay}"
+                                                  ItemTemplate="{StaticResource CollisionPrimitiveInComboBox}">
+                                        </ComboBox>
+                                    </DockPanel>
+                                </Border>
+                                
+                                <ContentPresenter DockPanel.Dock="Bottom" Content="{Binding Path=SelectedModel.CollisionPrimitive3DSelected}"/>
+                            </DockPanel>
+                        </Border>
+                        <!-- collision primitive 2D pane -->
+                        <Border Grid.Row="1" BorderThickness="2" BorderBrush="DarkGray">
+                            <DockPanel Grid.Row="1" IsEnabled="True">
+                                <Label DockPanel.Dock="Top" Style="{StaticResource SubsectionHeader}">Collision Primitive 2D</Label>
+                                
+                                <Border DockPanel.Dock="Top" BorderThickness="0 2 0 2" BorderBrush="LightGray">
+                                    <DockPanel>
+                                        <Label DockPanel.Dock="Left" Style="{StaticResource MasterPropertyHeader}">Type</Label>
+                                        <ComboBox ItemsSource="{Binding Path=SelectedModel.CollisionPrimitives2DCache}"
+                                                  SelectedItem="{Binding Path=SelectedModel.CollisionPrimitive2DSelected, Mode=TwoWay}"
+                                                  ItemTemplate="{StaticResource CollisionPrimitiveInComboBox}">
+                                        </ComboBox>
+                                    </DockPanel>
+                                </Border>
+                                
+                                <ContentPresenter DockPanel.Dock="Bottom" Content="{Binding Path=SelectedModel.CollisionPrimitive2DSelected}"/>
+                            </DockPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
+            
+            <!-- SCENES PANELS -->
+            <Grid Grid.Column="1" PreviewMouseDown="ExposeSceneViewport">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <Border Grid.Row="0" BorderThickness="5" BorderBrush="DarkGray">
+                        <DockPanel>
+                            <Border DockPanel.Dock="Bottom" BorderThickness="0 2 0 2" BorderBrush="DarkGray">
+                                <UniformGrid Columns="2">
+                                    <cc:ImageButton Grid.Column="0"
+                                                    Source="Resources\Imgs\BlueArrow.png"
+                                                    Width="30"
+                                                    Height="30"
+                                                    Rotation="-90"
+                                                    Command="{Binding Path=RemoveSceneModelCmd}"/>
+                                    
+                                    <cc:ImageButton Grid.Column="1" 
+                                                    Source="Resources\Imgs\SaveToDisk.png"
+                                                    Width="30"
+                                                    Height="30"
+                                                    Command="{Binding Path=SaveSceneCmd}"/>
+                                </UniformGrid>
+                            </Border>
+                            
+                            <Label DockPanel.Dock="Top" Style="{StaticResource SectionHeader}">Scene's Models</Label>
+
+                            <Border DockPanel.Dock="Top"                                     
+                                    BorderThickness="0 2 0 2" 
+                                    BorderBrush="LightGray" >
+                                <DockPanel>
+                                    <Label DockPanel.Dock="Left" Style="{StaticResource MasterPropertyHeader}">Scene</Label>
+                                    
+                                    <cc:ImageButton DockPanel.Dock="Right"                                                          
+                                                    Source="Resources\Imgs\RedX.png"
+                                                    Width="20"
+                                                    Height="20"
+                                                    Command="{Binding Path=RemoveSceneCmd}"/>
+
+                                    <cc:ImageButton DockPanel.Dock="Right"                                                     
+                                                    Source="Resources\Imgs\GreenPlus.png"
+                                                    Width="20"
+                                                    Height="20"
+                                                    Click="SetScenesComboBoxEditable"/>
+
+                                    <cc:ToggableIsEditableComboBox x:Name="sceneComboBox" 
+                                                                   VerticalContentAlignment="Center" 
+                                                                   IsTextSearchEnabled="False"
+                                                                   OnTextBoxLostFocus="{Binding Path=AddSceneCmd}"
+                                                                   ItemsSource="{Binding Path=SceneMs}"
+                                                                   SelectedItem="{Binding Path=SelectedScene}"
+                                                                   DefaultTextBoxText="&lt;&lt;&lt;ENTER NEW SCENE NAME&gt;&gt;&gt;">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type local:SceneM}">
+                                                <Label Content="{Binding Path=Name}" Style="{StaticResource DetailPropertyHeader}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </cc:ToggableIsEditableComboBox>
+                                </DockPanel>
+                            </Border>
+
+                            <!--scene's models-->
+                            <DataGrid x:Name="sceneModelsTable"
+                                      ItemsSource="{Binding Path=SelectedScene.SceneModelMs}"
+                                      SelectedItem="{Binding Path=SelectedSceneModel, Mode=TwoWay}"
+                                      HeadersVisibility="Column"
+                                      AutoGenerateColumns="False"                                                
+                                      SelectionMode="Single"                                                           
+                                      CanUserSortColumns="False" CanUserReorderColumns="False"
+                                      CanUserResizeRows="False" CanUserAddRows="False">
+                                <DataGrid.Resources>
+                                    <utils:BindingProxy x:Key="bindingProxy" Data="{Binding}"/>
+                                </DataGrid.Resources>
+                                <DataGrid.Style>
+                                    <Style TargetType="DataGrid">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Path=SelectedScene}" Value="{x:Null}">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.Style>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn IsReadOnly="True" Width="3*" Header="Scene" Binding="{Binding Path=Name}">
+                                        <DataGridTextColumn.CellStyle>
+                                            <Style TargetType="DataGridCell">
+                                                <Setter Property="behaviours:InputBehaviours.OnPreviewMouseMove" Value="{Binding Source={StaticResource bindingProxy}, Path=Data.TrySceneModelDragStart}"/>
+                                            </Style>
+                                        </DataGridTextColumn.CellStyle>
+                                    </DataGridTextColumn>
+                                    
+                                    <DataGridTextColumn IsReadOnly="True" Width="*" Header="Inst. Init" Binding="{Binding Path=SceneModelInstanceMs.Count}">
+                                        <DataGridTextColumn.CellStyle>
+                                            <Style TargetType="DataGridCell">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter Property="Background" Value="Transparent"/>
+                                                        <Setter Property="Foreground" Value="Black"/>
+                                                        <Setter Property="BorderBrush" Value="Transparent"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </DataGridTextColumn.CellStyle>
+                                    </DataGridTextColumn>
+                                    
+                                    <DataGridTextColumn IsReadOnly="False" Width="*" Header="Inst. Max" Binding="{Binding Path=InstancesNrMax, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            
+                            <ListBox DockPanel.Dock="Bottom" BorderThickness="0" 
+                                     ItemsSource="{Binding Path=SelectedScene.SceneModelMs}"
+                                     SelectedItem="{Binding Path=SelectedSceneModel}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type local:ModelM}">
+                                        <Label Content="{Binding Path=Name}" Style="{StaticResource DetailPropertyHeader}"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </DockPanel>
+                    </Border>
+                    
+                    <!-- scene's model's focused instance params-->
+                    <Border Grid.Row="1" BorderThickness="5" BorderBrush="DarkGray">
+                        <DockPanel IsEnabled="True">
+                            <Label DockPanel.Dock="Top" Style="{StaticResource SubsectionHeader}">Instance Params</Label>
+                            <Border DockPanel.Dock="Top" BorderThickness="0 2 0 2" BorderBrush="LightGray">
+                                <DockPanel>
+                                    <Label DockPanel.Dock="Left" Style="{StaticResource MasterPropertyHeader}">Instance</Label>
+                                    
+                                    <cc:ImageButton DockPanel.Dock="Right"                                                          
+                                                    Source="Resources\Imgs\RedX.png"
+                                                    Width="20"
+                                                    Height="20"
+                                                    Command="{Binding Path=RemoveSceneModelInstanceCmd}"/>
+                                    
+                                    <ComboBox ItemsSource="{Binding Path=SelectedSceneModel.SceneModelInstanceMs}"
+                                              SelectedItem="{Binding Path=SelectedSceneModelInstance}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Label Content="{Binding Path=Name}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </DockPanel>
+                            </Border>
+
+                            <ContentPresenter DockPanel.Dock="Bottom" Content="{Binding Path=SelectedSceneModelInstance}"/>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Grid>
+        
+        <!-- VIEWPORT -->
+        <Grid Grid.Column="2">
+            <Border x:Name="modelViewportContainer"
+                    BorderThickness="5" 
+                    BorderBrush="DarkGray" 
+                    Background="#E0E0E0"
+                    behaviours:InputBehaviours.OnPreviewMouseDown="{Binding Path=ModelRotateStart}"
+                    behaviours:InputBehaviours.OnPreviewMouseUp="{Binding Path=ModelRotateEnd}"                
+                    behaviours:InputBehaviours.OnPreviewMouseMove="{Binding Path=RotateModel}"
+                    behaviours:InputBehaviours.OnPreviewMouseWheel="{Binding Path=ZoomModelCamera}"                                        
+                    Visibility="Visible">
+                <Viewport3D>
+                    <Viewport3D.Camera>
+                        <PerspectiveCamera Position="{Binding Path=ModelCameraPos}" 
+                                           LookDirection="0 0 -1" 
+                                           UpDirection="0 1 0" 
+                                           FieldOfView="{Binding Path=CameraFieldOfView}"
+                                           NearPlaneDistance="{Binding Path=CameraNearPlaneDist}"/>
+                    </Viewport3D.Camera>
+
+                    <ModelVisual3D>
+                        <ModelVisual3D.Content>
+                            <Model3DGroup>
+                                <AmbientLight Color="#404040"/>
+                                <DirectionalLight Color="#A0A0A0" Direction="-1,-1,1"/>
+                                <DirectionalLight Color="#A0A0A0" Direction="0,0,-1"/>
+                                <DirectionalLight Color="#A0A0A0" Direction="1,1,1"/>
+                            </Model3DGroup>
+                        </ModelVisual3D.Content>
+                    </ModelVisual3D>
+
+                    <ModelVisual3D>
+                        <ModelVisual3D.Content>
+                            <Model3DGroup Children="{Binding Path=SelectedModel.CollisionPrimitive3DSelected.Avatars3D, Mode=TwoWay}"/>
+                        </ModelVisual3D.Content>
+                        <ModelVisual3D.Transform>
+                            <RotateTransform3D>
+                                <RotateTransform3D.Rotation>
+                                    <QuaternionRotation3D Quaternion="{Binding Path=SelectedModel.Rotation, Mode=TwoWay}"/>
+                                </RotateTransform3D.Rotation>
+                            </RotateTransform3D>
+                        </ModelVisual3D.Transform>
+                    </ModelVisual3D>
+
+                    <ModelVisual3D>
+                        <ModelVisual3D.Content>
+                            <Model3DGroup Children="{Binding Path=SelectedModel.CollisionPrimitive2DSelected.Avatars3D, Mode=TwoWay}"/>
+                        </ModelVisual3D.Content>
+                        <ModelVisual3D.Transform>
+                            <RotateTransform3D>
+                                <RotateTransform3D.Rotation>
+                                    <QuaternionRotation3D Quaternion="{Binding Path=SelectedModel.Rotation, Mode=TwoWay}"/>
+                                </RotateTransform3D.Rotation>
+                            </RotateTransform3D>
+                        </ModelVisual3D.Transform>
+                    </ModelVisual3D>
+
+                    <ModelVisual3D>
+                        <ModelVisual3D.Content>
+                            <Model3DGroup Children="{Binding Path=SelectedModel.Avatars3D}"/>
+                        </ModelVisual3D.Content>
+
+                        <ModelVisual3D.Transform>
+                            <Transform3DGroup>
+                                <RotateTransform3D>
+                                    <RotateTransform3D.Rotation>
+                                        <QuaternionRotation3D Quaternion="{Binding Path=SelectedModel.Rotation, Mode=TwoWay}"/>
+                                    </RotateTransform3D.Rotation>
+                                </RotateTransform3D>
+                            </Transform3DGroup>
+                        </ModelVisual3D.Transform>
+                    </ModelVisual3D>
+                </Viewport3D>
+            </Border>
+
+            <Border x:Name="sceneViewportContainer"
+                    BorderThickness="5" 
+                    BorderBrush="DarkGray"
+                    Loaded="OnSceneViewportLoaded"
+                    SizeChanged="OnViewportSizeChanged"        
+                    behaviours:DataBehaviours.OnLoad="{Binding Path=OnViewportLoadedCmd}"
+                    behaviours:DataBehaviours.OnSizeChanged="{Binding Path=OnViewportSizeChangedCmd}"                     
+                    Visibility="Hidden">
+                <Image x:Name="sceneViewportHost"                                             
+                       behaviours:InputBehaviours.OnPreviewDragEnter="{Binding Path=SceneModelDragEnterViewport}"
+                       behaviours:InputBehaviours.OnPreviewDragOver="{Binding Path=SceneModelDragOverViewport}"
+                       behaviours:InputBehaviours.OnPreviewDragLeave="{Binding Path=SceneModelDragLeaveViewport}"                            
+                       behaviours:InputBehaviours.OnPreviewDrop="{Binding Path=SceneModelDropOnViewport}"
+                       behaviours:InputBehaviours.OnPreviewMouseDown="{Binding Path=CameraTransformStart}"
+                       behaviours:InputBehaviours.OnPreviewMouseUp="{Binding Path=CameraTransformEnd}"                
+                       behaviours:InputBehaviours.OnPreviewMouseMove="{Binding Path=CameraTransform}"
+                       behaviours:InputBehaviours.OnPreviewMouseWheel="{Binding Path=ZoomCamera}"
+                       AllowDrop="True">
+                    <Image.Source>
+                        <dx:D3D11Image x:Name="sceneViewport"/>
+                    </Image.Source>
+                </Image>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

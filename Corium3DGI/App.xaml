@@ -1,0 +1,245 @@
+﻿<Application x:Class="Corium3DGI.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"            
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"             
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:utils="clr-namespace:Corium3DGI.Utils"
+             xmlns:cc="clr-namespace:Corium3DGI.CustomCtrls"
+             xmlns:behaviours="clr-namespace:Corium3DGI.Behaviours"
+             xmlns:local="clr-namespace:Corium3DGI">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CustomControls/CustomControlsResources.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            
+            <ControlTemplate x:Key="HeaderTemplate" TargetType="Label">
+                <Border Background="LightGray">
+                    <Label FontWeight="Bold" Padding="0" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" FontSize="{TemplateBinding FontSize}" Content="{TemplateBinding Content}"/>
+                </Border>
+            </ControlTemplate>
+
+            <Style x:Key="HeaderStyleBase" TargetType="Label">
+                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                <Setter Property="Template" Value="{StaticResource HeaderTemplate}"/>
+            </Style>
+
+            <Style x:Key="SectionHeader" TargetType="Label" BasedOn="{StaticResource HeaderStyleBase}">
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                <Setter Property="FontSize" Value="20"/>
+            </Style>
+
+            <Style x:Key="SubsectionHeader" TargetType="Label" BasedOn="{StaticResource HeaderStyleBase}">
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                <Setter Property="FontSize" Value="16"/>
+            </Style>
+
+            <Style x:Key="MasterPropertyHeader" TargetType="Label">
+                <Setter Property="HorizontalAlignment" Value="Center"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+                <Setter Property="Margin" Value="5 0 5 0"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="FontWeight" Value="bold"/>
+            </Style>
+
+            <Style x:Key="DetailPropertyHeader" TargetType="Label">
+                <Setter Property="HorizontalAlignment" Value="Left"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+                <Setter Property="Margin" Value="5 0 10 0"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="FontSize" Value="12"/>
+            </Style>
+
+            <ControlTemplate x:Key="LabeledTextBox" TargetType="cc:LabeledContentControl">
+                <cc:LabeledContentControl Key="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Key}">
+                    <cc:LabeledContentControl.Content>
+                        <TextBox HorizontalAlignment="Stretch"
+                                                    VerticalAlignment="Center"
+                                                    TextAlignment="Left" 
+                                                    Padding="0"
+                                                    FontSize="12"                                
+                                                    Text="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Content, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                    behaviours:InputBehaviours.UpdateSourcePropertyOnEnterPress="TextBox.Text"/>
+                    </cc:LabeledContentControl.Content>
+                </cc:LabeledContentControl>
+            </ControlTemplate>
+
+            <ControlTemplate x:Key="LabeledCheckBox" TargetType="cc:LabeledContentControl">
+                <cc:LabeledContentControl Key="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Key}">
+                    <cc:LabeledContentControl.Content>
+                        <CheckBox VerticalAlignment="Center"                                                    
+                                  Padding="0"
+                                  FontSize="12"                                
+                                  IsChecked="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Content, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    </cc:LabeledContentControl.Content>
+                </cc:LabeledContentControl>
+            </ControlTemplate>
+
+            <ControlTemplate x:Key="LabeledRadioBtn" TargetType="cc:LabeledContentControl">
+                <cc:LabeledContentControl Key="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Key}">
+                    <cc:LabeledContentControl.Content>
+                        <RadioButton VerticalAlignment="Center"                                                    
+                                     Padding="0"
+                                     FontSize="12"     
+                                     GroupName="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=(utils:StringAttachment.AttachedStr)}"
+                                     IsChecked="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Content, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    </cc:LabeledContentControl.Content>
+                </cc:LabeledContentControl>
+            </ControlTemplate>
+
+            <DataTemplate x:Key="CollisionPrimitiveInComboBox" DataType="{x:Type local:CollisionPrimitive}">
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="{Binding Path=IconPath}" Margin="0 0 10 0" Width="20" Height="20"/>
+                    <Label Padding="0" Content="{Binding Path=Name}" VerticalAlignment="Center" FontSize="12"/>
+                </StackPanel>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type utils:ObservablePoint3D}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <cc:MouseMoveNumberBoxUpdater Margin="5 0 0 0" Grid.Column="0" UpdaterText="X" NumberBoxText="{Binding Path=X, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <cc:MouseMoveNumberBoxUpdater Margin="5 0 0 0" Grid.Column="1" UpdaterText="Y" NumberBoxText="{Binding Path=Y, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <cc:MouseMoveNumberBoxUpdater Margin="5 0 0 0" Grid.Column="2" UpdaterText="Z" NumberBoxText="{Binding Path=Z, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type utils:ObservableVector3D}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <cc:MouseMoveNumberBoxUpdater Margin="5 0 0 0" Grid.Column="0" UpdaterText="X" NumberBoxText="{Binding Path=X, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <cc:MouseMoveNumberBoxUpdater Margin="5 0 0 0" Grid.Column="1" UpdaterText="Y" NumberBoxText="{Binding Path=Y, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <cc:MouseMoveNumberBoxUpdater Margin="5 0 0 0" Grid.Column="2" UpdaterText="Z" NumberBoxText="{Binding Path=Z, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="AxisAlignment3D"  DataType="{x:Type utils:ObservableVector3D}">
+                <DataTemplate.Resources>
+                    <utils:DoubleToBoolConverter x:Key="doubleToBoolConverter"/>
+                </DataTemplate.Resources>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <cc:LabeledContentControl Margin="5 0 0 0" Grid.Column="0" Template="{StaticResource LabeledRadioBtn}" Key="X" Content="{Binding Path=X, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource doubleToBoolConverter}}" utils:StringAttachment.AttachedStr="AxisAlignment3D"/>
+                    <cc:LabeledContentControl Margin="5 0 0 0" Grid.Column="1" Template="{StaticResource LabeledRadioBtn}" Key="Y" Content="{Binding Path=Y, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource doubleToBoolConverter}}" utils:StringAttachment.AttachedStr="AxisAlignment3D"/>
+                    <cc:LabeledContentControl Margin="5 0 0 0" Grid.Column="2" Template="{StaticResource LabeledRadioBtn}" Key="Z" Content="{Binding Path=Z, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource doubleToBoolConverter}}" utils:StringAttachment.AttachedStr="AxisAlignment3D"/>
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type utils:ObservablePoint}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <cc:MouseMoveNumberBoxUpdater Margin="5 0 0 0"  Grid.Column="0" UpdaterText="X" NumberBoxText="{Binding Path=X, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <cc:MouseMoveNumberBoxUpdater Margin="5 0 0 0" Grid.Column="1"  UpdaterText="Y" NumberBoxText="{Binding Path=Y, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type utils:ObservableVector}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <cc:MouseMoveNumberBoxUpdater Margin="5 0 0 0" Grid.Column="0" UpdaterText="X" NumberBoxText="{Binding Path=X, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <cc:MouseMoveNumberBoxUpdater Margin="5 0 0 0" Grid.Column="1" UpdaterText="Y" NumberBoxText="{Binding Path=Y, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="AxisAlignment"  DataType="{x:Type utils:ObservableVector}">
+                <DataTemplate.Resources>
+                    <utils:DoubleToBoolConverter x:Key="doubleToBoolConverter"/>
+                </DataTemplate.Resources>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <cc:LabeledContentControl Margin="5 0 0 0" Grid.Column="0" Template="{StaticResource LabeledRadioBtn}" Key="X" Content="{Binding Path=X, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource doubleToBoolConverter}}" utils:StringAttachment.AttachedStr="AxisAlignment"/>
+                    <cc:LabeledContentControl Margin="5 0 0 0" Grid.Column="1" Template="{StaticResource LabeledRadioBtn}" Key="Y" Content="{Binding Path=Y, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource doubleToBoolConverter}}" utils:StringAttachment.AttachedStr="AxisAlignment"/>
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type utils:ObservableQuaternion}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <cc:LabeledContentControl Margin="2 5 2 5" Grid.Row="0" Key="Axis:" Content="{Binding Path=Axis}"/>
+                    <cc:MouseMoveNumberBoxUpdater Margin="2 0 2 0" Grid.Row="1" UpdaterText="Angle:" NumberBoxText="{Binding Path=Angle, Mode=TwoWay}"/>
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type local:CollisionPrimitive}"/>
+
+            <DataTemplate DataType="{x:Type local:CollisionBox}">
+                <StackPanel Orientation="Vertical">
+                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
+                    <cc:LabeledContentControl Margin="2 0 2 0" Key="Scale:" Content="{Binding Path=Scale}"/>
+                </StackPanel>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type local:CollisionSphere}">
+                <StackPanel Orientation="Vertical">
+                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
+                    <cc:MouseMoveNumberBoxUpdater Margin="2 0 2 0" UpdaterText="Radius:" NumberBoxText="{Binding Path=Radius, Mode=TwoWay}"/>
+                </StackPanel>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type local:CollisionCapsule}">
+                <StackPanel Orientation="Vertical">
+                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
+                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Axis Vec:" Content="{Binding Path=AxisVec}" ContentTemplate="{StaticResource AxisAlignment3D}"/>
+                    <cc:MouseMoveNumberBoxUpdater Margin="2 5 2 5" UpdaterText="Height:" NumberBoxText="{Binding Path=Height, Mode=TwoWay}"/>
+                    <cc:MouseMoveNumberBoxUpdater Margin="2 0 2 0" UpdaterText="Radius:" NumberBoxText="{Binding Path=Radius, Mode=TwoWay}"/>
+                </StackPanel>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type local:CollisionRect}">
+                <StackPanel Orientation="Vertical">
+                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
+                    <cc:LabeledContentControl Margin="2 0 2 0" Key="Scale:" Content="{Binding Path=Scale}"/>
+                </StackPanel>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type local:CollisionCircle}">
+                <StackPanel Orientation="Vertical">
+                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
+                    <cc:MouseMoveNumberBoxUpdater Margin="2 0 2 0" UpdaterText="Radius:" NumberBoxText="{Binding Path=Radius, Mode=TwoWay}"/>
+                </StackPanel>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type local:CollisionStadium}">
+                <StackPanel Orientation="Vertical">
+                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
+                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Axis Vec:" Content="{Binding Path=AxisVec}" ContentTemplate="{StaticResource AxisAlignment}"/>
+                    <cc:MouseMoveNumberBoxUpdater Margin="2 5 2 5" UpdaterText="Height:" NumberBoxText="{Binding Path=Height, Mode=TwoWay}"/>
+                    <cc:MouseMoveNumberBoxUpdater Margin="2 0 2 0" UpdaterText="Radius:" NumberBoxText="{Binding Path=Radius, Mode=TwoWay}"/>
+                </StackPanel>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type local:SceneModelInstanceM}">
+                <StackPanel Orientation="Vertical">
+                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Name:" Content="{Binding Path=Name}"/>
+                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Translate:" Content="{Binding Path=Translate}"/>
+                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Scale:" Content="{Binding Path=Scale}"/>
+                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Rotation:" Content="{Binding Path=Rot}"/>
+                </StackPanel>
+            </DataTemplate>
+            
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
