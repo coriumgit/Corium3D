@@ -10,6 +10,7 @@ namespace Corium3DGI
     {
         private int instanceIdx;
         private DxVisualizer.IScene.SelectionHandler selectionHandler;
+        private OnSceneModelInstanceSelected selectionHandlerExt;
 
         public DxVisualizer.IScene.ISceneModelInstance IDxSceneModelInstance { get; private set; }
         
@@ -38,9 +39,12 @@ namespace Corium3DGI
 
         public ObservableQuaternion Rot { get; }
 
-        public SceneModelInstanceM(SceneModelM sceneModel, int instanceIdx, Vector3D translate, Vector3D scale, Vector3D rotAx, float rotAng)
+        public delegate void OnSceneModelInstanceSelected(SceneModelInstanceM thisSelected);        
+
+        public SceneModelInstanceM(SceneModelM sceneModel, int instanceIdx, Vector3D translate, Vector3D scale, Vector3D rotAx, float rotAng, OnSceneModelInstanceSelected selectionHandlerExt)
         {
             selectionHandler = new DxVisualizer.IScene.SelectionHandler(onSelected);
+            this.selectionHandlerExt = selectionHandlerExt;
             this.instanceIdx = instanceIdx;
             SceneModelMRef = sceneModel;                        
             name = sceneModel.Name + instanceIdx.ToString();
@@ -69,6 +73,7 @@ namespace Corium3DGI
         private void onSelected()
         {
             highlight();
+            selectionHandlerExt(this);
         }
 
         private void onTranslationChanged(object sender, PropertyChangedEventArgs e)

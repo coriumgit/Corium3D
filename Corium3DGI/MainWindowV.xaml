@@ -229,7 +229,7 @@
                                     <DataGridTextColumn IsReadOnly="True" Width="3*" Header="Scene" Binding="{Binding Path=Name}">
                                         <DataGridTextColumn.CellStyle>
                                             <Style TargetType="DataGridCell">
-                                                <Setter Property="behaviours:InputBehaviours.OnPreviewMouseMove" Value="{Binding Source={StaticResource bindingProxy}, Path=Data.TrySceneModelDragStart}"/>
+                                                <Setter Property="behaviours:InputBehaviours.OnPreviewMouseMove" Value="{Binding Source={StaticResource bindingProxy}, Path=Data.TrySceneModelDragStartCmd}"/>
                                             </Style>
                                         </DataGridTextColumn.CellStyle>
                                     </DataGridTextColumn>
@@ -302,10 +302,10 @@
                     BorderThickness="5" 
                     BorderBrush="DarkGray" 
                     Background="#E0E0E0"
-                    behaviours:InputBehaviours.OnPreviewMouseDown="{Binding Path=ModelRotateStart}"
-                    behaviours:InputBehaviours.OnPreviewMouseUp="{Binding Path=ModelRotateEnd}"                
-                    behaviours:InputBehaviours.OnPreviewMouseMove="{Binding Path=RotateModel}"
-                    behaviours:InputBehaviours.OnPreviewMouseWheel="{Binding Path=ZoomModelCamera}"                                        
+                    behaviours:InputBehaviours.OnPreviewMouseDown="{Binding Path=MouseDownModelViewportCmd}"
+                    behaviours:InputBehaviours.OnPreviewMouseUp="{Binding Path=MouseUpModelViewportCmd}"                
+                    behaviours:InputBehaviours.OnPreviewMouseMove="{Binding Path=MouseMoveModelViewportCmd}"
+                    behaviours:InputBehaviours.OnPreviewMouseWheel="{Binding Path=MouseWheelModelViewportCmd}"                                        
                     Visibility="Visible">
                 <Viewport3D>
                     <Viewport3D.Camera>
@@ -371,28 +371,29 @@
                 </Viewport3D>
             </Border>
 
-            <Border x:Name="sceneViewportContainer"
-                    BorderThickness="5" 
-                    BorderBrush="DarkGray"
-                    Loaded="OnSceneViewportLoaded"
-                    SizeChanged="OnViewportSizeChanged"        
-                    behaviours:DataBehaviours.OnLoad="{Binding Path=OnViewportLoadedCmd}"
-                    behaviours:DataBehaviours.OnSizeChanged="{Binding Path=OnViewportSizeChangedCmd}"                     
-                    Visibility="Hidden">
-                <Image x:Name="sceneViewportHost"                                             
-                       behaviours:InputBehaviours.OnPreviewDragEnter="{Binding Path=SceneModelDragEnterViewport}"
-                       behaviours:InputBehaviours.OnPreviewDragOver="{Binding Path=SceneModelDragOverViewport}"
-                       behaviours:InputBehaviours.OnPreviewDragLeave="{Binding Path=SceneModelDragLeaveViewport}"                            
-                       behaviours:InputBehaviours.OnPreviewDrop="{Binding Path=SceneModelDropOnViewport}"
-                       behaviours:InputBehaviours.OnPreviewMouseDown="{Binding Path=CameraTransformStart}"
-                       behaviours:InputBehaviours.OnPreviewMouseUp="{Binding Path=CameraTransformEnd}"                
-                       behaviours:InputBehaviours.OnPreviewMouseMove="{Binding Path=CameraTransform}"
-                       behaviours:InputBehaviours.OnPreviewMouseWheel="{Binding Path=ZoomCamera}"
-                       AllowDrop="True">
-                    <Image.Source>
-                        <dx:D3D11Image x:Name="sceneViewport"/>
-                    </Image.Source>
-                </Image>
+            <Border BorderThickness="5" 
+                    BorderBrush="DarkGray">
+                <Grid x:Name="sceneViewportContainer"
+                      Loaded="OnSceneViewportLoaded"
+                      SizeChanged="OnViewportSizeChanged"        
+                      behaviours:DataBehaviours.OnLoad="{Binding Path=OnViewportLoadedCmd}"
+                      behaviours:DataBehaviours.OnSizeChanged="{Binding Path=OnViewportSizeChangedCmd}"                     
+                      Visibility="Hidden">
+                    <Image x:Name="sceneViewportHost"                                             
+                           behaviours:InputBehaviours.OnPreviewDragEnter="{Binding Path=DragEnterSceneViewportCmd}"
+                           behaviours:InputBehaviours.OnPreviewDragOver="{Binding Path=DragOverSceneViewportCmd}"
+                           behaviours:InputBehaviours.OnPreviewDragLeave="{Binding Path=DragLeaveSceneViewportCmd}"                            
+                           behaviours:InputBehaviours.OnPreviewDrop="{Binding Path=DropSceneViewportCmd}"
+                           behaviours:InputBehaviours.OnPreviewMouseDown="{Binding Path=MouseDownSceneViewportCmd}"
+                           behaviours:InputBehaviours.OnPreviewMouseUp="{Binding Path=MouseUpSceneViewportCmd}"                
+                           behaviours:InputBehaviours.OnPreviewMouseMove="{Binding Path=MouseMoveSceneViewportCmd}"
+                           behaviours:InputBehaviours.OnPreviewMouseWheel="{Binding Path=MouseWheelSceneViewportCmd}"
+                           AllowDrop="True">
+                        <Image.Source>
+                            <dx:D3D11Image x:Name="sceneViewport"/>
+                        </Image.Source>
+                    </Image>
+                </Grid>
             </Border>
         </Grid>
     </Grid>

@@ -58,7 +58,7 @@ namespace CoriumDirectX {
 	void DxVisualizer::Scene::SceneModelInstance::highlight() {
 		sceneModelInstanceRef->highlight();
 	}
-
+	
 	void DxVisualizer::Scene::SceneModelInstance::release() {
 		sceneModelInstanceRef->release();
 	}
@@ -94,14 +94,18 @@ namespace CoriumDirectX {
 		return gcnew Vector3D(cameraPos.x, cameraPos.y, cameraPos.z);
 	}
 
-	void DxVisualizer::Scene::cursorSelect(float x, float y) {
-		sceneRef->cursorSelect(x, y);
+	bool DxVisualizer::Scene::cursorSelect(float x, float y) {
+		return sceneRef->cursorSelect(x, y);
 	}
 
 	Vector3D^ DxVisualizer::Scene::cursorPosToRayDirection(float x, float y) {		
 		XMFLOAT3 rayDirection = sceneRef->cursorPosToRayDirection(x, y);
 
 		return gcnew Vector3D(rayDirection.x, rayDirection.y, rayDirection.z);
+	}
+
+	void DxVisualizer::Scene::dimHighlightedInstance() {
+		sceneRef->dimHighlightedInstance();
 	}
 
 	void DxVisualizer::Scene::release() {

@@ -38,29 +38,45 @@ namespace Corium3DGI
             IDxScene.release();
         }
 
-        public SceneModelM addSceneModel(ModelM modelM)
+        public SceneModelM addSceneModel(ModelM model)
         {
             foreach (SceneModelM sceneModel in SceneModelMs)
             {
-                if (sceneModel.ModelMRef == modelM)
+                if (sceneModel.ModelMRef == model)
                     return null;
             }
 
-            SceneModelM sceneModelM = new SceneModelM(this, modelM);
+            SceneModelM sceneModelM = new SceneModelM(this, model);
             SceneModelMs.Add(sceneModelM);
 
             return sceneModelM;
         }
 
-        public void removeSceneModel(SceneModelM sceneModelM)
+        public void removeSceneModel(ModelM modelMRef)
         {
-            SceneModelMs.Remove(sceneModelM);
-            sceneModelM.releaseDxLmnts();
+            foreach (SceneModelM sceneModel in SceneModelMs)
+            {
+                if (sceneModel.ModelMRef == modelMRef)
+                {
+                    removeSceneModel(sceneModel);                    
+                    return;
+                }
+            }            
         }
 
-        public void cursorSelect(float x, float y)
+        public void removeSceneModel(SceneModelM sceneModel)
         {
-            IDxScene.cursorSelect(x, y);
+            SceneModelMs.Remove(sceneModel);
+            sceneModel.releaseDxLmnts();
+        }
+
+        public bool cursorSelect(float x, float y)
+        {
+            bool wasSceneModelInstanceSelected = IDxScene.cursorSelect(x, y);
+            if (!wasSceneModelInstanceSelected)
+                IDxScene.dimHighlightedInstance();
+
+            return wasSceneModelInstanceSelected;
         }
     }
 

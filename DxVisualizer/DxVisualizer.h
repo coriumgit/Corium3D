@@ -36,8 +36,9 @@ namespace CoriumDirectX {
 			void rotateCamera(float x, float y);
 			void zoomCamera(float amount);
 			Media3D::Vector3D^ getCameraPos();
-			void cursorSelect(float x, float y);
+			bool cursorSelect(float x, float y);
 			Media3D::Vector3D^ cursorPosToRayDirection(float x, float y);
+			void dimHighlightedInstance();
 			void release();
 		};
 
@@ -62,7 +63,7 @@ namespace CoriumDirectX {
 				void setScale(Media3D::Vector3D^ scaleFactor) override;
 				void rotate(Media3D::Vector3D^ ax, float ang) override;
 				void setRotation(Media3D::Vector3D^ ax, float ang) override;
-				void highlight() override;
+				void highlight() override;				
 				void release() override;
 
 			private:				
@@ -76,8 +77,9 @@ namespace CoriumDirectX {
 			void rotateCamera(float x, float y) override;
 			void zoomCamera(float amount) override;
 			Media3D::Vector3D^ getCameraPos() override;
-			void cursorSelect(float x, float y) override;
+			bool cursorSelect(float x, float y) override;
 			Media3D::Vector3D^ cursorPosToRayDirection(float x, float y) override;
+			void dimHighlightedInstance() override;
 			void release() override;
 
 		private:						

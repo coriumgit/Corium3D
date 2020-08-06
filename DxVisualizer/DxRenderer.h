@@ -75,7 +75,7 @@ namespace CoriumDirectX {
 			void rotateCamera(float x, float y);
 			void zoomCamera(float amount);
 			DirectX::XMFLOAT3 getCameraPos();
-			void cursorSelect(float x, float y);
+			bool cursorSelect(float x, float y);
 			DirectX::XMFLOAT3 cursorPosToRayDirection(float x, float y);
 			void dimHighlightedInstance();
 			void release();

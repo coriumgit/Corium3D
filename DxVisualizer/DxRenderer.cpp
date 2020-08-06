@@ -2,7 +2,7 @@
 #include "DxUtils.h"
 
 #include <exception>
-
+#include <string>
 using namespace DirectX;
 
 inline float gaussDistrib(float x, float y, float rho) {
@@ -182,7 +182,7 @@ namespace CoriumDirectX {
         return XMFLOAT3(XMVectorGetX(cameraPos), XMVectorGetY(cameraPos), XMVectorGetZ(cameraPos));
     }
     
-    void DxRenderer::Scene::cursorSelect(float x, float y) {
+    bool DxRenderer::Scene::cursorSelect(float x, float y) {
         UINT selectionX = (UINT)floorf(x), selectionY = (UINT)floorf(y);
         D3D11_BOX regionBox = { selectionX , selectionY, 0, selectionX + 1, selectionY + 1, 1 };
         renderer.devcon->CopySubresourceRegion(renderer.stagingSelectionTex, 0, selectionX, selectionY, 0, renderer.selectionTexes[(renderer.updatedSelectionTexIdx + 1) % 3], 0, &regionBox);
@@ -190,10 +190,11 @@ namespace CoriumDirectX {
         HRESULT hr = renderer.devcon->Map(renderer.stagingSelectionTex, 0, D3D11_MAP_READ, 0, &selectionTexMapped);
         if FAILED(hr) {
             OutputDebugStringW(L"Could not map a selection texture.");
-            return;
-        }
-        
-        SceneModelInstanceIdxs sceneModelInstanceIdxs = ((SceneModelInstanceIdxs*)selectionTexMapped.pData)[selectionTexMapped.RowPitch/sizeof(SceneModelInstanceIdxs)*selectionY + selectionX];
+            return false;
+        }        
+        SceneModelInstanceIdxs sceneModelInstanceIdxs = ((SceneModelInstanceIdxs*)selectionTexMapped.pData)[selectionTexMapped.RowPitch/sizeof(SceneModelInstanceIdxs)*selectionY + selectionX];        
+        renderer.devcon->Unmap(renderer.stagingSelectionTex, 0);
+
         if (sceneModelInstanceIdxs.modelID < MODELS_NR_MAX) {
             for (std::list<SceneModelData>::iterator modelsIt = sceneModelsData.begin(); modelsIt != sceneModelsData.end(); modelsIt++) {
                 SceneModelData& sceneModelData = (*modelsIt);
@@ -202,10 +203,13 @@ namespace CoriumDirectX {
                     std::advance(instanceIt, sceneModelInstanceIdxs.instanceIdx);
                     if ((*instanceIt)->selectionHandler)
                         (*instanceIt)->selectionHandler();
-                    break;
+                    
+                    return true;
                 }
             }
         }
+        else
+            return false;
     }
 
     XMFLOAT3 DxRenderer::Scene::cursorPosToRayDirection(float x, float y)
@@ -960,14 +964,14 @@ namespace CoriumDirectX {
         return hr;
     }
 
-    int delay = 50;
+    int delay = 60;
     void DxRenderer::startFrameCapture() {        
-        if (framesCapturesNr < FRAME_CAPTURES_NR_MAX && delay-- > 0)
+        if (framesCapturesNr < FRAME_CAPTURES_NR_MAX && delay == 0)
             pGraphicsAnalysis->BeginCapture();
     }
 
     void DxRenderer::endFrameCapture() {
-        if (framesCapturesNr < FRAME_CAPTURES_NR_MAX && delay-- > 0) {
+        if (framesCapturesNr < FRAME_CAPTURES_NR_MAX && delay-- == 0) {
             pGraphicsAnalysis->EndCapture();
             framesCapturesNr++;
         }
@@ -1115,7 +1119,8 @@ namespace CoriumDirectX {
 
                     // render the highlighted object targeting blur texture0 with stencil write
                     devcon->OMSetDepthStencilState(dsStateWriteStencil, 0);
-                    devcon->OMSetRenderTargets(1, &blurRTView0, dsView);
+                    ID3D11RenderTargetView* sceneRenderTargets[2] = { blurRTView0 , selectionRTViews[selectionTexIdxToUpdate] };                    
+                    devcon->OMSetRenderTargets(2, sceneRenderTargets, dsView);
                     devcon->DrawIndexedInstanced(bd.ByteWidth / sizeof(WORD), 1, 0, 0, 0);
                     devcon->OMSetRenderTargets(1, &rtView, NULL); // temporarily rebind the back buffer
 
