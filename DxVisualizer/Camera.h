@@ -1,5 +1,7 @@
 #pragma once
 
+#include "BoundingSphere.h"
+
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include <DirectXPackedVector.h>
@@ -22,7 +24,7 @@ namespace CoriumDirectX {
         void updateNearZ(float nearZ);
         void updateFarZ(float farZ);                
 
-        float getFieldOfView() { return fov; }
+        float getFieldOfView() { return fovVert; }
         float getNearZ() { return nearZ; }
         float getFarZ() { return farZ; }
         DirectX::XMVECTOR getPos() { return pos; }
@@ -31,19 +33,25 @@ namespace CoriumDirectX {
         DirectX::FXMMATRIX getProjMat() { return projMat; }
         DirectX::FXMMATRIX getViewMat() { return viewMat; }
         DirectX::XMVECTOR cursorPosToRayDirection(float x, float y);        
+        bool isBoundingSphereVisible(BoundingSphere const& boundingSphere) const;
 
-    private:        
-        void recompViewMat();        
-        void recompProjRectAndMat();
-
-        // TODO: move projMat and its related variables to the renderer, and have camera be part of the renderer
-        float fov;
+    private:         
+        // TODO: have camera be part of the renderer
+        float fovVert;
+        float fovHorizon;        
         float nearZ;
         float farZ;
         float screenWidth;
         float screenHeight;
+        DirectX::XMVECTOR frustumTopPlane;
+        DirectX::XMVECTOR frustumBotPlane;
+        DirectX::XMVECTOR frustumLeftPlane;
+        DirectX::XMVECTOR frustumRightPlane;
+        DirectX::XMVECTOR frustumNearPlane;
+        DirectX::XMVECTOR frustumFarPlane;
+
         DirectX::XMVECTOR pos = DirectX::XMVectorSet(0.0, 5.0, -5.0, 0.0f);
-		DirectX::XMVECTOR lookAtVec = DirectX::XMVector3Normalize(DirectX::XMVectorSet(0.0, -1.0, 1.0, 0.0f));
+        DirectX::XMVECTOR lookAtVec = DirectX::XMVector3Normalize(DirectX::XMVectorSet(0.0, -1.0, 1.0, 0.0f));
         DirectX::XMVECTOR rightVec = DirectX::XMVectorSet(1.0, 0.0, 0.0, 0.0f);
         DirectX::XMVECTOR upVec = DirectX::XMVector3Cross(lookAtVec, rightVec);
         DirectX::XMMATRIX viewMat;
@@ -53,7 +61,15 @@ namespace CoriumDirectX {
         float screenWidthDiv2;
         float screenHeightDiv2;
         float projRectWidthDiv2;
-        float projRectHeightDiv2;        
+        float projRectHeightDiv2;
+
+        void recompFovHorizon();
+        void recompViewMat();        
+        void recompProjRectAndMat();
+        void updateFrustumDs();
+        void updateFrustumSidePlanes();
+        void updateFrustumNearPlane();
+        void updateFrustumFarPlane();
     };
 
 }

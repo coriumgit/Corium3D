@@ -29,7 +29,7 @@ namespace Corium3DGI.CustomCtrls
             obj.SetValue(SourceProperty, imgSrc);
         }
 
-        public static readonly DependencyProperty WidthProperty = DependencyProperty.Register(
+        public new static readonly DependencyProperty WidthProperty = DependencyProperty.Register(
             "Width",
             typeof(double),
             typeof(ImageButton),
@@ -45,7 +45,7 @@ namespace Corium3DGI.CustomCtrls
             obj.SetValue(WidthProperty, width);
         }
 
-        public static readonly DependencyProperty HeightProperty = DependencyProperty.Register(
+        public new static readonly DependencyProperty HeightProperty = DependencyProperty.Register(
             "Height",
             typeof(double),
             typeof(ImageButton),
@@ -80,7 +80,7 @@ namespace Corium3DGI.CustomCtrls
 
     public class DoubleHalfer : IValueConverter
     {
-        public object Convert(object value, Type targetTYpe, object parameter, System.Globalization.CultureInfo culture)
+        public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
             return ((double)value) / 2;
         }

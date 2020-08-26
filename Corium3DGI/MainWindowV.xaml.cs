@@ -16,6 +16,7 @@ using System.Runtime.InteropServices;
 using System.Windows.Interop;
 using System.Windows.Media;
 using CoriumDirectX;
+using System.Windows.Media.Imaging;
 
 namespace Corium3DGI
 {
@@ -122,5 +123,24 @@ namespace Corium3DGI
             modelViewportContainer.Visibility = Visibility.Hidden;
             sceneViewportContainer.Visibility = Visibility.Visible;
         }
-    }        
+    } 
+    
+    public class IsShownToVisibilityBtnImageSource : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object param, System.Globalization.CultureInfo culture)
+        {
+            if ((bool)value)
+                return new BitmapImage(new Uri("pack://application:,,,/Corium3DGI;component/Resources/Imgs/eye.png"));
+            else
+                return new BitmapImage(new Uri("pack://application:,,,/Corium3DGI;component/Resources/Imgs/eye_crossed.png"));
+        }
+
+        public object ConvertBack(object value, Type targetType, object param, System.Globalization.CultureInfo culture)
+        {
+            if (((BitmapImage)value).UriSource == new Uri("Resources\\Imgs\\eye.png"))
+                return true;
+            else
+                return false;
+        }
+    }
 }

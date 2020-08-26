@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BoundingSphere.h" />
+    <ClInclude Include="BSH.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="DxRenderer.h" />
     <ClInclude Include="DxUtils.h" />
@@ -27,6 +29,7 @@
     <ClInclude Include="Model.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BoundingSphere.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="DxRenderer.cpp" />
     <ClCompile Include="DxUtils.cpp" />
@@ -39,6 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\Corium3DGI\bin\Debug\D3Dshader.fx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <FileType>Document</FileType>
     </Text>
   </ItemGroup>
@@ -118,6 +122,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalOptions>/Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>C:\games programming\windows programming\Corium3D\externals\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -125,6 +130,9 @@
       <EnableUAC>false</EnableUAC>
       <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxguid.lib;winmm.lib;comctl32.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <FxCompile>
+      <ShaderModel>5.1</ShaderModel>
+    </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

@@ -894,6 +894,7 @@ namespace Corium3D {
 
 	inline void Renderer::updateDueFovOrWinSzChange() {
 		// update fov trigs
+		fovSin = sinf(fov);
 		float QuartFov = fov / 4;
 		vertQuartFovSin = sinf(QuartFov);
 		vertQuartFovCos = cosf(QuartFov);
@@ -1401,7 +1402,7 @@ namespace Corium3D {
 			return false;
 
 		// cone to sphere test
-		glm::vec3 u = cameraPos - boundingSphere.getRadius()*cameraLookDirection/sin(fov);
+		glm::vec3 u = cameraPos - boundingSphere.getRadius()*cameraLookDirection/fovSin;
 		glm::vec3 d = sphereC - u;	
 		float e = dot(cameraLookDirection, d);
 		if ( e > 0 && e*e >= length2(d)*cos(fov)) {

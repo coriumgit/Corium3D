@@ -25,6 +25,9 @@ namespace CoriumDirectX {
 				void rotate(Media3D::Vector3D^ rotAx, float ang);
 				void setRotation(Media3D::Vector3D^ ax, float ang);
 				void highlight();
+				void dim();
+				void show();
+				void hide();
 				void release();				
 			};
 
@@ -38,18 +41,18 @@ namespace CoriumDirectX {
 			Media3D::Vector3D^ getCameraPos();
 			bool cursorSelect(float x, float y);
 			Media3D::Vector3D^ cursorPosToRayDirection(float x, float y);
-			void dimHighlightedInstance();
 			void release();
 		};
 
 		DxVisualizer(float fov, float nearZ, float farZ);
 		~DxVisualizer();
-		void addModel(array<Media3D::Point3D>^ modelVertices, array<unsigned short>^ modelVertexIndices, PrimitiveTopology primitiveTopology, [System::Runtime::InteropServices::Out] UINT% modelIDOut);
+		void addModel(array<Media3D::Point3D>^ modelVertices, array<unsigned short>^ modelVertexIndices, Media3D::Point3D^ boundingSphereCenter, float boundingSphereRadius, PrimitiveTopology primitiveTopology, [System::Runtime::InteropServices::Out] UINT% modelIDOut);
 		void updateModelData(unsigned int modelID, array<Media3D::Point3D>^ modelVertices, array<unsigned short>^ modelVertexIndices, PrimitiveTopology primitiveTopology);
 		void removeModel(unsigned int modelID);
 		IScene^ createScene();				
 		void initRenderer(System::IntPtr surface);
 		void render();
+		void captureFrame();
 
 	private:		
 		ref class Scene : public IScene {
@@ -63,7 +66,10 @@ namespace CoriumDirectX {
 				void setScale(Media3D::Vector3D^ scaleFactor) override;
 				void rotate(Media3D::Vector3D^ ax, float ang) override;
 				void setRotation(Media3D::Vector3D^ ax, float ang) override;
-				void highlight() override;				
+				void highlight() override;		
+				void dim() override;
+				void show() override;
+				void hide() override;
 				void release() override;
 
 			private:				
@@ -79,7 +85,6 @@ namespace CoriumDirectX {
 			Media3D::Vector3D^ getCameraPos() override;
 			bool cursorSelect(float x, float y) override;
 			Media3D::Vector3D^ cursorPosToRayDirection(float x, float y) override;
-			void dimHighlightedInstance() override;
 			void release() override;
 
 		private:						
@@ -88,6 +93,7 @@ namespace CoriumDirectX {
 
 		static void marshalModelData(array<Media3D::Point3D>^ modelVertices, std::vector<DxRenderer::VertexData>& verticesDataMarshaled, 
 									 array<unsigned short>^ modelVertexIndices, std::vector<WORD>& vertexIndicesMarshaled,
+									 Media3D::Point3D^ boundingSphereCenter, DirectX::XMFLOAT3& boundingSphereCenterMarshaled,
 									 PrimitiveTopology primitiveTopology, D3D_PRIMITIVE_TOPOLOGY& primitiveTopologyMarshaled);
 
 		DxRenderer* renderer;

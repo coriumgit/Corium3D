@@ -2,6 +2,7 @@
 
 #include "Camera.h"
 #include "IdxPool.h"
+#include "BSH.h"
 
 #include <d3d11.h>
 #include <list>
@@ -10,11 +11,14 @@
 #include <dxgi1_2.h>
 #include <dxgi1_3.h>
 #include <DXProgrammableCapture.h>
+#include <limits>
 
 namespace CoriumDirectX {
 	const unsigned int MODELS_NR_MAX = 100;
-	const unsigned int INSTANCES_NR_MAX = 100;
-	const unsigned int FRAME_CAPTURES_NR_MAX = 0;
+	const unsigned int INSTANCES_NR_MAX = 1024;
+	const unsigned int INSTANCES_BUFFERS_CAPACITY_INIT = 20;
+	const unsigned int INSTANCES_BUFFERS_CAPACITY_INC_FACTOR = 2;
+	const bool GRAPHICS_DBUG_RUN = false;
 	
 	class DxRenderer {
 	public:	
@@ -33,7 +37,12 @@ namespace CoriumDirectX {
 		};
 
 		class Scene {
+		private:
+			struct SceneModelData;
+
 		public:
+			friend DxRenderer;
+
 			class SceneModelInstance {
 			public:
 				friend Scene;
@@ -42,88 +51,107 @@ namespace CoriumDirectX {
 
 				void translate(DirectX::XMFLOAT3 const& translation);
 				void setTranslation(DirectX::XMFLOAT3 const& translation);
-				void scale(DirectX::XMFLOAT3 const& scaleFactor);
+				void scale(DirectX::XMFLOAT3 const& scaleFactorQ);
 				void setScale(DirectX::XMFLOAT3 const& scaleFactor);
 				void rotate(DirectX::XMFLOAT3 const& ax, float ang);
 				void setRotation(DirectX::XMFLOAT3 const& ax, float ang);
 				DirectX::FXMMATRIX& getModelTransformat() { return modelTransformat; }
 				void highlight();
-				void release();
-				
-			private:
-				SceneModelInstance(Scene& Scene, unsigned int modelID, UINT instanceIdx, Transform const& transformInit, SelectionHandler selectionHandler);
-				~SceneModelInstance() {}
-				void loadDataToBuffers();
-				void recompTransformat();
+				void dim();
+				void show();
+				void hide();
+				void release();				
 
-				Scene& scene;
-				unsigned int modelID;						
+			private:
+				Scene& const scene;				
+				unsigned int modelID;
+				UINT instanceIdx;				
 				Transform transform;
 				DirectX::XMVECTOR pos;
 				DirectX::XMVECTOR scaleFactor;
 				DirectX::XMVECTOR rot;
 				DirectX::XMMATRIX modelTransformat;
-				SelectionHandler selectionHandler;
-				UINT instanceIdx;				
-			};
+				BSH<SceneModelInstance>::DataNode* const bshDataNode;
+				SelectionHandler const selectionHandler;
+				bool isShown = true;
+				bool isHighlighted = false;
+				UINT transformatsBufferOffset = (std::numeric_limits<UINT>::max)();
 
-			friend DxRenderer;
-				
+				SceneModelInstance(Scene& Scene, UINT modelID, Transform const& transformInit, SelectionHandler selectionHandler);
+				~SceneModelInstance() {}
+				void loadInstanceTransformatToBuffer();
+				void unloadInstanceTransformatFromBuffer();
+				void updateInstanceTransformatInBuffer();
+				void updateBuffers();
+				void recompTransformat();								
+			};
+							
 			void activate();
-			SceneModelInstance* createModelInstance(UINT modelID, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler);
+			SceneModelInstance* createModelInstance(unsigned int modelID, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler);
 			void panCamera(float x, float y);
 			void rotateCamera(float x, float y);
 			void zoomCamera(float amount);
 			DirectX::XMFLOAT3 getCameraPos();
 			bool cursorSelect(float x, float y);
 			DirectX::XMFLOAT3 cursorPosToRayDirection(float x, float y);
-			void dimHighlightedInstance();
 			void release();
 
 		private:
+			class VisibleInstancesIt;
+
 			struct SceneModelData {
-				unsigned int modelID;
-				std::list<SceneModelInstance*> sceneModelInstances = std::list<SceneModelInstance*>(); // TODO: Change to vector with size INSTANCES_NR_MAX
+				unsigned int modelID;				
+				IdxPool instanceIdxsPool = IdxPool();
+				std::vector<SceneModelInstance*> sceneModelInstances = std::vector<SceneModelInstance*>(INSTANCES_BUFFERS_CAPACITY_INIT);
 			};
+
+			DxRenderer& renderer;
+			Camera camera;
+			BSH<SceneModelInstance> bsh;
+			std::list<SceneModelData*> sceneModelsData;
 
 			Scene(DxRenderer& renderer);
 			~Scene() {}
-			void loadDataToBuffers();
 			void loadViewMatToBuffer();
-			void loadProjMatToBuffer();
-						
-			DxRenderer& renderer;
-			Camera camera;
-					
-			std::list<SceneModelData> sceneModelsData;	
-			unsigned int highlightedModelID = MODELS_NR_MAX; // modelID of MODELS_NR_MAX indicates none is highlighted
+			void loadProjMatToBuffer();		
+			void loadVisibleInstancesDataToBuffers();
 		};	
 
 		DxRenderer(float fov, float nearZ, float farZ);
 		~DxRenderer();
 
 		HRESULT initDirectXLmnts(void* resource);
-		HRESULT addModel(std::vector<VertexData> const& modelVertices, std::vector<WORD> const& modelVertexIndices, D3D_PRIMITIVE_TOPOLOGY primitiveTopology, UINT* modelIDOut);
+		HRESULT addModel(std::vector<VertexData> const& modelVertices, std::vector<WORD> const& modelVertexIndices, DirectX::XMFLOAT3 const& boundingSphereCenter, float boundingSphereRadius, D3D_PRIMITIVE_TOPOLOGY primitiveTopology, UINT* modelIDOut);
 		HRESULT updateModelData(UINT modelID, std::vector<VertexData> const& modelVertices, std::vector<WORD> const& modelVertexIndices, D3D_PRIMITIVE_TOPOLOGY primitiveTopology);
 		HRESULT removeModel(UINT modelID);
 		Scene* createScene();		
 		HRESULT render();
+		void captureFrame();
 
-	private:
-		static const int BLUR_SPAN = 15;
+	private:		
+		static const int BLUR_SPAN = 15;		
 		static const float BLUR_STD;
 		static const float BLUR_FACTOR;
 		static const FLOAT CLEAR_COLOR[4];
-		static const FLOAT SELECTION_TEXES_CLEAR_COLOR[2];		
+		static const FLOAT SELECTION_TEXES_CLEAR_COLOR[4];		
 		static const FLOAT BLUR_TEXES_CLEAR_COLOR[4];
 
 		struct ModelRenderData {
 			ID3D11Buffer* vertexBuffer;
 			ID3D11Buffer* indexBuffer;
-			ID3D11Buffer* instancesTransformatsBuffer;
+			BoundingSphere boundingSphere;						
+			UINT visibleInstancesNr = 0;
+			ID3D11Buffer* visibleInstancesTransformatsBuffer;
+			std::vector<UINT> visibleInstancesIdxs = std::vector<UINT>(INSTANCES_BUFFERS_CAPACITY_INIT);
+			ID3D11Buffer* visibleInstancesIdxsBuffer;
+			UINT visibleHighlightedInstancesNr = 0;
+			ID3D11Buffer* visibleHighlightedInstancesTransformatsBuffer;	
+			std::vector<UINT> visibleHighlightedInstancesIdxs = std::vector<UINT>(INSTANCES_BUFFERS_CAPACITY_INIT);
+			ID3D11Buffer* visibleHighlightedInstancesIdxsBuffer;
+			UINT visibleInstancesBuffersCapacity = INSTANCES_BUFFERS_CAPACITY_INIT;									
 			D3D_PRIMITIVE_TOPOLOGY primitiveTopology;
 		};
-
+		
 		struct ScreenQuadVertexData {
 			DirectX::XMFLOAT4 pos;
 			DirectX::XMFLOAT2 tex;
@@ -153,7 +181,7 @@ namespace CoriumDirectX {
 		ID3D11BlendState* blendStateTransparency = NULL;
 
 		// scene shaders resources
-		std::vector<DxRenderer::ModelRenderData> modelsRenderData = std::vector<DxRenderer::ModelRenderData>(MODELS_NR_MAX);
+		std::vector<ModelRenderData> modelsRenderData = std::vector<ModelRenderData>(MODELS_NR_MAX);
 		ID3D11RenderTargetView* rtView = NULL;
 		ID3D11Texture2D* selectionTexes[3] = { NULL, NULL, NULL };
 		ID3D11RenderTargetView* selectionRTViews[3] = { NULL, NULL, NULL };
@@ -187,7 +215,7 @@ namespace CoriumDirectX {
 		ID3D11VertexShader* vsBlur = NULL;
 		ID3D11PixelShader* psBlur = NULL;
 		ID3D11InputLayout* vlBlur = NULL;						
-						
+								
 		IdxPool modelsIDsPool;		
 		Scene* activeScene = NULL;
 		std::list<Scene*> scenes;
@@ -196,10 +224,10 @@ namespace CoriumDirectX {
 		float farZ;
 
 		IDXGraphicsAnalysis* pGraphicsAnalysis = NULL;
-		unsigned int framesCapturesNr = 0;
+		unsigned int framesNrToCapture = 0;
 
 		HRESULT loadShaders();	
-		HRESULT initShaderResources(void* resource);
+		HRESULT initShaderResources(void* resource);		
 		void startFrameCapture();
 		void endFrameCapture();
 	};

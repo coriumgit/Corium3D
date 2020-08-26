@@ -135,6 +135,7 @@
       <DependentUpon>MouseMoveNumberBoxUpdater.xaml</DependentUpon>
     </Compile>
     <Compile Include="CustomControls\TextBoxAutoSelectingText.cs" />
+    <Compile Include="CustomControls\ToggledImageButton.cs" />
     <Compile Include="SceneModelInstanceM.cs" />
     <Compile Include="SceneModelM.cs" />
     <Compile Include="Utils\BindingProxy.cs" />
@@ -204,7 +205,13 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <Content Include="Resources\Imgs\Grid.png">
+    <Content Include="Resources\Imgs\camera.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Imgs\eye.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Imgs\eye_crossed.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\Models3D\box.dae">

@@ -73,8 +73,8 @@ namespace Corium3DGI
         public bool cursorSelect(float x, float y)
         {
             bool wasSceneModelInstanceSelected = IDxScene.cursorSelect(x, y);
-            if (!wasSceneModelInstanceSelected)
-                IDxScene.dimHighlightedInstance();
+            //if (!wasSceneModelInstanceSelected)
+              //  IDxScene.dimHighlightedInstance();
 
             return wasSceneModelInstanceSelected;
         }

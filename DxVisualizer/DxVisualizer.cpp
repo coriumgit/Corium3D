@@ -59,6 +59,18 @@ namespace CoriumDirectX {
 		sceneModelInstanceRef->highlight();
 	}
 	
+	void DxVisualizer::Scene::SceneModelInstance::dim() {
+		sceneModelInstanceRef->dim();
+	}
+
+	void DxVisualizer::Scene::SceneModelInstance::show() {
+		sceneModelInstanceRef->show();
+	}
+
+	void DxVisualizer::Scene::SceneModelInstance::hide() {
+		sceneModelInstanceRef->hide();
+	}
+
 	void DxVisualizer::Scene::SceneModelInstance::release() {
 		sceneModelInstanceRef->release();
 	}
@@ -104,10 +116,6 @@ namespace CoriumDirectX {
 		return gcnew Vector3D(rayDirection.x, rayDirection.y, rayDirection.z);
 	}
 
-	void DxVisualizer::Scene::dimHighlightedInstance() {
-		sceneRef->dimHighlightedInstance();
-	}
-
 	void DxVisualizer::Scene::release() {
 		sceneRef->release();
 	}	
@@ -120,22 +128,24 @@ namespace CoriumDirectX {
 		delete renderer;
 	}
 
-	void DxVisualizer::addModel(array<Point3D>^ modelVertices, array<unsigned short>^ modelVertexIndices, PrimitiveTopology primitiveTopology, [System::Runtime::InteropServices::Out] UINT% modelIDOut) {
+	void DxVisualizer::addModel(array<Point3D>^ modelVertices, array<unsigned short>^ modelVertexIndices, Point3D^ boundingSphereCenter, float boundingSphereRadius, PrimitiveTopology primitiveTopology, [System::Runtime::InteropServices::Out] UINT% modelIDOut) {
 		std::vector<DxRenderer::VertexData> verticesData(modelVertices->Length);		
 		std::vector<WORD> vertexIndicesMarshaled(modelVertexIndices->Length); 
+		XMFLOAT3 boundingSphereCenterMarshaled;
 		D3D_PRIMITIVE_TOPOLOGY primitiveTopologyMarshaled;
-		marshalModelData(modelVertices, verticesData, modelVertexIndices, vertexIndicesMarshaled, primitiveTopology, primitiveTopologyMarshaled);
+		marshalModelData(modelVertices, verticesData, modelVertexIndices, vertexIndicesMarshaled, boundingSphereCenter, boundingSphereCenterMarshaled, primitiveTopology, primitiveTopologyMarshaled);
 
-		UINT modelID;
-		renderer->addModel(verticesData, vertexIndicesMarshaled, primitiveTopologyMarshaled, &modelID);
+		UINT modelID;		
+		renderer->addModel(verticesData, vertexIndicesMarshaled, boundingSphereCenterMarshaled, boundingSphereRadius, primitiveTopologyMarshaled, &modelID);
 		modelIDOut = modelID;
 	}
 
 	void DxVisualizer::updateModelData(unsigned int modelID, array<Point3D>^ modelVertices, array<unsigned short>^ modelVertexIndices, PrimitiveTopology primitiveTopology) {
 		std::vector<DxRenderer::VertexData> verticesData(modelVertices->Length);
 		std::vector<WORD> vertexIndicesMarshaled(modelVertexIndices->Length);
+		XMFLOAT3 boundingSphereCenterMarshaled;
 		D3D_PRIMITIVE_TOPOLOGY primitiveTopologyMarshaled;
-		marshalModelData(modelVertices, verticesData, modelVertexIndices, vertexIndicesMarshaled, primitiveTopology, primitiveTopologyMarshaled);
+		marshalModelData(modelVertices, verticesData, modelVertexIndices, vertexIndicesMarshaled, gcnew Point3D(), boundingSphereCenterMarshaled, primitiveTopology, primitiveTopologyMarshaled);
 
 		renderer->updateModelData(modelID, verticesData, vertexIndicesMarshaled, primitiveTopologyMarshaled);
 	}
@@ -157,8 +167,14 @@ namespace CoriumDirectX {
 		renderer->render();
 	}
 
+	void DxVisualizer::captureFrame()
+	{
+		renderer->captureFrame();
+	}
+
 	void DxVisualizer::marshalModelData(array<Point3D>^ modelVertices, std::vector<DxRenderer::VertexData>& verticesDataMarshaled,
 										array<unsigned short>^ modelVertexIndices, std::vector<WORD>& vertexIndicesMarshaled, 
+										Point3D^ boundingSphereCenter, XMFLOAT3& boundingSphereCenterMarshaled,
 										PrimitiveTopology primitiveTopology, D3D_PRIMITIVE_TOPOLOGY& primitiveTopologyMarshaled) {
 		
 		for (unsigned int vertexIdx = 0; vertexIdx < modelVertices->Length; vertexIdx++) {
@@ -174,6 +190,8 @@ namespace CoriumDirectX {
 				vertexIndicesMarshaled.begin());
 		}
 		
+		boundingSphereCenterMarshaled = marshalPoint3D(boundingSphereCenter);
+
 		switch (primitiveTopology) {
 			case PrimitiveTopology::LINELIST:
 				primitiveTopologyMarshaled = D3D_PRIMITIVE_TOPOLOGY_LINELIST;

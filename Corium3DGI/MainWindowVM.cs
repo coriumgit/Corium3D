@@ -94,7 +94,12 @@ namespace Corium3DGI
             {
                 if (selectedSceneModelInstance != value)
                 {
+                    if (selectedSceneModelInstance != null)
+                        selectedSceneModelInstance.dim();
+
                     selectedSceneModelInstance = value;
+                    if (selectedSceneModelInstance != null)
+                        selectedSceneModelInstance.highlight();
                     OnPropertyChanged("SelectedSceneModelInstance");
                 }
             }
@@ -221,6 +226,7 @@ namespace Corium3DGI
         public ICommand DragOverSceneViewportCmd { get; }
         public ICommand DropSceneViewportCmd { get; }
         public ICommand AddSceneModelInstanceCmd { get; }
+        public ICommand ToggleSceneModelInstanceVisibilityCmd { get; }
         public ICommand RemoveSceneModelInstanceCmd { get; }
         public ICommand SaveSceneCmd { get; }
         public ICommand MouseDownSceneViewportCmd { get; }
@@ -232,6 +238,7 @@ namespace Corium3DGI
         public ICommand MouseMoveModelViewportCmd { get; }
         public ICommand MouseWheelModelViewportCmd { get; }
         public ICommand ClearFocusCmd { get; }
+        public ICommand CaptureFrameCmd { get; }
 
         public MainWindowVM(DxVisualizer dxVisualizer)
         {
@@ -251,7 +258,8 @@ namespace Corium3DGI
             DragLeaveSceneViewportCmd = new RelayCommand(p => sceneModelDragLeaveViewport((DragEventArgs)p));
             DragOverSceneViewportCmd = new RelayCommand(p => sceneModelDragOverViewport((DragEventArgs)p));
             DropSceneViewportCmd = new RelayCommand(p => sceneModelDropOnViewport((DragEventArgs)p));
-            //AddSceneModelInstanceCmd = new RelayCommand(p => addSceneModelInstance(), p => SelectedSceneModel != null);
+            AddSceneModelInstanceCmd = new RelayCommand(p => addSceneModelInstance(), p => SelectedSceneModel != null);
+            ToggleSceneModelInstanceVisibilityCmd = new RelayCommand(p => toggleSceneModelInstanceVisibility(), p => SelectedSceneModelInstance != null);
             RemoveSceneModelInstanceCmd = new RelayCommand(p => removeSceneModelInstance(), p => SelectedSceneModelInstance != null);
             SaveSceneCmd = new RelayCommand(p => saveScene(), p => SelectedScene != null);
             MouseDownSceneViewportCmd = new RelayCommand(p => mouseDownSceneViewport((MouseButtonEventArgs)p));
@@ -263,7 +271,8 @@ namespace Corium3DGI
             MouseMoveModelViewportCmd = new RelayCommand(p => rotateModel((MouseEventArgs)p));
             MouseWheelModelViewportCmd = new RelayCommand(p => zoomModelCamera((MouseWheelEventArgs)p));
             ClearFocusCmd = new RelayCommand(p => clearFocus());
-
+            CaptureFrameCmd = new RelayCommand(p => captureFrame());
+            
             // Forcing a call to CollisionPrimitives' static constructors
             CollisionPrimitive collisionPrimitive = new CollisionPrimitive();
             CollisionBox collisionBox = new CollisionBox(new Point3D(), new Point3D());
@@ -291,7 +300,11 @@ namespace Corium3DGI
                 {
                     AssetsImporter.NamedModelData importedModelData = AssetsImporter.Instance.importModel(modelColladaPath);                    
                     uint dxModelID;
-                    dxVisualizer.addModel(importedModelData.importData.meshesVertices[0], importedModelData.importData.meshesVertexIndices[0], PrimitiveTopology.TRIANGLELIST, out dxModelID);
+                    dxVisualizer.addModel(importedModelData.importData.meshesVertices[0], 
+                        importedModelData.importData.meshesVertexIndices[0], 
+                        importedModelData.importData.boundingSphereCenter, 
+                        importedModelData.importData.boundingSphereRadius, 
+                        PrimitiveTopology.TRIANGLELIST, out dxModelID);
                     ModelM model = new ModelM(importedModelData, dxModelID);
                     ModelMs.Add(model);
                 }
@@ -402,7 +415,7 @@ namespace Corium3DGI
                 vertexIndices[2 * (vertGridLinesNr + horizonLineIdx) + 1] = (ushort)(2 * (vertGridLinesNr + horizonLineIdx) + 1);
             }
 
-            dxVisualizer.addModel(vertices, vertexIndices, PrimitiveTopology.LINELIST, out gridDxModelId);
+            dxVisualizer.addModel(vertices, vertexIndices, new Point3D(0, 0, 0), GRID_HALF_WIDHT, PrimitiveTopology.LINELIST, out gridDxModelId);
         }
 
         private void onViewportSizeChagned(SizeChangedEventArgs e)
@@ -431,6 +444,7 @@ namespace Corium3DGI
             {
                 SelectedSceneModel.removeSceneModelInstance(draggedSceneModelInstance);
                 SelectedSceneModelInstance = draggedSceneModelInstance = null;
+                CommandManager.InvalidateRequerySuggested();
             }
         }
 
@@ -454,6 +468,17 @@ namespace Corium3DGI
         private void sceneModelDropOnViewport(DragEventArgs e)
         {
             draggedSceneModelInstance = null;
+            CommandManager.InvalidateRequerySuggested();
+        }
+
+        private void addSceneModelInstance()
+        {
+            SelectedSceneModel.addSceneModelInstance(new Vector3D(0, 0, 0), new Vector3D(1, 1, 1), new Vector3D(1, 0, 0), 0, onSceneModelInstanceSelected);
+        }
+
+        private void toggleSceneModelInstanceVisibility()
+        {
+            SelectedSceneModelInstance.toggleVisibility();
         }
 
         private void removeSceneModelInstance()
@@ -573,7 +598,12 @@ namespace Corium3DGI
         }
         private void clearFocus()
         {
-            Keyboard.ClearFocus();
+            Keyboard.ClearFocus();            
+        }
+
+        private void captureFrame()
+        {
+            dxVisualizer.captureFrame();
         }
     }
 }

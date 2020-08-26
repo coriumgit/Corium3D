@@ -10,7 +10,7 @@ namespace Corium3DGI
     {
         private int instanceIdx;
         private DxVisualizer.IScene.SelectionHandler selectionHandler;
-        private OnSceneModelInstanceSelected selectionHandlerExt;
+        private OnSceneModelInstanceSelected selectionHandlerExt;        
 
         public DxVisualizer.IScene.ISceneModelInstance IDxSceneModelInstance { get; private set; }
         
@@ -38,6 +38,21 @@ namespace Corium3DGI
         public ObservableVector3D Scale { get; }
 
         public ObservableQuaternion Rot { get; }
+
+        private bool isShown = true;
+        public bool IsShown
+        {
+            get { return isShown; }
+
+            set
+            {
+                if (isShown != value)
+                {
+                    isShown = value;
+                    OnPropertyChanged("IsShown");
+                }
+            }
+        }
 
         public delegate void OnSceneModelInstanceSelected(SceneModelInstanceM thisSelected);        
 
@@ -70,9 +85,23 @@ namespace Corium3DGI
             IDxSceneModelInstance.highlight();
         }
 
-        private void onSelected()
+        public void dim()
         {
-            highlight();
+            IDxSceneModelInstance.dim();
+        }
+
+        public void toggleVisibility()
+        {
+            IsShown = !IsShown;
+
+            if (IsShown)
+                IDxSceneModelInstance.show();
+            else
+                IDxSceneModelInstance.hide();            
+        }
+
+        private void onSelected()
+        {            
             selectionHandlerExt(this);
         }
 

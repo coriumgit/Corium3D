@@ -1,3 +1,5 @@
+#include "..\DxVisualizer\BoundingSphere.h"
+#include "..\DxVisualizer\BoundingSphere.h"
 #include "BoundingSphere.h"
 
 #include <glm/gtx/norm.hpp>
@@ -183,5 +185,4 @@ namespace Corium3D {
 		else
 			return BoundingSphere(sphere1.c, std::fmax(sphere1.r, sphere2.r));
 	}
-
 } // namespace Corium3D

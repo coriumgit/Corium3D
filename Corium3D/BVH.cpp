@@ -1061,7 +1061,6 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 		}
 		else { // childIdx == 1
 			child->escapeNode = this->escapeNode;
-			children[0]->escapeNode = child;
 			nodesIt = children[0];	
 			do {
 				nodesIt->escapeNode = child;

@@ -152,15 +152,21 @@
                     <Border Grid.Row="0" BorderThickness="5" BorderBrush="DarkGray">
                         <DockPanel>
                             <Border DockPanel.Dock="Bottom" BorderThickness="0 2 0 2" BorderBrush="DarkGray">
-                                <UniformGrid Columns="2">
+                                <UniformGrid Columns="3">
                                     <cc:ImageButton Grid.Column="0"
                                                     Source="Resources\Imgs\BlueArrow.png"
                                                     Width="30"
                                                     Height="30"
                                                     Rotation="-90"
                                                     Command="{Binding Path=RemoveSceneModelCmd}"/>
+
+                                    <cc:ImageButton Grid.Column="1"
+                                                    Source="Resources\Imgs\GreenPlus.png"
+                                                    Width="30"
+                                                    Height="30"
+                                                    Command="{Binding Path=AddSceneModelInstanceCmd}"/>
                                     
-                                    <cc:ImageButton Grid.Column="1" 
+                                    <cc:ImageButton Grid.Column="2" 
                                                     Source="Resources\Imgs\SaveToDisk.png"
                                                     Width="30"
                                                     Height="30"
@@ -277,6 +283,20 @@
                                                     Width="20"
                                                     Height="20"
                                                     Command="{Binding Path=RemoveSceneModelInstanceCmd}"/>
+
+                                    <cc:ImageButton DockPanel.Dock="Right"
+                                                    Width="20"
+                                                    Height="20"
+                                                    Command="{Binding Path=ToggleSceneModelInstanceVisibilityCmd}">
+                                        
+                                        <cc:ImageButton.Resources>
+                                            <local:IsShownToVisibilityBtnImageSource x:Key="isShownToVisibilityBtnImageSource"/>
+                                        </cc:ImageButton.Resources>
+                                        
+                                        <cc:ImageButton.Source>
+                                            <Binding Path="SelectedSceneModelInstance.IsShown" Converter="{StaticResource isShownToVisibilityBtnImageSource}"/>
+                                        </cc:ImageButton.Source>
+                                    </cc:ImageButton>
                                     
                                     <ComboBox ItemsSource="{Binding Path=SelectedSceneModel.SceneModelInstanceMs}"
                                               SelectedItem="{Binding Path=SelectedSceneModelInstance}">
@@ -393,6 +413,14 @@
                             <dx:D3D11Image x:Name="sceneViewport"/>
                         </Image.Source>
                     </Image>
+
+                    <cc:ImageButton HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    Margin="0 5 5 0"
+                                    Source="Resources\Imgs\camera.png"
+                                    Width="30"
+                                    Height="30"
+                                    Command="{Binding Path=CaptureFrameCmd}"/>
                 </Grid>
             </Border>
         </Grid>

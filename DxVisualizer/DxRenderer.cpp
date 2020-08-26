@@ -3,6 +3,10 @@
 
 #include <exception>
 #include <string>
+#include <limits>
+
+#pragma warning( disable : 3146081)
+
 using namespace DirectX;
 
 inline float gaussDistrib(float x, float y, float rho) {
@@ -13,8 +17,9 @@ namespace CoriumDirectX {
     const float DxRenderer::BLUR_STD = 5.0f;
     const float DxRenderer::BLUR_FACTOR = 1.75f;
     const FLOAT DxRenderer::CLEAR_COLOR[4] = { 224.0f / 255, 224.0f / 255, 224.0f / 255, 1.0f };
-    const FLOAT DxRenderer::SELECTION_TEXES_CLEAR_COLOR[2] = { (FLOAT)MODELS_NR_MAX , (FLOAT)INSTANCES_NR_MAX };    
+    const FLOAT DxRenderer::SELECTION_TEXES_CLEAR_COLOR[4] = { MODELS_NR_MAX, 0, 0, 0}; //TODO: update the selection texes to hold INT instead of UINT
     const FLOAT DxRenderer::BLUR_TEXES_CLEAR_COLOR[4] = { CLEAR_COLOR[0], CLEAR_COLOR[1], CLEAR_COLOR[2], 0.0f };
+
     XMMATRIX DxRenderer::Transform::genTransformat() const {
         XMMATRIX transformat = XMMatrixScaling(scaleFactor.x, scaleFactor.y, scaleFactor.z);
         transformat = XMMatrixMultiply(XMMatrixRotationAxis(XMLoadFloat3(&rotAx), rotAng), transformat);
@@ -25,85 +30,102 @@ namespace CoriumDirectX {
 
     void DxRenderer::Scene::SceneModelInstance::translate(XMFLOAT3 const& _translation) {
         XMVECTOR translation = XMLoadFloat3(&_translation);
+        scene.bsh.translateNodeBS(bshDataNode, translation);
         pos += translation;
         modelTransformat = XMMatrixMultiply(XMMatrixTranslationFromVector(translation), modelTransformat);
-        loadDataToBuffers();
+        updateBuffers();
     }
 
-    void DxRenderer::Scene::SceneModelInstance::setTranslation(XMFLOAT3 const& translation) {
-        pos = XMLoadFloat3(&translation);
+    void DxRenderer::Scene::SceneModelInstance::setTranslation(XMFLOAT3 const& _translation) {
+        XMVECTOR translation = XMLoadFloat3(&_translation);
+        scene.bsh.setTranslationForNodeBS(bshDataNode, translation);
+        pos = translation;        
         recompTransformat();
-        loadDataToBuffers();
+        updateBuffers();
     }
 
     void DxRenderer::Scene::SceneModelInstance::scale(XMFLOAT3 const& _scaleFactorQ) {
+        scene.bsh.scaleNodeBS(bshDataNode, max(max(_scaleFactorQ.x, _scaleFactorQ.y), _scaleFactorQ.z));
         XMVECTOR scaleFactorQ = XMLoadFloat3(&_scaleFactorQ);
         scaleFactor *= scaleFactorQ;
         modelTransformat = XMMatrixMultiply(XMMatrixScaling(XMVectorGetX(scaleFactor), XMVectorGetY(scaleFactor), XMVectorGetZ(scaleFactor)), modelTransformat);
-        loadDataToBuffers();
+        updateBuffers();
     }
 
     void DxRenderer::Scene::SceneModelInstance::setScale(XMFLOAT3 const& _scaleFactor) {
+        scene.bsh.setRadiusForNodeBS(bshDataNode, max(max(_scaleFactor.x, _scaleFactor.y), _scaleFactor.z));
         scaleFactor = XMLoadFloat3(&_scaleFactor);
         recompTransformat();
-        loadDataToBuffers();
+        updateBuffers();
     }
 
     void DxRenderer::Scene::SceneModelInstance::rotate(XMFLOAT3 const& ax, float ang) {
         XMVECTOR rotQuat = XMQuaternionRotationAxis(XMVectorSet(ax.x, ax.y, ax.z, 0.0f), ang);
         rot *= rotQuat;
         modelTransformat = XMMatrixMultiply(XMMatrixRotationQuaternion(rotQuat), modelTransformat);
-        loadDataToBuffers();
+        updateBuffers();
     }
 
     void DxRenderer::Scene::SceneModelInstance::setRotation(XMFLOAT3 const& ax, float ang) {
         rot = XMQuaternionRotationAxis(XMVectorSet(ax.x, ax.y, ax.z, 0.0f), ang);
         recompTransformat();
-        loadDataToBuffers();
+        updateBuffers();
     }
 
-    void DxRenderer::Scene::SceneModelInstance::highlight() {
-        for (std::list<SceneModelData>::iterator it = scene.sceneModelsData.begin(); it != scene.sceneModelsData.end(); it++) {
-            SceneModelData& sceneModelData = (*it);
-            if (sceneModelData.modelID == modelID) {
-                if (instanceIdx > 0) {
-                    std::list<SceneModelInstance*>::iterator instanceIt = sceneModelData.sceneModelInstances.begin();                
-                    std::advance(instanceIt, instanceIdx);                 
+    void DxRenderer::Scene::SceneModelInstance::highlight() {    
+        if (isHighlighted)
+            return;
 
-                    SceneModelInstance* frontInstance = sceneModelData.sceneModelInstances.front();
-                    sceneModelData.sceneModelInstances.insert(instanceIt, frontInstance);
-                    frontInstance->instanceIdx = instanceIdx;
-                    frontInstance->loadDataToBuffers();
-                    sceneModelData.sceneModelInstances.pop_front();
-
-                    sceneModelData.sceneModelInstances.push_front(this);
-                    instanceIdx = 0;
-                    loadDataToBuffers();
-                    sceneModelData.sceneModelInstances.erase(instanceIt);                    
-                }
-                                
-                scene.highlightedModelID = modelID;
-            }            
+        if (transformatsBufferOffset < (std::numeric_limits<UINT>::max)()) {
+            unloadInstanceTransformatFromBuffer();
+            isHighlighted = true;
+            loadInstanceTransformatToBuffer();
         }
-    }    
+        else
+            isHighlighted = true;                                                                 
+    }
+
+    void DxRenderer::Scene::SceneModelInstance::dim() {
+        if (!isHighlighted)
+            return;
+
+        if (transformatsBufferOffset < (std::numeric_limits<UINT>::max)()) {
+            unloadInstanceTransformatFromBuffer();
+            isHighlighted = false;
+            loadInstanceTransformatToBuffer();
+        }
+        else
+            isHighlighted = false;
+    }
+
+    void DxRenderer::Scene::SceneModelInstance::show() {
+        if (isShown)
+            return;
+
+        isShown = true;
+        updateBuffers();
+    }
+
+    void DxRenderer::Scene::SceneModelInstance::hide() {
+        if (!isShown)
+            return;
+
+        isShown = false;
+        updateBuffers();
+    }
 
     void DxRenderer::Scene::SceneModelInstance::release() {
-        for (std::list<SceneModelData>::iterator it = scene.sceneModelsData.begin(); it != scene.sceneModelsData.end(); it++) {
-            SceneModelData& sceneModelData = (*it);
-            if (sceneModelData.modelID == modelID) {     
-                std::list<SceneModelInstance*>::iterator instanceIt = sceneModelData.sceneModelInstances.begin();
-                std::advance(instanceIt, instanceIdx);
-                if (instanceIdx < sceneModelData.sceneModelInstances.size() - 1) {
-                    SceneModelInstance* backInstance = sceneModelData.sceneModelInstances.back();                    
-                    sceneModelData.sceneModelInstances.insert(instanceIt, backInstance);
-                    backInstance->instanceIdx = instanceIdx;
-                    backInstance->loadDataToBuffers();
-                    sceneModelData.sceneModelInstances.pop_back();
-                }
-                sceneModelData.sceneModelInstances.erase(instanceIt);
+        scene.bsh.destroy(bshDataNode);
 
-                if (sceneModelData.sceneModelInstances.size() == 0)
-                    scene.sceneModelsData.erase(it);
+        if (transformatsBufferOffset < (std::numeric_limits<UINT>::max)())
+            unloadInstanceTransformatFromBuffer();
+        
+        for (std::list<SceneModelData*>::iterator sceneModelsIt = scene.sceneModelsData.begin(); sceneModelsIt != scene.sceneModelsData.end(); sceneModelsIt++) {
+            SceneModelData* sceneModelData = *sceneModelsIt;
+            if (sceneModelData->modelID == modelID) {
+                sceneModelData->instanceIdxsPool.releaseIdx(instanceIdx);
+                if (sceneModelData->instanceIdxsPool.acquiredIdxsNr() == 0)
+                    scene.sceneModelsData.erase(sceneModelsIt); // TODO: delete the scene models instances
 
                 delete this;
                 return;
@@ -113,18 +135,126 @@ namespace CoriumDirectX {
         throw std::exception("release was called on a SceneModelInstance of a removed model.");
     }
 
-    DxRenderer::Scene::SceneModelInstance::SceneModelInstance(Scene& _scene, UINT _modelID, UINT _instanceIdx, Transform const& transform, SceneModelInstance::SelectionHandler _selectionHandler) :
-            scene(_scene), modelID(_modelID), instanceIdx(_instanceIdx), selectionHandler(_selectionHandler),
-            pos(XMVectorSet(transform.translation.x, transform.translation.y, transform.translation.z, 0.0f)),
-            scaleFactor(XMVectorSet(transform.scaleFactor.x, transform.scaleFactor.y, transform.scaleFactor.z, 0.0f)),
-            rot(XMQuaternionRotationAxis(XMVectorSet(transform.rotAx.x, transform.rotAx.y, transform.rotAx.z, 0.0f), transform.rotAng)), 
-            modelTransformat(transform.genTransformat()) {}
+    DxRenderer::Scene::SceneModelInstance::SceneModelInstance(Scene& _scene, UINT _modelID, Transform const& transform, SceneModelInstance::SelectionHandler _selectionHandler) :
+            scene(_scene), modelID(_modelID),
+            selectionHandler(_selectionHandler),
+            pos(XMLoadFloat3(&transform.translation)), 
+            scaleFactor(XMLoadFloat3(&transform.scaleFactor)),
+            rot(XMQuaternionRotationAxis(XMLoadFloat3(&transform.rotAx), transform.rotAng)),
+            modelTransformat(transform.genTransformat()),
+            bshDataNode(scene.bsh.insert(BoundingSphere::calcTransformedBoundingSphere(scene.renderer.modelsRenderData[modelID].boundingSphere, pos, max(max(transform.scaleFactor.x, transform.scaleFactor.y), transform.scaleFactor.z)), *this)) {
 
-    void DxRenderer::Scene::SceneModelInstance::loadDataToBuffers() {
-        UINT transformatsBufferOffset = instanceIdx * sizeof(XMMATRIX);
-        D3D11_BOX rangeBox = { transformatsBufferOffset , 0U, 0U, transformatsBufferOffset + sizeof(XMMATRIX), 1U, 1U };
-        scene.renderer.devcon->UpdateSubresource(scene.renderer.modelsRenderData[modelID].instancesTransformatsBuffer, 0, &rangeBox, &(modelTransformat), 0, 0);
+        SceneModelData* sceneModelData = NULL;
+        for (std::list<SceneModelData*>::iterator it = scene.sceneModelsData.begin(); it != scene.sceneModelsData.end(); it++) {
+            if ((*it)->modelID == modelID) {
+                sceneModelData = *it;
+                break;
+            }
+        }
+
+        if (sceneModelData == NULL) {
+            // modelID was not found
+            sceneModelData = new SceneModelData{ modelID };
+            scene.sceneModelsData.push_back(sceneModelData);
+        }
+
+        instanceIdx = sceneModelData->instanceIdxsPool.acquireIdx();
+#if _DEBUG
+        bshDataNode->setName(std::string("(") + std::to_string(modelID) + std::string(",") + std::to_string(instanceIdx) + std::string(")"));
+#endif
+        // TODO: if acquired indices number == visibleInstancesBuffersCapacity, reallocate:
+        // visibleHighlightedInstancesIdxsBuffer
+        // visibleInstancesIdxsBuffer
+        // visibleInstancesIdxsStaging
+        // visibleHighlightedInstancesIdxsStaging
+
+        sceneModelData->sceneModelInstances[instanceIdx] = this;                           
+        updateBuffers();
     }
+
+    void DxRenderer::Scene::SceneModelInstance::loadInstanceTransformatToBuffer() {             
+        if (isHighlighted) 
+            transformatsBufferOffset = scene.renderer.modelsRenderData[modelID].visibleHighlightedInstancesNr++;        
+        else 
+            transformatsBufferOffset = scene.renderer.modelsRenderData[modelID].visibleInstancesNr++;
+                
+        updateInstanceTransformatInBuffer();
+    }
+
+    void DxRenderer::Scene::SceneModelInstance::unloadInstanceTransformatFromBuffer() {
+        ID3D11Buffer* transformatsBuffer;        
+        std::vector<UINT>* visibleInstancesIdxs;
+        ID3D11Buffer* idxsBuffer;
+        UINT visibleInstancesNr;        
+        if (isHighlighted) {
+            transformatsBuffer = scene.renderer.modelsRenderData[modelID].visibleHighlightedInstancesTransformatsBuffer;
+            idxsBuffer = scene.renderer.modelsRenderData[modelID].visibleHighlightedInstancesIdxsBuffer;
+            visibleInstancesIdxs = &scene.renderer.modelsRenderData[modelID].visibleHighlightedInstancesIdxs;
+            visibleInstancesNr = --scene.renderer.modelsRenderData[modelID].visibleHighlightedInstancesNr;
+        }
+        else {
+            transformatsBuffer = scene.renderer.modelsRenderData[modelID].visibleInstancesTransformatsBuffer;
+            idxsBuffer = scene.renderer.modelsRenderData[modelID].visibleInstancesIdxsBuffer;
+            visibleInstancesIdxs = &scene.renderer.modelsRenderData[modelID].visibleInstancesIdxs;
+            visibleInstancesNr = --scene.renderer.modelsRenderData[modelID].visibleInstancesNr;
+        }
+                
+        if (transformatsBufferOffset < visibleInstancesNr) {
+            for (std::list<SceneModelData*>::iterator it = scene.sceneModelsData.begin(); it != scene.sceneModelsData.end(); it++) {
+                SceneModelData* sceneModelData = *it;
+                if (sceneModelData->modelID == modelID) {
+                    D3D11_BOX rangeBox = { visibleInstancesNr * sizeof(XMMATRIX), 0U, 0U, (visibleInstancesNr + 1) * sizeof(XMMATRIX), 1U, 1U };
+                    scene.renderer.devcon->CopySubresourceRegion(transformatsBuffer, 0, transformatsBufferOffset * sizeof(XMMATRIX), 0, 0, transformatsBuffer, 0, &rangeBox);
+
+                    rangeBox.left = visibleInstancesNr * sizeof(UINT);
+                    rangeBox.right = (visibleInstancesNr + 1) * sizeof(UINT);
+                    scene.renderer.devcon->CopySubresourceRegion(idxsBuffer, 0, transformatsBufferOffset * sizeof(UINT), 0, 0, idxsBuffer, 0, &rangeBox);
+
+                    SceneModelInstance* instanceToSwapWith = sceneModelData->sceneModelInstances[(*visibleInstancesIdxs)[visibleInstancesNr]];
+                    (*visibleInstancesIdxs)[transformatsBufferOffset] = instanceToSwapWith->instanceIdx;
+                    instanceToSwapWith->transformatsBufferOffset = transformatsBufferOffset;
+                }
+            }
+        }
+
+        transformatsBufferOffset = (std::numeric_limits<UINT>::max)();
+    }
+
+    void DxRenderer::Scene::SceneModelInstance::updateInstanceTransformatInBuffer() {
+        ID3D11Buffer* transformatsBuffer;
+        std::vector<UINT>* visibleInstancesIdxs;
+        ID3D11Buffer* idxsBuffer;
+        if (isHighlighted) {
+            visibleInstancesIdxs = &scene.renderer.modelsRenderData[modelID].visibleHighlightedInstancesIdxs;
+            transformatsBuffer = scene.renderer.modelsRenderData[modelID].visibleHighlightedInstancesTransformatsBuffer;
+            idxsBuffer = scene.renderer.modelsRenderData[modelID].visibleHighlightedInstancesIdxsBuffer;
+        }
+        else {
+            visibleInstancesIdxs = &scene.renderer.modelsRenderData[modelID].visibleInstancesIdxs;
+            transformatsBuffer = scene.renderer.modelsRenderData[modelID].visibleInstancesTransformatsBuffer;
+            idxsBuffer = scene.renderer.modelsRenderData[modelID].visibleInstancesIdxsBuffer;
+        }
+
+        D3D11_BOX rangeBox = { transformatsBufferOffset * sizeof(XMMATRIX), 0U, 0U, (transformatsBufferOffset + 1) * sizeof(XMMATRIX), 1U, 1U };
+        scene.renderer.devcon->UpdateSubresource(transformatsBuffer, 0, &rangeBox, &modelTransformat, 0, 0);
+
+        rangeBox.left = transformatsBufferOffset * sizeof(UINT);
+        rangeBox.right = (transformatsBufferOffset + 1) * sizeof(UINT);
+        scene.renderer.devcon->UpdateSubresource(idxsBuffer, 0, &rangeBox, &instanceIdx, 0, 0);
+
+        (*visibleInstancesIdxs)[transformatsBufferOffset] = instanceIdx;
+    }
+
+    void DxRenderer::Scene::SceneModelInstance::updateBuffers() {        
+        if (isShown && scene.camera.isBoundingSphereVisible(bshDataNode->getBoundingSphere())) {
+            if (transformatsBufferOffset == (std::numeric_limits<UINT>::max)())
+                loadInstanceTransformatToBuffer();
+            else
+                updateInstanceTransformatInBuffer();
+        }
+        else if (transformatsBufferOffset < (std::numeric_limits<UINT>::max)())
+            unloadInstanceTransformatFromBuffer();
+    }       
 
     void DxRenderer::Scene::SceneModelInstance::recompTransformat() {
         modelTransformat = XMMatrixTranslationFromVector(pos);        
@@ -132,48 +262,33 @@ namespace CoriumDirectX {
         modelTransformat = XMMatrixMultiply(XMMatrixScaling(XMVectorGetX(scaleFactor), XMVectorGetY(scaleFactor), XMVectorGetZ(scaleFactor)), modelTransformat);
     }
 
-    void DxRenderer::Scene::activate() {
+    void DxRenderer::Scene::activate() {        
+        loadViewMatToBuffer();
+        loadProjMatToBuffer();
+        loadVisibleInstancesDataToBuffers();
         renderer.activeScene = this;
-        highlightedModelID = MODELS_NR_MAX;
-        loadDataToBuffers();
     }
 
-    DxRenderer::Scene::SceneModelInstance* DxRenderer::Scene::createModelInstance(UINT modelID, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler) {
-        for (std::list<SceneModelData>::iterator it = sceneModelsData.begin(); it != sceneModelsData.end(); it++) {
-            SceneModelData& sceneModelData = (*it);
-            if (sceneModelData.modelID == modelID) {
-                SceneModelInstance* sceneModelInstance = new SceneModelInstance(*this, modelID, sceneModelData.sceneModelInstances.size(), transformInit, selectionHandler);
-                sceneModelInstance->loadDataToBuffers();
-                sceneModelData.sceneModelInstances.push_back(sceneModelInstance);                
-                
-                return sceneModelInstance;
-            }
-        }
-
-        // modelID was not found
-        SceneModelData sceneModelData;
-        sceneModelData.modelID = modelID;
-        SceneModelInstance* sceneModelInstance = new SceneModelInstance(*this, modelID, 0, transformInit, selectionHandler);
-        sceneModelInstance->loadDataToBuffers();
-        sceneModelData.sceneModelInstances.push_back(sceneModelInstance);
-        sceneModelsData.push_back(sceneModelData);
-
-        return sceneModelInstance;
+    DxRenderer::Scene::SceneModelInstance* DxRenderer::Scene::createModelInstance(unsigned int modelID, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler) {                        
+        return new SceneModelInstance(*this, modelID, transformInit, selectionHandler);
     }
 
     void DxRenderer::Scene::panCamera(float x, float y) {
         camera.panViaViewportDrag(x, y);
         loadViewMatToBuffer();
+        loadVisibleInstancesDataToBuffers();
     }
 
     void DxRenderer::Scene::rotateCamera(float x, float y) {
         camera.rotateViaViewportDrag(x, y);
         loadViewMatToBuffer();
+        loadVisibleInstancesDataToBuffers();
     }
 
     void DxRenderer::Scene::zoomCamera(float amount) {
         camera.zoom(amount);
         loadViewMatToBuffer();
+        loadVisibleInstancesDataToBuffers();
     }
 
     XMFLOAT3 DxRenderer::Scene::getCameraPos() {
@@ -196,35 +311,31 @@ namespace CoriumDirectX {
         renderer.devcon->Unmap(renderer.stagingSelectionTex, 0);
 
         if (sceneModelInstanceIdxs.modelID < MODELS_NR_MAX) {
-            for (std::list<SceneModelData>::iterator modelsIt = sceneModelsData.begin(); modelsIt != sceneModelsData.end(); modelsIt++) {
-                SceneModelData& sceneModelData = (*modelsIt);
-                if (sceneModelData.modelID == sceneModelInstanceIdxs.modelID) {
-                    std::list<SceneModelInstance*>::iterator instanceIt = sceneModelData.sceneModelInstances.begin();
-                    std::advance(instanceIt, sceneModelInstanceIdxs.instanceIdx);
-                    if ((*instanceIt)->selectionHandler)
-                        (*instanceIt)->selectionHandler();
+            for (std::list<SceneModelData*>::iterator modelsIt = sceneModelsData.begin(); modelsIt != sceneModelsData.end(); modelsIt++) {
+                SceneModelData* sceneModelData = *modelsIt;
+                if (sceneModelData->modelID == sceneModelInstanceIdxs.modelID) {   
+                    SceneModelInstance* instance = sceneModelData->sceneModelInstances[sceneModelInstanceIdxs.instanceIdx];
+                    if (instance->selectionHandler)
+                        instance->selectionHandler();
                     
                     return true;
                 }
             }
+
+            assert(false);
         }
         else
             return false;
     }
 
-    XMFLOAT3 DxRenderer::Scene::cursorPosToRayDirection(float x, float y)
-    {
+    XMFLOAT3 DxRenderer::Scene::cursorPosToRayDirection(float x, float y) {
         XMVECTOR rayDirection = camera.cursorPosToRayDirection(x, y);
         return XMFLOAT3(XMVectorGetX(rayDirection), XMVectorGetY(rayDirection), XMVectorGetZ(rayDirection));
     }
 
-    void DxRenderer::Scene::dimHighlightedInstance() {
-        highlightedModelID = MODELS_NR_MAX;
-    }
-
     void DxRenderer::Scene::release() {           
-        for (std::list<SceneModelData>::iterator it = sceneModelsData.begin(); it != sceneModelsData.end(); it++ ){
-            (*it).sceneModelInstances.clear();
+        for (std::list<SceneModelData*>::iterator it = sceneModelsData.begin(); it != sceneModelsData.end(); it++){
+            (*it)->sceneModelInstances.clear(); // TODO: delete the scene models instances
         }
         sceneModelsData.clear();
         renderer.scenes.remove(this);
@@ -237,15 +348,53 @@ namespace CoriumDirectX {
     DxRenderer::Scene::Scene(DxRenderer& _renderer) :
         renderer(_renderer), camera(renderer.fov, renderer.viewportWidth, renderer.viewportHeight, renderer.nearZ, renderer.farZ) {}           
 
-    void DxRenderer::Scene::loadDataToBuffers() {
-        loadViewMatToBuffer();
-        loadProjMatToBuffer();        
+    class DxRenderer::Scene::VisibleInstancesIt {
+    public:
+        VisibleInstancesIt(BSH<SceneModelInstance> const& _bsh, Camera const& _camera) : bsh(_bsh), camera(_camera) {
+            init();
+        }
 
-        for (std::list<SceneModelData>::iterator it = sceneModelsData.begin(); it != sceneModelsData.end(); it++) {
-            for (std::list<SceneModelInstance*>::iterator instanceIt = (*it).sceneModelInstances.begin(); instanceIt != (*it).sceneModelInstances.end(); instanceIt++)
-                (*instanceIt)->loadDataToBuffers();
-        }                
-    }
+        void init() {
+            BSH<SceneModelInstance>::Node* root = bsh.getNodesRoot();
+            if (root != NULL && camera.isBoundingSphereVisible(root->getBoundingSphere())) {
+                it = root;
+                findNextVisibleLeaf();
+            }
+        }
+
+        SceneModelInstance* getNext() {
+            if (!it)
+                return NULL;
+
+            SceneModelInstance* ret = &static_cast<BSH<SceneModelInstance>::DataNode*>(it)->getData();
+            it = it->getEscapeNode();
+            findNextVisibleLeaf();
+
+            return ret;
+        }       
+
+    private:
+        BSH<SceneModelInstance> const& bsh;
+        Camera const& camera;
+        BSH<SceneModelInstance>::Node* it = NULL;
+
+        void findNextVisibleLeaf() {
+            while (it != NULL) {
+                if (it->isLeaf()) {
+                    if (static_cast<BSH<SceneModelInstance>::DataNode*>(it)->getData().isShown && camera.isBoundingSphereVisible(it->getBoundingSphere()))
+                        break;
+                    else
+                        it = it->getEscapeNode();
+                }
+                else {
+                    if (camera.isBoundingSphereVisible(it->getBoundingSphere()))
+                        it = it->getChild(0);
+                    else
+                        it = it->getEscapeNode();
+                }
+            }
+        }
+    };    
     
     void DxRenderer::Scene::loadViewMatToBuffer() {
         renderer.devcon->UpdateSubresource(renderer.cbViewMat, 0, NULL, &XMMatrixTranspose(camera.getViewMat()), 0, 0);
@@ -253,15 +402,66 @@ namespace CoriumDirectX {
 
     void DxRenderer::Scene::loadProjMatToBuffer() {
         renderer.devcon->UpdateSubresource(renderer.cbProjMat, 0, NULL, &XMMatrixTranspose(camera.getProjMat()), 0, 0);
+    }            
+
+    void DxRenderer::Scene::loadVisibleInstancesDataToBuffers() {
+        std::vector<std::vector<UINT>*[2]> visibleInstancesIdxsTable(MODELS_NR_MAX);
+        for (std::list<SceneModelData*>::iterator it = sceneModelsData.begin(); it != sceneModelsData.end(); it++) {
+            ModelRenderData& modelRenderData = renderer.modelsRenderData[(*it)->modelID];
+            modelRenderData.visibleInstancesNr = modelRenderData.visibleHighlightedInstancesNr = 0;            
+        }
+            
+        VisibleInstancesIt visibleNodesIt(bsh, camera);        
+        while (SceneModelInstance* visibleInstance = visibleNodesIt.getNext()) {
+            ModelRenderData& modelRenderData = renderer.modelsRenderData[visibleInstance->modelID];
+            if (!visibleInstance->isHighlighted) {
+                modelRenderData.visibleInstancesIdxs[modelRenderData.visibleInstancesNr] = visibleInstance->instanceIdx;
+                visibleInstance->transformatsBufferOffset = modelRenderData.visibleInstancesNr++;
+            }
+            else {
+                modelRenderData.visibleHighlightedInstancesIdxs[modelRenderData.visibleHighlightedInstancesNr] = visibleInstance->instanceIdx;
+                visibleInstance->transformatsBufferOffset = modelRenderData.visibleHighlightedInstancesNr++;
+            }
+        }
+                
+        for (std::list<SceneModelData*>::iterator sceneModelsIt = sceneModelsData.begin(); sceneModelsIt != sceneModelsData.end(); sceneModelsIt++) {
+            SceneModelData* sceneModelData = *sceneModelsIt;
+            ModelRenderData& modelRenderData = renderer.modelsRenderData[sceneModelData->modelID];
+            if (modelRenderData.visibleInstancesNr) {
+                std::vector<XMMATRIX> visibleInstancesTransformatsStaging(modelRenderData.visibleInstancesBuffersCapacity);
+                for (unsigned int transformatsBufferOffset = 0; transformatsBufferOffset < modelRenderData.visibleInstancesNr; transformatsBufferOffset++) {
+                    UINT instanceIdx = modelRenderData.visibleInstancesIdxs[transformatsBufferOffset];
+                    visibleInstancesTransformatsStaging[transformatsBufferOffset] = sceneModelData->sceneModelInstances[instanceIdx]->getModelTransformat();
+                }
+                D3D11_BOX rangeBox = { 0U, 0U, 0U, modelRenderData.visibleInstancesNr * sizeof(XMMATRIX), 1U, 1U };
+				renderer.devcon->UpdateSubresource(modelRenderData.visibleInstancesTransformatsBuffer, 0, &rangeBox, &visibleInstancesTransformatsStaging[0], 0, 0);
+
+                rangeBox.right = modelRenderData.visibleInstancesNr * sizeof(UINT);
+                renderer.devcon->UpdateSubresource(modelRenderData.visibleInstancesIdxsBuffer, 0, &rangeBox, &modelRenderData.visibleInstancesIdxs[0], 0, 0);
+            }
+            if (modelRenderData.visibleHighlightedInstancesNr) {
+                std::vector<XMMATRIX> visibleHighlightedInstancesTransformatsStaging(modelRenderData.visibleInstancesBuffersCapacity);
+                for (unsigned int transformatsBufferOffset = 0; transformatsBufferOffset < modelRenderData.visibleHighlightedInstancesNr; transformatsBufferOffset++) {
+                    UINT instanceIdx = modelRenderData.visibleHighlightedInstancesIdxs[transformatsBufferOffset];
+                    visibleHighlightedInstancesTransformatsStaging[transformatsBufferOffset] = sceneModelData->sceneModelInstances[instanceIdx]->getModelTransformat();
+                }
+                D3D11_BOX rangeBox = { 0U, 0U, 0U, modelRenderData.visibleHighlightedInstancesNr * sizeof(XMMATRIX), 1U, 1U };
+                renderer.devcon->UpdateSubresource(modelRenderData.visibleHighlightedInstancesTransformatsBuffer, 0, &rangeBox, &visibleHighlightedInstancesTransformatsStaging[0], 0, 0);
+
+                rangeBox.right = modelRenderData.visibleHighlightedInstancesNr * sizeof(UINT);
+                renderer.devcon->UpdateSubresource(modelRenderData.visibleHighlightedInstancesIdxsBuffer, 0, &rangeBox, &modelRenderData.visibleHighlightedInstancesIdxs[0], 0, 0);
+            }            
+        }
     }
-        
+
     DxRenderer::DxRenderer(float _fov, float _nearZ, float _farZ) : fov(_fov), nearZ(_nearZ), farZ(_farZ) {}    
 
     DxRenderer::~DxRenderer() {
         for (std::vector<ModelRenderData>::iterator it = modelsRenderData.begin(); it != modelsRenderData.end(); it++) {
             (*it).vertexBuffer->Release();
             (*it).indexBuffer->Release();
-            (*it).instancesTransformatsBuffer->Release();
+            (*it).visibleInstancesTransformatsBuffer->Release();
+            (*it).visibleHighlightedInstancesTransformatsBuffer->Release();
         }
 
         modelsRenderData.clear();
@@ -323,6 +523,41 @@ namespace CoriumDirectX {
             goto CreateDeviceFailed;
         }                
         
+        ID3D11Debug* d3dDebug;
+        hr = dev->QueryInterface(__uuidof(ID3D11Debug), (void**)&d3dDebug);
+        if (FAILED(hr)) {
+            OutputDebugStringW(L"Query of ID3D11Debug failed.");
+            devcon->Release();
+            dev->Release();
+            goto CreateDeviceFailed;
+        }
+        
+        ID3D11InfoQueue* d3dInfoQueue;
+        hr = d3dDebug->QueryInterface(__uuidof(ID3D11InfoQueue), (void**)&d3dInfoQueue);
+        if (FAILED(hr)) {
+            d3dDebug->Release();
+            devcon->Release();
+            dev->Release();
+            goto CreateDeviceFailed;
+        }
+        
+        d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
+        d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+        {
+            D3D11_MESSAGE_ID hide[] =
+            {
+                D3D11_MESSAGE_ID_DEVICE_DRAW_RENDERTARGETVIEW_NOT_SET,
+                D3D11_MESSAGE_ID_DEVICE_DRAW_RENDERTARGETVIEW_NOT_SET_DUE_TO_FLIP_PRESENT
+            };
+
+            D3D11_INFO_QUEUE_FILTER filter = {};
+            filter.DenyList.NumIDs = _countof(hide);
+            filter.DenyList.pIDList = hide;
+            d3dInfoQueue->AddStorageFilterEntries(&filter);            
+        }
+        d3dInfoQueue->Release();
+        d3dDebug->Release();        
+
         D3D11_BUFFER_DESC bd;
         ZeroMemory(&bd, sizeof(bd));
         bd.Usage = D3D11_USAGE_DEFAULT;
@@ -404,14 +639,18 @@ namespace CoriumDirectX {
         blendStateDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
         blendStateDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
         blendStateDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
         blendStateDesc.RenderTarget[1].BlendEnable = FALSE;
-        blendStateDesc.RenderTarget[1].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-        blendStateDesc.RenderTarget[1].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-        blendStateDesc.RenderTarget[1].BlendOp = D3D11_BLEND_OP_ADD;
-        blendStateDesc.RenderTarget[1].SrcBlendAlpha = D3D11_BLEND_INV_DEST_ALPHA;
-        blendStateDesc.RenderTarget[1].DestBlendAlpha = D3D11_BLEND_ONE;
-        blendStateDesc.RenderTarget[1].BlendOpAlpha = D3D11_BLEND_OP_ADD;
         blendStateDesc.RenderTarget[1].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+        blendStateDesc.RenderTarget[2].BlendEnable = TRUE;
+        blendStateDesc.RenderTarget[2].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+        blendStateDesc.RenderTarget[2].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+        blendStateDesc.RenderTarget[2].BlendOp = D3D11_BLEND_OP_ADD;
+        blendStateDesc.RenderTarget[2].SrcBlendAlpha = D3D11_BLEND_INV_DEST_ALPHA;
+        blendStateDesc.RenderTarget[2].DestBlendAlpha = D3D11_BLEND_ONE;
+        blendStateDesc.RenderTarget[2].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+        blendStateDesc.RenderTarget[2].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
         hr = dev->CreateBlendState(&blendStateDesc, &blendStateTransparency);
         if (FAILED(hr)) {
             OutputDebugStringW(L"Could not load shaders.");
@@ -435,7 +674,7 @@ namespace CoriumDirectX {
             goto InitShaderResourcesFailed;
         }                       
 
-        if (FRAME_CAPTURES_NR_MAX) {
+        if (GRAPHICS_DBUG_RUN) {
             hr = DXGIGetDebugInterface1(0, __uuidof(pGraphicsAnalysis), reinterpret_cast<void**>(&pGraphicsAnalysis));
             if (FAILED(hr))
                 goto PGraphicsAnalysisFailed;
@@ -515,7 +754,8 @@ namespace CoriumDirectX {
             {"INSTANCE_TRANSFORMAT", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1},
             {"INSTANCE_TRANSFORMAT", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
             {"INSTANCE_TRANSFORMAT", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
-            {"INSTANCE_TRANSFORMAT", 4, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1}
+            {"INSTANCE_TRANSFORMAT", 4, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+            {"INSTANCE_IDX", 0, DXGI_FORMAT_R32_UINT, 2, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1}
         };
         hr = dev->CreateInputLayout(vlSceneLmnts, ARRAYSIZE(vlSceneLmnts), d3d10Blob->GetBufferPointer(), d3d10Blob->GetBufferSize(), &vlScene);
         d3d10Blob->Release();
@@ -857,8 +1097,8 @@ namespace CoriumDirectX {
         if (FAILED(hr))
             goto DsStateJustDepthFail;
 
-        dsStateDesc.DepthEnable = false;
-        dsStateDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+        dsStateDesc.DepthEnable = true;
+        dsStateDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
         dsStateDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 
         dsStateDesc.StencilEnable = true;
@@ -963,25 +1203,24 @@ namespace CoriumDirectX {
       
         return hr;
     }
-
-    int delay = 60;
+    
     void DxRenderer::startFrameCapture() {        
-        if (framesCapturesNr < FRAME_CAPTURES_NR_MAX && delay == 0)
+        if (framesNrToCapture)
             pGraphicsAnalysis->BeginCapture();
     }
 
     void DxRenderer::endFrameCapture() {
-        if (framesCapturesNr < FRAME_CAPTURES_NR_MAX && delay-- == 0) {
+        if (framesNrToCapture) {
             pGraphicsAnalysis->EndCapture();
-            framesCapturesNr++;
+            framesNrToCapture--;
         }
     }
 
-    HRESULT DxRenderer::addModel(std::vector<VertexData> const& modelVertices, std::vector<WORD> const& modelVertexIndices, D3D_PRIMITIVE_TOPOLOGY primitiveTopology, UINT* modelIDOut) {
+    HRESULT DxRenderer::addModel(std::vector<VertexData> const& modelVertices, std::vector<WORD> const& modelVertexIndices, XMFLOAT3 const& boundingSphereCenter, float boundingSphereRadius, D3D_PRIMITIVE_TOPOLOGY primitiveTopology, UINT* modelIDOut) {
         HRESULT hr = S_OK;
         D3D11_BUFFER_DESC bd;
         D3D11_SUBRESOURCE_DATA initData;
-        ModelRenderData modelBuffers;
+        ModelRenderData modelRenderData;
 
         ZeroMemory(&bd, sizeof(bd));
         bd.Usage = D3D11_USAGE_DEFAULT;
@@ -991,7 +1230,7 @@ namespace CoriumDirectX {
 
         ZeroMemory(&initData, sizeof(initData));
         initData.pSysMem = &modelVertices[0];
-        hr = dev->CreateBuffer(&bd, &initData, &modelBuffers.vertexBuffer);
+        hr = dev->CreateBuffer(&bd, &initData, &modelRenderData.vertexBuffer);
         if (FAILED(hr)) {
             OutputDebugStringW(L"Failed to create a vertex buffer.");
 
@@ -1006,33 +1245,82 @@ namespace CoriumDirectX {
 
         ZeroMemory(&initData, sizeof(initData));
         initData.pSysMem = &modelVertexIndices[0];        
-        hr = dev->CreateBuffer(&bd, &initData, &modelBuffers.indexBuffer);
+        hr = dev->CreateBuffer(&bd, &initData, &modelRenderData.indexBuffer);
         if (FAILED(hr)) {
             OutputDebugStringW(L"Failed to create an index buffer.");
-            modelBuffers.vertexBuffer->Release();
+            modelRenderData.vertexBuffer->Release();
+
+            return hr;
+        }
+                
+        ZeroMemory(&bd, sizeof(bd));
+        bd.Usage = D3D11_USAGE_DEFAULT;
+        bd.ByteWidth = INSTANCES_BUFFERS_CAPACITY_INIT * sizeof(XMMATRIX);
+        bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+        bd.CPUAccessFlags = 0;
+        hr = dev->CreateBuffer(&bd, NULL, &modelRenderData.visibleInstancesTransformatsBuffer);
+        if (FAILED(hr)) {
+            OutputDebugStringW(L"Failed to create an instances buffer..");
+            modelRenderData.vertexBuffer->Release();
+            modelRenderData.indexBuffer->Release();
 
             return hr;
         }
 
         ZeroMemory(&bd, sizeof(bd));
         bd.Usage = D3D11_USAGE_DEFAULT;
-        bd.ByteWidth = INSTANCES_NR_MAX * sizeof(XMMATRIX);
+        bd.ByteWidth = INSTANCES_BUFFERS_CAPACITY_INIT * sizeof(UINT);
         bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
         bd.CPUAccessFlags = 0;
-        hr = dev->CreateBuffer(&bd, NULL, &modelBuffers.instancesTransformatsBuffer);
+        hr = dev->CreateBuffer(&bd, NULL, &modelRenderData.visibleInstancesIdxsBuffer);        
         if (FAILED(hr)) {
             OutputDebugStringW(L"Failed to create an instances buffer..");
-            modelBuffers.vertexBuffer->Release();
-            modelBuffers.indexBuffer->Release();
+            modelRenderData.vertexBuffer->Release();
+            modelRenderData.indexBuffer->Release();
+            modelRenderData.visibleInstancesTransformatsBuffer->Release();
 
             return hr;
         }
 
-        modelBuffers.primitiveTopology = primitiveTopology;
+        ZeroMemory(&bd, sizeof(bd));
+        bd.Usage = D3D11_USAGE_DEFAULT;
+        bd.ByteWidth = INSTANCES_BUFFERS_CAPACITY_INIT * sizeof(XMMATRIX);
+        bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+        bd.CPUAccessFlags = 0;
+        hr = dev->CreateBuffer(&bd, NULL, &modelRenderData.visibleHighlightedInstancesTransformatsBuffer);
+        if (FAILED(hr)) {
+            OutputDebugStringW(L"Failed to create an instances buffer..");
+            modelRenderData.vertexBuffer->Release();
+            modelRenderData.indexBuffer->Release();
+            modelRenderData.visibleInstancesTransformatsBuffer->Release();
+            modelRenderData.visibleInstancesIdxsBuffer->Release();
+
+            return hr;
+        }
+
+        ZeroMemory(&bd, sizeof(bd));
+        bd.Usage = D3D11_USAGE_DEFAULT;
+        bd.ByteWidth = INSTANCES_BUFFERS_CAPACITY_INIT * sizeof(UINT);
+        bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+        bd.CPUAccessFlags = 0;
+        hr = dev->CreateBuffer(&bd, NULL, &modelRenderData.visibleHighlightedInstancesIdxsBuffer);
+        if (FAILED(hr)) {
+            OutputDebugStringW(L"Failed to create an instances buffer..");
+            modelRenderData.vertexBuffer->Release();
+            modelRenderData.indexBuffer->Release();
+            modelRenderData.visibleInstancesTransformatsBuffer->Release();
+            modelRenderData.visibleInstancesIdxsBuffer->Release();
+            modelRenderData.visibleHighlightedInstancesTransformatsBuffer->Release();
+
+            return hr;
+        }
+
+        modelRenderData.boundingSphere = BoundingSphere(XMLoadFloat3(&boundingSphereCenter), boundingSphereRadius);
+        modelRenderData.primitiveTopology = primitiveTopology;
 
         unsigned int modelID = modelsIDsPool.acquireIdx();
         *modelIDOut = modelID;
-        modelsRenderData[modelID] = modelBuffers;
+        modelsRenderData[modelID] = modelRenderData;
 
         return hr;
     }
@@ -1044,10 +1332,10 @@ namespace CoriumDirectX {
 
     HRESULT DxRenderer::removeModel(UINT modelID) {
         for (std::list<Scene*>::iterator scenesIt = scenes.begin(); scenesIt != scenes.end(); scenesIt++) {
-            std::list<Scene::SceneModelData>& sceneModelsData = (*scenesIt)->sceneModelsData;
-            for (std::list<Scene::SceneModelData>::iterator sceneModelsDataIt = sceneModelsData.begin(); sceneModelsDataIt != sceneModelsData.end(); sceneModelsDataIt++) {
-                if ((*sceneModelsDataIt).modelID == modelID) {
-                    (*sceneModelsDataIt).sceneModelInstances.clear();
+            std::list<Scene::SceneModelData*>& sceneModelsData = (*scenesIt)->sceneModelsData;
+            for (std::list<Scene::SceneModelData*>::iterator sceneModelsDataIt = sceneModelsData.begin(); sceneModelsDataIt != sceneModelsData.end(); sceneModelsDataIt++) {
+                if ((*sceneModelsDataIt)->modelID == modelID) {
+                    (*sceneModelsDataIt)->sceneModelInstances.clear(); // TODO: delete the scene models instances
                     sceneModelsData.erase(sceneModelsDataIt);
                     break;
                 }
@@ -1056,7 +1344,8 @@ namespace CoriumDirectX {
 
         modelsRenderData[modelID].vertexBuffer->Release();
         modelsRenderData[modelID].indexBuffer->Release();
-        modelsRenderData[modelID].instancesTransformatsBuffer->Release();
+        modelsRenderData[modelID].visibleInstancesTransformatsBuffer->Release();
+        modelsRenderData[modelID].visibleHighlightedInstancesTransformatsBuffer->Release();
         modelsIDsPool.releaseIdx(modelID);
 
         return S_OK;
@@ -1078,93 +1367,104 @@ namespace CoriumDirectX {
         devcon->ClearDepthStencilView(dsView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);        
         if (activeScene != NULL) {  
             int objIdx = 0;
-            for (std::list<Scene::SceneModelData>::iterator it = activeScene->sceneModelsData.begin(); it != activeScene->sceneModelsData.end(); it++) {                                
-                devcon->PSSetShader(psScene, NULL, 0);
-                devcon->VSSetShader(vsScene, NULL, 0);
-                devcon->IASetInputLayout(vlScene);                
-                unsigned int modelID = (*it).modelID;
-                if (modelID == 1)
-                    startFrameCapture();
-                devcon->UpdateSubresource(cbModelID, 0, NULL, &modelID, 0, 0);
+            for (std::list<Scene::SceneModelData*>::iterator it = activeScene->sceneModelsData.begin(); it != activeScene->sceneModelsData.end(); it++) {                                
+                unsigned int modelID = (*it)->modelID;
+                ModelRenderData modelRenderData = modelsRenderData[modelID];                
+                if (modelRenderData.visibleInstancesNr || modelRenderData.visibleHighlightedInstancesNr) {
+                    devcon->PSSetShader(psScene, NULL, 0);
+                    devcon->VSSetShader(vsScene, NULL, 0);
+                    devcon->IASetInputLayout(vlScene);                    
 
-                ID3D11Buffer* constBuffers[3] = { cbViewMat, cbProjMat, cbModelID };
-                devcon->VSSetConstantBuffers(0, 3, constBuffers); 
-                
-                ModelRenderData modelRenderData = modelsRenderData[modelID];
-                ID3D11Buffer* vertexInstanceBuffers[2] = { modelRenderData.vertexBuffer, modelRenderData.instancesTransformatsBuffer };
-                UINT strides[2] = { sizeof(VertexData), sizeof(XMMATRIX) };
-                UINT offsets[2] = { 0, 0 };
-                devcon->IASetVertexBuffers(0, 2, vertexInstanceBuffers, strides, offsets);
+                    devcon->UpdateSubresource(cbModelID, 0, NULL, &modelID, 0, 0);
 
-                ID3D11Buffer* indexBuffer = modelRenderData.indexBuffer;
-                devcon->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R16_UINT, 0);
+                    ID3D11Buffer* constBuffers[3] = { cbViewMat, cbProjMat, cbModelID };
+                    devcon->VSSetConstantBuffers(0, 3, constBuffers);
 
-                devcon->IASetPrimitiveTopology(modelRenderData.primitiveTopology);
-                
-                devcon->OMSetDepthStencilState(dsStateJustDepth, 0);
-                
-                ID3D11RenderTargetView* sceneRenderTargets[2] = { rtView , selectionRTViews[selectionTexIdxToUpdate] };
-                devcon->OMSetRenderTargets(2, sceneRenderTargets, dsView);
-                D3D11_BUFFER_DESC bd;
-                indexBuffer->GetDesc(&bd);
-                UINT instancesNr = (*it).sceneModelInstances.size();                
-                devcon->DrawIndexedInstanced(bd.ByteWidth / sizeof(WORD), instancesNr, 0, 0, 0);   
-                updatedSelectionTexIdx = selectionTexIdxToUpdate;
-                if (modelID == 1)
-                    endFrameCapture();
+                    ID3D11Buffer* vertexBuffers[3] = { modelRenderData.vertexBuffer, modelRenderData.visibleInstancesTransformatsBuffer, modelRenderData.visibleInstancesIdxsBuffer };
+                    UINT strides[3] = { sizeof(VertexData), sizeof(XMMATRIX), sizeof(UINT) };
+                    UINT offsets[3] = { 0, 0, 0 };
+                    devcon->IASetVertexBuffers(0, 3, vertexBuffers, strides, offsets);
 
-                if (activeScene->highlightedModelID == (*it).modelID) {                                                                                  
-                    devcon->ClearRenderTargetView(blurRTView0, BLUR_TEXES_CLEAR_COLOR);
-                    devcon->ClearRenderTargetView(blurRTView1, BLUR_TEXES_CLEAR_COLOR);
+                    ID3D11Buffer* indexBuffer = modelRenderData.indexBuffer;
+                    devcon->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R16_UINT, 0);
+                    D3D11_BUFFER_DESC bd;
+                    indexBuffer->GetDesc(&bd);
 
-                    // render the highlighted object targeting blur texture0 with stencil write
-                    devcon->OMSetDepthStencilState(dsStateWriteStencil, 0);
-                    ID3D11RenderTargetView* sceneRenderTargets[2] = { blurRTView0 , selectionRTViews[selectionTexIdxToUpdate] };                    
-                    devcon->OMSetRenderTargets(2, sceneRenderTargets, dsView);
-                    devcon->DrawIndexedInstanced(bd.ByteWidth / sizeof(WORD), 1, 0, 0, 0);
-                    devcon->OMSetRenderTargets(1, &rtView, NULL); // temporarily rebind the back buffer
+                    devcon->IASetPrimitiveTopology(modelRenderData.primitiveTopology);
 
-                    // render the texture with the blur algo twice, and the result to the back buffer: blurRTView0 -> blurRTView1 -> blurRTView0 -> back buffer
-                    devcon->PSSetShader(psBlur, NULL, 0);
-                    devcon->VSSetShader(vsBlur, NULL, 0);
-                    devcon->IASetInputLayout(vlBlur);
-
-                    UINT stride = sizeof(ScreenQuadVertexData);
-                    UINT offset = 0;
-                    devcon->IASetVertexBuffers(0, 1, &vbScreenQuad, &stride, &offset);
+                    devcon->OMSetDepthStencilState(dsStateJustDepth, 0);
                     
-                    devcon->PSSetConstantBuffers(3, 1, &cbBlur);
+                    if (modelID == 1)
+                        startFrameCapture();
 
-					devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+                    if (modelRenderData.visibleInstancesNr) {
+                        ID3D11RenderTargetView* sceneRenderTargets[2] = { rtView , selectionRTViews[selectionTexIdxToUpdate] };
+                        devcon->OMSetRenderTargets(2, sceneRenderTargets, dsView);                        
+                        devcon->DrawIndexedInstanced(bd.ByteWidth / sizeof(WORD), modelRenderData.visibleInstancesNr, 0, 0, 0);
+                        updatedSelectionTexIdx = selectionTexIdxToUpdate;                        
+                    }
 
-                    devcon->PSSetSamplers(0, 1, &blurTexSampState);                    
+                    if (modelRenderData.visibleHighlightedInstancesNr) {
+                        devcon->ClearRenderTargetView(blurRTView0, BLUR_TEXES_CLEAR_COLOR);
+                        devcon->ClearRenderTargetView(blurRTView1, BLUR_TEXES_CLEAR_COLOR);
 
-                    // blur pass 1                                        
-                    devcon->UpdateSubresource(cbBlur, 0, NULL, &blurVarsHorizon, 0, 0);
-                    devcon->PSSetShaderResources(0, 1, &blurSRView0);
-                    devcon->OMSetRenderTargets(1, &blurRTView1, NULL);                                                            
-                    devcon->Draw(4, 0);
-                    devcon->OMSetRenderTargets(1, &rtView, NULL); // temporarily rebind the back buffer
+                        // render the highlighted object targeting blur texture0 with stencil write
+                        vertexBuffers[1] = modelRenderData.visibleHighlightedInstancesTransformatsBuffer;
+                        vertexBuffers[2] = modelRenderData.visibleHighlightedInstancesIdxsBuffer;
+                        devcon->IASetVertexBuffers(0, 3, vertexBuffers, strides, offsets);
+                        
+                        devcon->OMSetDepthStencilState(dsStateWriteStencil, 0);
+                        ID3D11RenderTargetView* sceneRenderTargets[3] = { rtView, selectionRTViews[selectionTexIdxToUpdate], blurRTView0 };
+                        devcon->OMSetRenderTargets(3, sceneRenderTargets, dsView);                        
+                        devcon->DrawIndexedInstanced(bd.ByteWidth / sizeof(WORD), modelRenderData.visibleHighlightedInstancesNr, 0, 0, 0);
+                        updatedSelectionTexIdx = selectionTexIdxToUpdate;
+                        devcon->OMSetRenderTargets(1, &rtView, NULL); // temporarily rebind the back buffer
 
-                    // blur pass 2                    
-                    devcon->UpdateSubresource(cbBlur, 0, NULL, &blurVarsVert, 0, 0);
-                    devcon->PSSetShaderResources(0, 1, &blurSRView1);
-                    devcon->OMSetDepthStencilState(dsStateMaskStencil, 0);
-                    devcon->OMSetRenderTargets(1, &rtView, dsView);
-                    devcon->Draw(4, 0);                                        
-                    //devcon->OMSetRenderTargets(1, &rtView, NULL); // temporarily rebind the back buffer
+                        // render the texture with the blur algo twice, and the result to the back buffer: blurRTView0 -> blurRTView1 -> blurRTView0 -> back buffer
+                        devcon->PSSetShader(psBlur, NULL, 0);
+                        devcon->VSSetShader(vsBlur, NULL, 0);
+                        devcon->IASetInputLayout(vlBlur);
 
-                    /*
-                    // render the result to the back buffer
-                    devcon->PSSetShader(psOutline, NULL, 0);
-                    devcon->VSSetShader(vsOutline, NULL, 0);                    
-                    devcon->PSSetShaderResources(0, 1, &blurSRView0);
-                    devcon->OMSetDepthStencilState(dsStateMaskStencil, 0);
-                    devcon->OMSetRenderTargets(1, &rtView, dsView);
-                    devcon->Draw(4, 0);                                        
-                    devcon->PSSetShaderResources(0, 1, &blurSRView1); // temporarily rebind the back buffer
-                    */                    
-                }
+                        UINT stride = sizeof(ScreenQuadVertexData);
+                        UINT offset = 0;
+                        devcon->IASetVertexBuffers(0, 1, &vbScreenQuad, &stride, &offset);
+
+                        devcon->PSSetConstantBuffers(3, 1, &cbBlur);
+
+                        devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+                        devcon->PSSetSamplers(0, 1, &blurTexSampState);
+
+                        // blur pass 1                                        
+                        devcon->UpdateSubresource(cbBlur, 0, NULL, &blurVarsHorizon, 0, 0);
+                        devcon->PSSetShaderResources(0, 1, &blurSRView0);
+                        devcon->OMSetRenderTargets(1, &blurRTView1, NULL);
+                        devcon->Draw(4, 0);
+                        devcon->OMSetRenderTargets(1, &rtView, NULL); // temporarily rebind the back buffer
+
+                        // blur pass 2                    
+                        devcon->UpdateSubresource(cbBlur, 0, NULL, &blurVarsVert, 0, 0);
+                        devcon->PSSetShaderResources(0, 1, &blurSRView1);
+                        devcon->OMSetDepthStencilState(dsStateMaskStencil, 0);
+                        devcon->OMSetRenderTargets(1, &rtView, dsView);
+                        devcon->Draw(4, 0);
+                        //devcon->OMSetRenderTargets(1, &rtView, NULL); // temporarily rebind the back buffer
+
+                        /*
+                        // render the result to the back buffer
+                        devcon->PSSetShader(psOutline, NULL, 0);
+                        devcon->VSSetShader(vsOutline, NULL, 0);
+                        devcon->PSSetShaderResources(0, 1, &blurSRView0);
+                        devcon->OMSetDepthStencilState(dsStateMaskStencil, 0);
+                        devcon->OMSetRenderTargets(1, &rtView, dsView);
+                        devcon->Draw(4, 0);
+                        devcon->PSSetShaderResources(0, 1, &blurSRView1); // temporarily rebind the back buffer
+                        */
+                    }
+                    
+                    if (modelID == 1)
+                        endFrameCapture();
+                }                
             }
             devcon->OMSetRenderTargets(1, &rtView, dsView);
 
@@ -1172,5 +1472,9 @@ namespace CoriumDirectX {
         }        
 
         return hr;
-    }    
+    }
+
+    void DxRenderer::captureFrame() {
+        framesNrToCapture++;
+    }
 }
