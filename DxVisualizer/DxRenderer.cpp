@@ -404,10 +404,14 @@ namespace CoriumDirectX {
         renderer.devcon->UpdateSubresource(renderer.cbProjMat, 0, NULL, &XMMatrixTranspose(camera.getProjMat()), 0, 0);
     }            
 
-    void DxRenderer::Scene::loadVisibleInstancesDataToBuffers() {
-        std::vector<std::vector<UINT>*[2]> visibleInstancesIdxsTable(MODELS_NR_MAX);
+    void DxRenderer::Scene::loadVisibleInstancesDataToBuffers() {        
         for (std::list<SceneModelData*>::iterator it = sceneModelsData.begin(); it != sceneModelsData.end(); it++) {
             ModelRenderData& modelRenderData = renderer.modelsRenderData[(*it)->modelID];
+            for (unsigned int instanceIdx = 0; instanceIdx < modelRenderData.visibleInstancesNr; instanceIdx++)
+                (*it)->sceneModelInstances[modelRenderData.visibleInstancesIdxs[instanceIdx]]->transformatsBufferOffset = (std::numeric_limits<UINT>::max)();
+            for (unsigned int instanceIdx = 0; instanceIdx < modelRenderData.visibleHighlightedInstancesNr; instanceIdx++)
+                (*it)->sceneModelInstances[modelRenderData.visibleHighlightedInstancesIdxs[instanceIdx]]->transformatsBufferOffset = (std::numeric_limits<UINT>::max)();
+
             modelRenderData.visibleInstancesNr = modelRenderData.visibleHighlightedInstancesNr = 0;            
         }
             
