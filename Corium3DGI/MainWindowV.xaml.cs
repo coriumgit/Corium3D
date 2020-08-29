@@ -1,18 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.Windows.Media.Media3D;
-using System.Runtime.InteropServices;
-//using System.Windows.Forms;
 using System.Windows.Interop;
 using System.Windows.Media;
 using CoriumDirectX;
@@ -130,14 +119,14 @@ namespace Corium3DGI
         public object Convert(object value, Type targetType, object param, System.Globalization.CultureInfo culture)
         {
             if ((bool)value)
-                return new BitmapImage(new Uri("pack://application:,,,/Corium3DGI;component/Resources/Imgs/eye.png"));
+                return new BitmapImage(new Uri("pack://application:,,,/Corium3DGI;" + System.IO.Path.Combine("component", "Resources", "Imgs", "eye.png")));
             else
-                return new BitmapImage(new Uri("pack://application:,,,/Corium3DGI;component/Resources/Imgs/eye_crossed.png"));
+                return new BitmapImage(new Uri("pack://application:,,,/Corium3DGI;" + System.IO.Path.Combine("component", "Resources", "Imgs", "eye_crossed.png")));
         }
 
         public object ConvertBack(object value, Type targetType, object param, System.Globalization.CultureInfo culture)
         {
-            if (((BitmapImage)value).UriSource == new Uri("Resources\\Imgs\\eye.png"))
+            if (((BitmapImage)value).UriSource == new Uri(System.IO.Path.Combine("Resources", "Imgs", "eye.png")))
                 return true;
             else
                 return false;
