@@ -668,7 +668,7 @@ namespace Corium3D {
 				CHECK_GL_ERROR("updateRendererBuffer");
 			}
 			visibleMobileModelsInstancesIdxs[mobileModelIdx][visibleMobileModelsInstancesNrs[mobileModelIdx]] = node->getInstanceIdx();	
-			mobileModelsTransformatsBuffers[mobileModelIdx][visibleMobileModelsInstancesNrs[mobileModelIdx]] = vpMat * node->getMobilityInterface().getTransformat(); // vpMat * node->getMobilityInterface().getTransformat();
+			mobileModelsTransformatsBuffers[mobileModelIdx][visibleMobileModelsInstancesNrs[mobileModelIdx]] = vpMat * node->getMobilityInterface().getTransformat();
 			visibleMobileModelsInstancesNrs[mobileModelIdx]++;
 		
 			const AABB3D aabb = node->getAABB();
