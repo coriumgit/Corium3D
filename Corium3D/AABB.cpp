@@ -194,8 +194,8 @@ namespace Corium3D {
 	AABB3DRotatable& AABB3DRotatable::rotate(glm::quat const& rot) {
 		rotQuat = rot * rotQuat;
 		glm::vec3 vecToNewMax(glm::abs(rotQuat * glm::vec3(unrotatedHalfDims.x, 0.0f, 0.0f)) +
-			glm::abs(rotQuat * glm::vec3(0.0f, unrotatedHalfDims.y, 0.0f)) +
-			glm::abs(rotQuat * glm::vec3(0.0f, 0.0f, unrotatedHalfDims.z)));
+							  glm::abs(rotQuat * glm::vec3(0.0f, unrotatedHalfDims.y, 0.0f)) +
+							  glm::abs(rotQuat * glm::vec3(0.0f, 0.0f, unrotatedHalfDims.z)));
 
 		glm::vec3 midPoint = 0.5f * (minVertex + maxVertex);
 		minVertex = midPoint - vecToNewMax;
