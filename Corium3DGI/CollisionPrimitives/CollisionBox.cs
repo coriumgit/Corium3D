@@ -10,7 +10,7 @@ namespace Corium3DGI
 {
     public class CollisionBox : CollisionPrimitive
     {
-        private static string nameCache;
+        private const string NAME_CACHE = "Box";
         private static string iconPathCache;
         private static Model3DCollection avatars3DCache;
 
@@ -46,13 +46,12 @@ namespace Corium3DGI
         }
 
         static CollisionBox()
-        {
-            nameCache = "Box";
-            cacheAvatarsAssets(nameCache, new Color() { R = 0, G = 255, B = 0, A = 255 }, out iconPathCache, out avatars3DCache);            
+        {            
+            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 0, G = 255, B = 0, A = 255 }, out iconPathCache, out avatars3DCache);            
         }
 
         public CollisionBox(Point3D center, Point3D scale) {
-            Name = nameCache;
+            Name = NAME_CACHE;
             IconPath = iconPathCache;
             foreach (GeometryModel3D avatar3D in avatars3DCache)
                 avatars3D.Add(new GeometryModel3D(avatar3D.Geometry, avatar3D.Material));

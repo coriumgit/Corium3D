@@ -10,7 +10,8 @@ namespace Corium3DGI
 {
     public class CollisionStadium : CollisionPrimitive
     {
-        private static string nameCache;
+        private const string NAME_CACHE = "Stadium";
+
         private static string iconPathCache;
         private static Model3DCollection avatars3DCache;
 
@@ -76,13 +77,12 @@ namespace Corium3DGI
         }
 
         static CollisionStadium()
-        {
-            nameCache = "Stadium";
-            cacheAvatarsAssets(nameCache, new Color() { R = 255, G = 128, B = 0, A = 255 }, out iconPathCache, out avatars3DCache);
+        {            
+            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 255, G = 128, B = 0, A = 255 }, out iconPathCache, out avatars3DCache);
         }
 
         public CollisionStadium(Point center, Vector axisVec, float height, float radius) {
-            Name = nameCache;
+            Name = NAME_CACHE;
             IconPath = iconPathCache;
             foreach (GeometryModel3D avatar3D in avatars3DCache)
                 avatars3D.Add(new GeometryModel3D(avatar3D.Geometry, avatar3D.Material));

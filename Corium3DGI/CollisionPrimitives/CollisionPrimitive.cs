@@ -8,9 +8,10 @@ namespace Corium3DGI
 {
     public class CollisionPrimitive : ObservableObject
     {
-        private static readonly string COLLISION_PRIMITIVES_AVATARS_PATHS = System.IO.Path.Combine("Resources", "CollisionPrimitivesAvatarsPaths.xml");
+        private static readonly string RESOURCES_PATHS_XML_PATH = System.IO.Path.Combine("Resources", "ResourcesPaths.xml");        
 
-        private static string nameCache;
+        private const string NAME_CACHE = "None";
+
         private static string iconPathCache;
         private static Model3DCollection avatars3DCache;
 
@@ -34,13 +35,12 @@ namespace Corium3DGI
         }    
 
         static CollisionPrimitive()
-        {
-            nameCache = "None";
-            cacheAvatarsAssets(nameCache, new Color() { R = 0, G = 0, B = 0, A = 0 }, out iconPathCache, out avatars3DCache);
+        {            
+            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 0, G = 0, B = 0, A = 0 }, out iconPathCache, out avatars3DCache);
         }
 
         public CollisionPrimitive() {
-            Name = nameCache;
+            Name = NAME_CACHE;
             IconPath = iconPathCache;
             avatars3D = new Model3DCollection();           
         }        
@@ -59,11 +59,11 @@ namespace Corium3DGI
 
         protected static void cacheAvatarsAssets(string primitiveName, Color primitiveColor, out string iconPath, out Model3DCollection avatars3D)
         {
-            XElement root = XDocument.Load(COLLISION_PRIMITIVES_AVATARS_PATHS).Root;
+            XElement root = XDocument.Load(RESOURCES_PATHS_XML_PATH).Root.Element("CollisionPrimitivesAvatars");
             XElement avatarsPathsNode = root.Elements().Where(e => e.Attribute("Primitive").Value == primitiveName).FirstOrDefault();
-            iconPath = avatarsPathsNode.Descendants().Where(e => e.Name == "IconPath").FirstOrDefault().Value;
+            iconPath = avatarsPathsNode.Descendants().Where(e => e.Name == "Icon").FirstOrDefault().Value;
             avatars3D = new Model3DCollection();
-            foreach (XElement modelPathLmnt in avatarsPathsNode.Descendants().Where(e => e.Name == "ModelPath"))
+            foreach (XElement modelPathLmnt in avatarsPathsNode.Descendants().Where(e => e.Name == "Model"))
             {
                 AssetsImporter.NamedModelData namedModelData = AssetsImporter.Instance.importModel(modelPathLmnt.Value);
                 AssetsImporter.Instance.removeModel(namedModelData.name);                               
