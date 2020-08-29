@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ResourcesPaths>
+  
+  <CollisionPrimitivesAvatars>    
+    <CollisionPrimitiveAvatars Primitive="None">
+      <Icon>Resources\Imgs\empty.png</Icon>
+      <Model>Resources\Models3D\empty.dae</Model>
+    </CollisionPrimitiveAvatars>
+  
+    <CollisionPrimitiveAvatars Primitive="Box">
+      <Icon>Resources\Imgs\box.png</Icon>
+      <Model>Resources\Models3D\box.dae</Model>
+    </CollisionPrimitiveAvatars>
+  
+    <CollisionPrimitiveAvatars Primitive="Sphere">
+      <Icon>Resources\Imgs\sphere.png</Icon>
+      <Model>Resources\Models3D\sphere.dae</Model>
+    </CollisionPrimitiveAvatars>
+  
+    <CollisionPrimitiveAvatars Primitive="Capsule">
+      <Icon>Resources\Imgs\capsule.png</Icon>
+      <Model>Resources\Models3D\cylinder.dae</Model>
+      <Model>Resources\Models3D\demi_sphere_top.dae</Model>
+      <Model>Resources\Models3D\demi_sphere_bottom.dae</Model>
+    </CollisionPrimitiveAvatars>
+  
+    <CollisionPrimitiveAvatars Primitive="Rect">
+      <Icon>Resources\Imgs\rectangle.png</Icon>
+      <Model>Resources\Models3D\rectangle.dae</Model>
+    </CollisionPrimitiveAvatars>
+  
+    <CollisionPrimitiveAvatars Primitive="Circle">
+      <Icon>Resources\Imgs\circle.png</Icon>
+      <Model>Resources\Models3D\circle.dae</Model>
+    </CollisionPrimitiveAvatars>
+  
+    <CollisionPrimitiveAvatars Primitive="Stadium">
+      <Icon>Resources\Imgs\stadium.png</Icon>
+      <Model>Resources\Models3D\rectangle.dae</Model>
+      <Model>Resources\Models3D\demi_circle_top.dae</Model>
+      <Model>Resources\Models3D\demi_circle_bottom.dae</Model>
+    </CollisionPrimitiveAvatars>      
+  </CollisionPrimitivesAvatars> 
+</ResourcesPaths>
