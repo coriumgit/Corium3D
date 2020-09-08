@@ -2,6 +2,7 @@
 
 using namespace System;
 using namespace DirectX;
+using namespace System::Windows::Media;
 using namespace System::Windows::Media::Media3D;
 using namespace System::Runtime::InteropServices;
 
@@ -38,6 +39,13 @@ namespace CoriumDirectX {
 
 	void DxVisualizer::Scene::SceneModelInstance::setTranslation(Media3D::Vector3D^ translation) {
 		sceneModelInstanceRef->setTranslation(marshalVector3D(translation));
+	}
+
+	Media3D::Vector3D^ DxVisualizer::Scene::SceneModelInstance::getTranslation()
+	{
+		XMFLOAT3 ret = sceneModelInstanceRef->getTranslation();
+		
+		return gcnew Vector3D(ret.x, ret.y, ret.z);
 	}
 
 	void DxVisualizer::Scene::SceneModelInstance::scale(Vector3D^ scale) {
@@ -100,14 +108,25 @@ namespace CoriumDirectX {
 		sceneRef->zoomCamera(amount);
 	}
 
-	Media3D::Vector3D^ DxVisualizer::Scene::getCameraPos() {
+	Media3D::Point3D^ DxVisualizer::Scene::getCameraPos() {
 		XMFLOAT3 cameraPos = sceneRef->getCameraPos();
 
-		return gcnew Vector3D(cameraPos.x, cameraPos.y, cameraPos.z);
+		return gcnew Point3D(cameraPos.x, cameraPos.y, cameraPos.z);
+	}
+
+	float DxVisualizer::Scene::getCameraFOV() {
+		return sceneRef->getCameraFOV();
 	}
 
 	bool DxVisualizer::Scene::cursorSelect(float x, float y) {
 		return sceneRef->cursorSelect(x, y);
+	}
+
+	Media3D::Vector3D^ DxVisualizer::Scene::screenVecToWorldVec(float x, float y)
+	{
+		XMFLOAT3 worldVec = sceneRef->screenVecToWorldVec(x, y);
+
+		return gcnew Vector3D(worldVec.x, worldVec.y, worldVec.z);
 	}
 
 	Vector3D^ DxVisualizer::Scene::cursorPosToRayDirection(float x, float y) {		
@@ -128,24 +147,24 @@ namespace CoriumDirectX {
 		delete renderer;
 	}
 
-	void DxVisualizer::addModel(array<Point3D>^ modelVertices, array<unsigned short>^ modelVertexIndices, Point3D^ boundingSphereCenter, float boundingSphereRadius, PrimitiveTopology primitiveTopology, [System::Runtime::InteropServices::Out] UINT% modelIDOut) {
+	void DxVisualizer::addModel(array<Point3D>^ modelVertices, array<unsigned short>^ modelVertexIndices, Color modelColor, Point3D^ boundingSphereCenter, float boundingSphereRadius, PrimitiveTopology primitiveTopology, bool doDepthTest, [System::Runtime::InteropServices::Out] UINT% modelIDOut) {
 		std::vector<DxRenderer::VertexData> verticesData(modelVertices->Length);		
 		std::vector<WORD> vertexIndicesMarshaled(modelVertexIndices->Length); 
 		XMFLOAT3 boundingSphereCenterMarshaled;
 		D3D_PRIMITIVE_TOPOLOGY primitiveTopologyMarshaled;
-		marshalModelData(modelVertices, verticesData, modelVertexIndices, vertexIndicesMarshaled, boundingSphereCenter, boundingSphereCenterMarshaled, primitiveTopology, primitiveTopologyMarshaled);
+		marshalModelData(modelVertices, modelColor, verticesData, modelVertexIndices, vertexIndicesMarshaled, boundingSphereCenter, boundingSphereCenterMarshaled, primitiveTopology, primitiveTopologyMarshaled);
 
 		UINT modelID;		
-		renderer->addModel(verticesData, vertexIndicesMarshaled, boundingSphereCenterMarshaled, boundingSphereRadius, primitiveTopologyMarshaled, &modelID);
+		renderer->addModel(verticesData, vertexIndicesMarshaled, boundingSphereCenterMarshaled, boundingSphereRadius, primitiveTopologyMarshaled, doDepthTest, &modelID);
 		modelIDOut = modelID;
 	}
 
-	void DxVisualizer::updateModelData(unsigned int modelID, array<Point3D>^ modelVertices, array<unsigned short>^ modelVertexIndices, PrimitiveTopology primitiveTopology) {
+	void DxVisualizer::updateModelData(unsigned int modelID, array<Point3D>^ modelVertices, array<unsigned short>^ modelVertexIndices, Color modelColor, PrimitiveTopology primitiveTopology) {
 		std::vector<DxRenderer::VertexData> verticesData(modelVertices->Length);
 		std::vector<WORD> vertexIndicesMarshaled(modelVertexIndices->Length);
 		XMFLOAT3 boundingSphereCenterMarshaled;
 		D3D_PRIMITIVE_TOPOLOGY primitiveTopologyMarshaled;
-		marshalModelData(modelVertices, verticesData, modelVertexIndices, vertexIndicesMarshaled, gcnew Point3D(), boundingSphereCenterMarshaled, primitiveTopology, primitiveTopologyMarshaled);
+		marshalModelData(modelVertices, modelColor, verticesData, modelVertexIndices, vertexIndicesMarshaled, gcnew Point3D(), boundingSphereCenterMarshaled, primitiveTopology, primitiveTopologyMarshaled);
 
 		renderer->updateModelData(modelID, verticesData, vertexIndicesMarshaled, primitiveTopologyMarshaled);
 	}
@@ -172,15 +191,14 @@ namespace CoriumDirectX {
 		renderer->captureFrame();
 	}
 
-	void DxVisualizer::marshalModelData(array<Point3D>^ modelVertices, std::vector<DxRenderer::VertexData>& verticesDataMarshaled,
+	void DxVisualizer::marshalModelData(array<Point3D>^ modelVertices, Color modelColor, std::vector<DxRenderer::VertexData>& verticesDataMarshaled,
 										array<unsigned short>^ modelVertexIndices, std::vector<WORD>& vertexIndicesMarshaled, 
 										Point3D^ boundingSphereCenter, XMFLOAT3& boundingSphereCenterMarshaled,
 										PrimitiveTopology primitiveTopology, D3D_PRIMITIVE_TOPOLOGY& primitiveTopologyMarshaled) {
 		
 		for (unsigned int vertexIdx = 0; vertexIdx < modelVertices->Length; vertexIdx++) {
 			verticesDataMarshaled[vertexIdx].pos = marshalPoint3D(modelVertices[vertexIdx]);
-			verticesDataMarshaled[vertexIdx].color = { 0.5f * ((float)modelVertices[vertexIdx].X + 1), 0.5f * ((float)modelVertices[vertexIdx].Y + 1), 0.5f * ((float)modelVertices[vertexIdx].Z + 1), 1.0f };
-			//verticesDataMarshaled[vertexIdx].color = { 1.0f, 1.0f, 1.0f, 1.0f };
+			verticesDataMarshaled[vertexIdx].color = { modelColor.ScR, modelColor.ScG, modelColor.ScB, modelColor.ScA };
 		}
 		
 		{

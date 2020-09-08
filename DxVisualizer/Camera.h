@@ -24,7 +24,7 @@ namespace CoriumDirectX {
         void updateNearZ(float nearZ);
         void updateFarZ(float farZ);                
 
-        float getFieldOfView() { return fovVert; }
+        float getFOV() { return fovVert; }
         float getNearZ() { return nearZ; }
         float getFarZ() { return farZ; }
         DirectX::XMVECTOR getPos() { return pos; }
@@ -32,6 +32,7 @@ namespace CoriumDirectX {
         DirectX::XMVECTOR getUpVec() { return upVec; }
         DirectX::FXMMATRIX getProjMat() { return projMat; }
         DirectX::FXMMATRIX getViewMat() { return viewMat; }
+        DirectX::XMVECTOR screenVecToWorldVec(float x, float y);
         DirectX::XMVECTOR cursorPosToRayDirection(float x, float y);        
         bool isBoundingSphereVisible(BoundingSphere const& boundingSphere) const;
 

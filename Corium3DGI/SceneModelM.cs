@@ -60,7 +60,7 @@ namespace Corium3DGI
                 instance.releaseDxLmnts();            
         }
 
-        public SceneModelInstanceM addSceneModelInstance(Vector3D instanceTranslationInit, Vector3D instanceScaleFactorInit, Vector3D instanceRotAxInit, float instanceRotAngInit, SceneModelInstanceM.OnSceneModelInstanceSelected selectionHandler)
+        public SceneModelInstanceM addSceneModelInstance(Vector3D instanceTranslationInit, Vector3D instanceScaleFactorInit, Vector3D instanceRotAxInit, float instanceRotAngInit, SceneModelInstanceM.OnSelected selectionHandler)
         {
             SceneModelInstanceM sceneModelInstance = new SceneModelInstanceM(this, idxPool.acquireIdx(), instanceTranslationInit, instanceScaleFactorInit, instanceRotAxInit, instanceRotAngInit, selectionHandler);
             SceneModelInstanceMs.Add(sceneModelInstance);

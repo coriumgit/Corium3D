@@ -90,6 +90,10 @@ namespace CoriumDirectX {
 		recompProjRectAndMat();
 	}
 
+	DirectX::XMVECTOR Camera::screenVecToWorldVec(float x, float y) {
+		return x*rightVec + y*upVec;
+	}
+
 	DirectX::XMVECTOR Camera::cursorPosToRayDirection(float x, float y) {				
 		XMFLOAT2 cursorPosOffsetedByMid = { x - screenWidthDiv2, screenHeightDiv2 - y };
 

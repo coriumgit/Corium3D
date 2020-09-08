@@ -18,7 +18,7 @@ namespace CoriumDirectX {
 	const unsigned int INSTANCES_NR_MAX = 1024;
 	const unsigned int INSTANCES_BUFFERS_CAPACITY_INIT = 20;
 	const unsigned int INSTANCES_BUFFERS_CAPACITY_INC_FACTOR = 2;
-	const bool GRAPHICS_DBUG_RUN = false;
+	const int GRAPHICS_DEBUG_MODEL_ID = -1;
 	
 	class DxRenderer {
 	public:	
@@ -47,10 +47,14 @@ namespace CoriumDirectX {
 			public:
 				friend Scene;
 				
-				typedef void (*SelectionHandler)();				
+				// in:
+				//	x -> cursor x coord on selection
+				//	y -> cursor y coord on selection			
+				typedef void (*SelectionHandler)(float x, float y);				
 
 				void translate(DirectX::XMFLOAT3 const& translation);
 				void setTranslation(DirectX::XMFLOAT3 const& translation);
+				DirectX::XMFLOAT3 getTranslation();
 				void scale(DirectX::XMFLOAT3 const& scaleFactorQ);
 				void setScale(DirectX::XMFLOAT3 const& scaleFactor);
 				void rotate(DirectX::XMFLOAT3 const& ax, float ang);
@@ -92,7 +96,9 @@ namespace CoriumDirectX {
 			void rotateCamera(float x, float y);
 			void zoomCamera(float amount);
 			DirectX::XMFLOAT3 getCameraPos();
+			float getCameraFOV();
 			bool cursorSelect(float x, float y);
+			DirectX::XMFLOAT3 screenVecToWorldVec(float x, float y);
 			DirectX::XMFLOAT3 cursorPosToRayDirection(float x, float y);
 			void release();
 
@@ -121,7 +127,7 @@ namespace CoriumDirectX {
 		~DxRenderer();
 
 		HRESULT initDirectXLmnts(void* resource);
-		HRESULT addModel(std::vector<VertexData> const& modelVertices, std::vector<WORD> const& modelVertexIndices, DirectX::XMFLOAT3 const& boundingSphereCenter, float boundingSphereRadius, D3D_PRIMITIVE_TOPOLOGY primitiveTopology, UINT* modelIDOut);
+		HRESULT addModel(std::vector<VertexData> const& modelVertices, std::vector<WORD> const& modelVertexIndices, DirectX::XMFLOAT3 const& boundingSphereCenter, float boundingSphereRadius, D3D_PRIMITIVE_TOPOLOGY primitiveTopology, bool doDepthTest, UINT* modelIDOut);
 		HRESULT updateModelData(UINT modelID, std::vector<VertexData> const& modelVertices, std::vector<WORD> const& modelVertexIndices, D3D_PRIMITIVE_TOPOLOGY primitiveTopology);
 		HRESULT removeModel(UINT modelID);
 		Scene* createScene();		
@@ -148,7 +154,8 @@ namespace CoriumDirectX {
 			ID3D11Buffer* visibleHighlightedInstancesTransformatsBuffer;	
 			std::vector<UINT> visibleHighlightedInstancesIdxs = std::vector<UINT>(INSTANCES_BUFFERS_CAPACITY_INIT);
 			ID3D11Buffer* visibleHighlightedInstancesIdxsBuffer;
-			UINT visibleInstancesBuffersCapacity = INSTANCES_BUFFERS_CAPACITY_INIT;									
+			UINT visibleInstancesBuffersCapacity = INSTANCES_BUFFERS_CAPACITY_INIT;				
+			bool doDepthTest;
 			D3D_PRIMITIVE_TOPOLOGY primitiveTopology;
 		};
 		
@@ -190,13 +197,14 @@ namespace CoriumDirectX {
 		ID3D11Texture2D* dsTex = NULL;
 		ID3D11DepthStencilView* dsView = NULL;
 		ID3D11DepthStencilState* dsStateJustDepth = NULL;
+		ID3D11DepthStencilState* dsStateDisable = NULL;
+
 		// scene shaders
 		ID3D11VertexShader* vsScene = NULL;
 		ID3D11PixelShader* psScene = NULL;
 		ID3D11InputLayout* vlScene = NULL;
 
 		// selection shaders resources
-
 		ID3D11VertexShader* vsOutline = NULL; // outline vertex shader
 		ID3D11PixelShader* psOutline = NULL; // outline pixel shader			
 

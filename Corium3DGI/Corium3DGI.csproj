@@ -148,6 +148,7 @@
     <Compile Include="Utils\ObservableVector.cs" />
     <Compile Include="Utils\ObservableVector3D.cs" />
     <Compile Include="Behaviours\OnRoutedEventCmdExecutor.cs" />
+    <Compile Include="Utils\RadToDegConverter.cs" />
     <Compile Include="Utils\RelayCommand.cs" />
     <Compile Include="AssetsImporter.cs" />
     <Compile Include="ModelM.cs" />
@@ -267,7 +268,7 @@
     <Content Include="Resources\Imgs\stadium.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\CollisionPrimitivesAvatarsPaths.xml">
+    <Content Include="Resources\ResourcesPaths.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\Imgs\box.png">

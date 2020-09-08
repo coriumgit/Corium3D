@@ -16,7 +16,7 @@ namespace Corium3DGI.Utils
             bindObjsProperties(point3D, "X", translateTransform3D, TranslateTransform3D.OffsetXProperty, null);
             bindObjsProperties(point3D, "Y", translateTransform3D, TranslateTransform3D.OffsetYProperty, null);
             bindObjsProperties(point3D, "Z", translateTransform3D, TranslateTransform3D.OffsetZProperty, null);
-        }
+        }        
 
         public static void bindVector3DToScaleTransform(ObservableVector3D vector3D, ScaleTransform3D scaleTransform3D)
         {
@@ -29,7 +29,7 @@ namespace Corium3DGI.Utils
         {
             bindObjsProperties(quaternion, "Angle", axisAngleRotation, AxisAngleRotation3D.AngleProperty, null);
             bindObjsProperties(quaternion, "Axis", axisAngleRotation, AxisAngleRotation3D.AxisProperty, new Vector3DObservableVector3DConverter());                     
-        }
+        }        
 
         public static void bindObjsProperties(object sourceObj, string propertyName, DependencyObject targetObj, DependencyProperty transform3DDP, IValueConverter converter)
         {

@@ -26,7 +26,6 @@
     <ClInclude Include="DxUtils.h" />
     <ClInclude Include="DxVisualizer.h" />
     <ClInclude Include="IdxPool.h" />
-    <ClInclude Include="Model.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BoundingSphere.cpp" />
@@ -35,7 +34,6 @@
     <ClCompile Include="DxUtils.cpp" />
     <ClCompile Include="DxVisualizer.cpp" />
     <ClCompile Include="IdxPool.cpp" />
-    <ClCompile Include="Model.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="PresentationCore" />

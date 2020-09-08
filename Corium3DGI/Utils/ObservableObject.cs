@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Collections;
 using System.ComponentModel;
+using System.Windows;
 
 namespace Corium3DGI
 {
-    public abstract class ObservableObject : INotifyPropertyChanged
+    public abstract class ObservableObject : DependencyObject, INotifyPropertyChanged
     {
         #region Debugging Aides
 

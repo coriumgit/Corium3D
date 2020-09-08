@@ -32,7 +32,7 @@ namespace CoriumDirectX {
         XMVECTOR translation = XMLoadFloat3(&_translation);
         scene.bsh.translateNodeBS(bshDataNode, translation);
         pos += translation;
-        modelTransformat = XMMatrixMultiply(XMMatrixTranslationFromVector(translation), modelTransformat);
+        recompTransformat(); 
         updateBuffers();
     }
 
@@ -44,30 +44,38 @@ namespace CoriumDirectX {
         updateBuffers();
     }
 
-    void DxRenderer::Scene::SceneModelInstance::scale(XMFLOAT3 const& _scaleFactorQ) {
-        scene.bsh.scaleNodeBS(bshDataNode, max(max(_scaleFactorQ.x, _scaleFactorQ.y), _scaleFactorQ.z));
-        XMVECTOR scaleFactorQ = XMLoadFloat3(&_scaleFactorQ);
-        scaleFactor *= scaleFactorQ;
-        modelTransformat = XMMatrixMultiply(XMMatrixScaling(XMVectorGetX(scaleFactor), XMVectorGetY(scaleFactor), XMVectorGetZ(scaleFactor)), modelTransformat);
-        updateBuffers();
+    DirectX::XMFLOAT3 DxRenderer::Scene::SceneModelInstance::getTranslation() {
+        XMFLOAT3 ret;
+        XMStoreFloat3(&ret, pos);
+        
+        return ret;
     }
 
-    void DxRenderer::Scene::SceneModelInstance::setScale(XMFLOAT3 const& _scaleFactor) {
-        scene.bsh.setRadiusForNodeBS(bshDataNode, max(max(_scaleFactor.x, _scaleFactor.y), _scaleFactor.z));
-        scaleFactor = XMLoadFloat3(&_scaleFactor);
+    void DxRenderer::Scene::SceneModelInstance::scale(XMFLOAT3 const& _scaleFactorQ) {
+        XMVECTOR scaleFactorQ = XMLoadFloat3(&_scaleFactorQ);
+        scene.bsh.scaleNodeBS(bshDataNode, max(max(_scaleFactorQ.x, _scaleFactorQ.y), _scaleFactorQ.z));        
+        scaleFactor *= scaleFactorQ;
         recompTransformat();
         updateBuffers();
     }
 
-    void DxRenderer::Scene::SceneModelInstance::rotate(XMFLOAT3 const& ax, float ang) {
-        XMVECTOR rotQuat = XMQuaternionRotationAxis(XMVectorSet(ax.x, ax.y, ax.z, 0.0f), ang);
-        rot *= rotQuat;
-        modelTransformat = XMMatrixMultiply(XMMatrixRotationQuaternion(rotQuat), modelTransformat);
+    void DxRenderer::Scene::SceneModelInstance::setScale(XMFLOAT3 const& _scaleFactor) {
+        scaleFactor = XMLoadFloat3(&_scaleFactor);
+        scene.bsh.setRadiusForNodeBS(bshDataNode, max(max(_scaleFactor.x, _scaleFactor.y), _scaleFactor.z));        
+        recompTransformat();
+        updateBuffers();
+    }
+
+    void DxRenderer::Scene::SceneModelInstance::rotate(XMFLOAT3 const& ax, float ang) {         
+        rot *= XMQuaternionRotationAxis(XMVectorSet(ax.x, ax.y, ax.z, 0.0f), ang / 180.0f * XM_PI);
+        scene.bsh.setTranslationForNodeBS(bshDataNode, pos + XMVector3Rotate(scene.renderer.modelsRenderData[modelID].boundingSphere.getCenter(), rot));
+        recompTransformat();
         updateBuffers();
     }
 
     void DxRenderer::Scene::SceneModelInstance::setRotation(XMFLOAT3 const& ax, float ang) {
-        rot = XMQuaternionRotationAxis(XMVectorSet(ax.x, ax.y, ax.z, 0.0f), ang);
+        rot = XMQuaternionRotationAxis(XMVectorSet(ax.x, ax.y, ax.z, 0.0f), ang / 180.0f * XM_PI);
+        scene.bsh.setTranslationForNodeBS(bshDataNode, pos + XMVector3Rotate(scene.renderer.modelsRenderData[modelID].boundingSphere.getCenter(), rot));
         recompTransformat();
         updateBuffers();
     }
@@ -135,27 +143,34 @@ namespace CoriumDirectX {
         throw std::exception("release was called on a SceneModelInstance of a removed model.");
     }
 
+    inline BoundingSphere calcTransformedBoundingSphere(BoundingSphere const& boundingSphere, XMVECTOR const& translation, XMFLOAT3 const& scaleFactor, XMVECTOR rot) {
+        return BoundingSphere::calcTransformedBoundingSphere(boundingSphere, translation + XMVector3Rotate(boundingSphere.getCenter(), rot), max(max(scaleFactor.x, scaleFactor.y), scaleFactor.z));
+    }
+
     DxRenderer::Scene::SceneModelInstance::SceneModelInstance(Scene& _scene, UINT _modelID, Transform const& transform, SceneModelInstance::SelectionHandler _selectionHandler) :
             scene(_scene), modelID(_modelID),
             selectionHandler(_selectionHandler),
             pos(XMLoadFloat3(&transform.translation)), 
-            scaleFactor(XMLoadFloat3(&transform.scaleFactor)),
-            rot(XMQuaternionRotationAxis(XMLoadFloat3(&transform.rotAx), transform.rotAng)),
+            scaleFactor(XMLoadFloat3(&transform.scaleFactor)), 
+            rot(XMQuaternionRotationAxis(XMLoadFloat3(&transform.rotAx), transform.rotAng / 180.0f * XM_PI)),
             modelTransformat(transform.genTransformat()),
-            bshDataNode(scene.bsh.insert(BoundingSphere::calcTransformedBoundingSphere(scene.renderer.modelsRenderData[modelID].boundingSphere, pos, max(max(transform.scaleFactor.x, transform.scaleFactor.y), transform.scaleFactor.z)), *this)) {
+            bshDataNode(scene.bsh.insert(calcTransformedBoundingSphere(scene.renderer.modelsRenderData[modelID].boundingSphere, pos, transform.scaleFactor, rot), *this)) {
 
         SceneModelData* sceneModelData = NULL;
         for (std::list<SceneModelData*>::iterator it = scene.sceneModelsData.begin(); it != scene.sceneModelsData.end(); it++) {
             if ((*it)->modelID == modelID) {
                 sceneModelData = *it;
                 break;
-            }
+            } 
         }
 
         if (sceneModelData == NULL) {
             // modelID was not found
             sceneModelData = new SceneModelData{ modelID };
-            scene.sceneModelsData.push_back(sceneModelData);
+            if (scene.renderer.modelsRenderData[modelID].doDepthTest)
+                scene.sceneModelsData.push_front(sceneModelData);
+            else
+                scene.sceneModelsData.push_back(sceneModelData);
         }
 
         instanceIdx = sceneModelData->instanceIdxsPool.acquireIdx();
@@ -297,6 +312,10 @@ namespace CoriumDirectX {
         return XMFLOAT3(XMVectorGetX(cameraPos), XMVectorGetY(cameraPos), XMVectorGetZ(cameraPos));
     }
     
+    float DxRenderer::Scene::getCameraFOV() {
+        return camera.getFOV();
+    }
+
     bool DxRenderer::Scene::cursorSelect(float x, float y) {
         UINT selectionX = (UINT)floorf(x), selectionY = (UINT)floorf(y);
         D3D11_BOX regionBox = { selectionX , selectionY, 0, selectionX + 1, selectionY + 1, 1 };
@@ -316,7 +335,7 @@ namespace CoriumDirectX {
                 if (sceneModelData->modelID == sceneModelInstanceIdxs.modelID) {   
                     SceneModelInstance* instance = sceneModelData->sceneModelInstances[sceneModelInstanceIdxs.instanceIdx];
                     if (instance->selectionHandler)
-                        instance->selectionHandler();
+                        instance->selectionHandler(x, y);
                     
                     return true;
                 }
@@ -328,9 +347,18 @@ namespace CoriumDirectX {
             return false;
     }
 
-    XMFLOAT3 DxRenderer::Scene::cursorPosToRayDirection(float x, float y) {
-        XMVECTOR rayDirection = camera.cursorPosToRayDirection(x, y);
-        return XMFLOAT3(XMVectorGetX(rayDirection), XMVectorGetY(rayDirection), XMVectorGetZ(rayDirection));
+    DirectX::XMFLOAT3 DxRenderer::Scene::screenVecToWorldVec(float x, float y) {
+        XMFLOAT3 ret;
+        XMStoreFloat3(&ret, camera.screenVecToWorldVec(x, y));
+
+        return ret;
+    }
+
+    XMFLOAT3 DxRenderer::Scene::cursorPosToRayDirection(float x, float y) {        
+        XMFLOAT3 ret;
+        XMStoreFloat3(&ret, camera.cursorPosToRayDirection(x, y));
+        
+        return ret;
     }
 
     void DxRenderer::Scene::release() {           
@@ -486,6 +514,7 @@ namespace CoriumDirectX {
         SAFE_RELEASE(selectionRTViews[1]);        
         SAFE_RELEASE(selectionRTViews[2]);
         SAFE_RELEASE(dsStateJustDepth);
+        SAFE_RELEASE(dsStateDisable);
         SAFE_RELEASE(dsStateWriteStencil);
         SAFE_RELEASE(dsStateMaskStencil);
         SAFE_RELEASE(dsView);
@@ -678,7 +707,7 @@ namespace CoriumDirectX {
             goto InitShaderResourcesFailed;
         }                       
 
-        if (GRAPHICS_DBUG_RUN) {
+        if (GRAPHICS_DEBUG_MODEL_ID >= 0) {
             hr = DXGIGetDebugInterface1(0, __uuidof(pGraphicsAnalysis), reinterpret_cast<void**>(&pGraphicsAnalysis));
             if (FAILED(hr))
                 goto PGraphicsAnalysisFailed;
@@ -1101,6 +1130,13 @@ namespace CoriumDirectX {
         if (FAILED(hr))
             goto DsStateJustDepthFail;
 
+        dsStateDesc.DepthEnable = false;
+        dsStateDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+
+        hr = dev->CreateDepthStencilState(&dsStateDesc, &dsStateDisable);
+        if (FAILED(hr))
+            goto DsStateDisableFail;        
+
         dsStateDesc.DepthEnable = true;
         dsStateDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
         dsStateDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
@@ -1152,6 +1188,9 @@ namespace CoriumDirectX {
         dsStateWriteStencil->Release();
 
     DsStateWriteStencilFail:
+        dsStateDisable->Release();
+
+    DsStateDisableFail:
         dsStateJustDepth->Release();
 
     DsStateJustDepthFail:
@@ -1220,7 +1259,7 @@ namespace CoriumDirectX {
         }
     }
 
-    HRESULT DxRenderer::addModel(std::vector<VertexData> const& modelVertices, std::vector<WORD> const& modelVertexIndices, XMFLOAT3 const& boundingSphereCenter, float boundingSphereRadius, D3D_PRIMITIVE_TOPOLOGY primitiveTopology, UINT* modelIDOut) {
+    HRESULT DxRenderer::addModel(std::vector<VertexData> const& modelVertices, std::vector<WORD> const& modelVertexIndices, XMFLOAT3 const& boundingSphereCenter, float boundingSphereRadius, D3D_PRIMITIVE_TOPOLOGY primitiveTopology, bool doDepthTest, UINT* modelIDOut) {
         HRESULT hr = S_OK;
         D3D11_BUFFER_DESC bd;
         D3D11_SUBRESOURCE_DATA initData;
@@ -1320,6 +1359,7 @@ namespace CoriumDirectX {
         }
 
         modelRenderData.boundingSphere = BoundingSphere(XMLoadFloat3(&boundingSphereCenter), boundingSphereRadius);
+        modelRenderData.doDepthTest = doDepthTest;
         modelRenderData.primitiveTopology = primitiveTopology;
 
         unsigned int modelID = modelsIDsPool.acquireIdx();
@@ -1396,9 +1436,12 @@ namespace CoriumDirectX {
 
                     devcon->IASetPrimitiveTopology(modelRenderData.primitiveTopology);
 
-                    devcon->OMSetDepthStencilState(dsStateJustDepth, 0);
-                    
-                    if (modelID == 1)
+                    if (modelRenderData.doDepthTest)
+                        devcon->OMSetDepthStencilState(dsStateJustDepth, 0);
+                    else
+                        devcon->OMSetDepthStencilState(dsStateDisable, 0);
+
+                    if (modelID == GRAPHICS_DEBUG_MODEL_ID)
                         startFrameCapture();
 
                     if (modelRenderData.visibleInstancesNr) {
@@ -1466,7 +1509,7 @@ namespace CoriumDirectX {
                         */
                     }
                     
-                    if (modelID == 1)
+                    if (modelID == GRAPHICS_DEBUG_MODEL_ID)
                         endFrameCapture();
                 }                
             }
