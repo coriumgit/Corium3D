@@ -338,3 +338,9 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+DxVisualizerTester.cpp
+UnitTests/pch.cpp
+UnitTests/pch.h
+UnitTests/UnitTests.cpp
+UnitTests/UnitTests.vcxproj
+UnitTests/UnitTests.vcxproj.filters
