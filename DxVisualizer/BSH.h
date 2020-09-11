@@ -5,6 +5,7 @@
 #include <vector>
 #include <array>
 #include <string>
+#include <iostream>
 
 namespace CoriumDirectX {
 	
@@ -23,7 +24,7 @@ namespace CoriumDirectX {
 			bool isLeaf() const { return children[0] == NULL; }
 			BoundingSphere const& getBoundingSphere() const { return boundingSphere; }
 #if _DEBUG
-			void setName(std::string const& _name) { name = _name; }
+			void setName(std::string const& _name) { name = _name; }			
 #endif
 		protected:			
 			Node(BoundingSphere const& boundingSphere);
@@ -68,7 +69,10 @@ namespace CoriumDirectX {
 		void setTranslationForNodeBS(DataNode* node, DirectX::XMVECTOR const& translation);
 		void scaleNodeBS(DataNode* node, float scaleFactor);
 		void setRadiusForNodeBS(DataNode* node, float radius);
-		Node* getNodesRoot() const { return nodesRoot; }						
+		Node* getNodesRoot() const { return nodesRoot; }	
+#if _DEBUG
+		void print();
+#endif
 
 	private:				
 		Node* nodesRoot = NULL;			
@@ -79,7 +83,12 @@ namespace CoriumDirectX {
 
 		static Node* findNewNodeSibling(Node* root, Node* newNode);	
 		static void refitBoundingSpheresUpTree(Node* node);
-		static void deleteNodeRecurse(Node* node);		
+		static void deleteNodeRecurse(Node* node);
+
+#if _DEBUG
+		static const unsigned int SPACE_INIT = 10;
+		void printAux(Node* root, unsigned int space);
+#endif
 	};
 
 	template <class T>
@@ -216,6 +225,13 @@ namespace CoriumDirectX {
 			else {
 				nodesRoot = nodeSibling;
 				nodeSibling->parent = NULL;
+				if (nodeSibling->escapeNode != NULL) {					
+					Node* nodesIt = nodeSibling;
+					do {
+						nodesIt->escapeNode = NULL;
+						nodesIt = nodesIt->children[1];
+					} while (nodesIt);
+				}
 			}
 
 			delete nodeParent;
@@ -247,6 +263,42 @@ namespace CoriumDirectX {
 		node->boundingSphere.setRadius(radius);
 		testBoundingSphereContainmentAndUpdate(node);
 	}
+
+#if _DEBUG
+	template <class T>
+	void BSH<T>::print() {
+		std::cout << "==========================================================" << std::endl;
+		std::cout << "======================== BSH Tree ========================" << std::endl;
+		std::cout << "==========================================================" << std::endl;
+		printAux(nodesRoot, 0);
+		std::cout << "==========================================================" << std::endl;
+	}
+
+	template <class T>
+	void BSH<T>::printAux(Node* root, unsigned int space) {
+		// Base case  
+		if (root == NULL)
+			return;
+
+		// Increase distance between levels  
+		space += SPACE_INIT;
+
+		// Process right child first  
+		printAux(root->getChild(1), space);
+
+		// Print current node after space count  
+		std::cout << std::endl;
+		for (int i = SPACE_INIT; i < space; i++)
+			std::cout << " ";
+		if (root->escapeNode)
+			std::cout << root->name << "->" << root->escapeNode->name << "\n";
+		else
+			std::cout << root->name << "->(NULL)" <<"\n";
+
+		// Process left child  
+		printAux(root->getChild(0), space);
+	}
+#endif 
 
 	template <class T>
 	void BSH<T>::testBoundingSphereContainmentAndUpdate(DataNode* node) {

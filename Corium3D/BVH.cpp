@@ -600,6 +600,13 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 			else {
 				*nodesRoot = static_cast<TNode*>(nodeSibling);
 				nodeSibling->parent = NULL;
+				if (nodeSibling->escapeNode != NULL) {
+					Node<TAABB>* nodesIt = nodeSibling;
+					do {
+						nodesIt->escapeNode = NULL;
+						nodesIt = nodesIt->children[1];
+					} while (nodesIt);
+				}
 			}
 		
 			nodesPool->release(static_cast<TNode*>(nodeParent));
