@@ -332,7 +332,7 @@ namespace Corium3DGI
                 dxHandlesOnSelectDelegates[8] = new DxVisualizer.IScene.SelectionHandler(activateTranslateOnYZ);                
                 dxHandlesOnSelectDelegates[9] = new DxVisualizer.IScene.SelectionHandler(activateRotateRoundX);
                 dxHandlesOnSelectDelegates[10] = new DxVisualizer.IScene.SelectionHandler(activateRotateRoundY);
-                dxHandlesOnSelectDelegates[11] = new DxVisualizer.IScene.SelectionHandler(activateRotateRoundZ);                
+                dxHandlesOnSelectDelegates[11] = new DxVisualizer.IScene.SelectionHandler(activateRotateRoundZ);
                 
                 dxHandles[0] = dxScene.createModelInstance(handlesModelIDs[0], new Vector3D(), new Vector3D(1.0f, 1.0f, 1.0f), new Vector3D(1.0f, 0.0f, 0.0f), 0.0f, dxHandlesOnSelectDelegates[0]);
                 dxHandles[1] = dxScene.createModelInstance(handlesModelIDs[1], new Vector3D(), new Vector3D(1.0f, 1.0f, 1.0f), new Vector3D(1.0f, 0.0f, 0.0f), 0.0f, dxHandlesOnSelectDelegates[0]);
@@ -364,7 +364,7 @@ namespace Corium3DGI
                 dxHandles[24] = dxScene.createModelInstance(handlesModelIDs[8], new Vector3D(), new Vector3D(1.0f, 1.0f, 1.0f), new Vector3D(1.0f, 0.0f, 0.0f), 90.0f, dxHandlesOnSelectDelegates[10]);
                 dxHandles[25] = dxScene.createModelInstance(handlesModelIDs[7], new Vector3D(), new Vector3D(1.0f, 1.0f, 1.0f), new Vector3D(0.0f, 1.0f, 0.0f), -90.0f, dxHandlesOnSelectDelegates[9]);
                 dxHandles[26] = dxScene.createModelInstance(handlesModelIDs[8], new Vector3D(), new Vector3D(1.0f, 1.0f, 1.0f), new Vector3D(0.0f, 1.0f, 0.0f), -90.0f, dxHandlesOnSelectDelegates[9]);                
-
+                
                 foreach (DxVisualizer.IScene.ISceneModelInstance handle in dxHandles)
                     handle.hide();
             }
@@ -403,6 +403,9 @@ namespace Corium3DGI
 
             public void onMouseMove(Point cursorPos)
             {
+                if (boundInstance == null)
+                    return;
+
                 // manipulate the instance according to the handle activated in the direction of cursorMoveVec in world space (should make a method in IDxScene) relative to the handle
                 if (activeHandle == Handle.None)
                     return;
@@ -447,6 +450,7 @@ namespace Corium3DGI
 
             public void onCameraTranslation()
             {
+                if (boundInstance != null)
                 updateDxHandlesScale();
             }
 

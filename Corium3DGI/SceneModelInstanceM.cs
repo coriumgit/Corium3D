@@ -82,42 +82,57 @@ namespace Corium3DGI
 
         public void setTranslation(Vector3D translation)
         {
+            Translate.PropertyChanged -= onTranslatePropertyChanged;
             Translate.X = translation.X;
             Translate.Y = translation.Y;
             Translate.Z = translation.Z;
+            Translate.PropertyChanged += onTranslatePropertyChanged;
+            onTranslatePropertyChanged(null, null);
+            /*
             IDxSceneModelInstance.setTranslation(translation);
             if (TranslationSet != null)
             {
                 foreach (OnTranslationSet handler in TranslationSet.GetInvocationList())
                     handler.Invoke(translation);
             }
+            */
         }
 
         public void setScale(Vector3D scale)
         {
+            Scale.PropertyChanged -= onScalePropertyChanged;
             Scale.X = scale.X;
             Scale.Y = scale.Y;
             Scale.Z = scale.Z;
+            Scale.PropertyChanged += onScalePropertyChanged;
+            onScalePropertyChanged(null, null);
+            /*
             IDxSceneModelInstance.setScale(scale);
             if (ScaleSet != null)
             {
                 foreach (OnScaleSet handler in ScaleSet.GetInvocationList())
                     handler.Invoke(scale);
             }
+            */
         }
 
         public void setRotation(Quaternion rot)
-        {            
+        {
+            Rot.PropertyChanged -= onRotPropertyChanged;
             Rot.X = rot.X;
             Rot.Y = rot.Y;
             Rot.Z = rot.Z;
             Rot.W = rot.W;
+            Rot.PropertyChanged += onRotPropertyChanged;
+            onRotPropertyChanged(null, null);
+            /*
             IDxSceneModelInstance.setRotation(rot.Axis, (float)rot.Angle);
             if (RotSet != null)
             {
                 foreach (OnRotSet handler in RotSet.GetInvocationList())
                     handler.Invoke(rot);
             }
+            */
         }
 
         public int getInstanceIdx() { return instanceIdx; }

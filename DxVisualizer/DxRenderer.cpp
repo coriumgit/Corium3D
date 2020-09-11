@@ -30,7 +30,7 @@ namespace CoriumDirectX {
 
     void DxRenderer::Scene::SceneModelInstance::translate(XMFLOAT3 const& _translation) {
         XMVECTOR translation = XMLoadFloat3(&_translation);
-        scene.bsh.translateNodeBS(bshDataNode, translation);
+        scene.bsh.translateNodeBS(bshDataNode, translation);        
         pos += translation;
         recompTransformat(); 
         updateBuffers();
@@ -38,7 +38,7 @@ namespace CoriumDirectX {
 
     void DxRenderer::Scene::SceneModelInstance::setTranslation(XMFLOAT3 const& _translation) {
         XMVECTOR translation = XMLoadFloat3(&_translation);
-        scene.bsh.setTranslationForNodeBS(bshDataNode, translation);
+        scene.bsh.setTranslationForNodeBS(bshDataNode, translation);        
         pos = translation;        
         recompTransformat();
         updateBuffers();
@@ -443,7 +443,7 @@ namespace CoriumDirectX {
             modelRenderData.visibleInstancesNr = modelRenderData.visibleHighlightedInstancesNr = 0;            
         }
             
-        VisibleInstancesIt visibleNodesIt(bsh, camera);        
+        VisibleInstancesIt visibleNodesIt(bsh, camera);     
         while (SceneModelInstance* visibleInstance = visibleNodesIt.getNext()) {
             ModelRenderData& modelRenderData = renderer.modelsRenderData[visibleInstance->modelID];
             if (!visibleInstance->isHighlighted) {
