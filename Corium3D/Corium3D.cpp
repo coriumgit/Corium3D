@@ -205,7 +205,7 @@ namespace Corium3D {
 		void resolveCollisions2D();
 		template <class V>
 		void doResolveCollisions(BVH::CollisionsData<V> const& collisionsData);
-		static void* loopThreadStarter(void* corium3DEngineImpl);
+		//bool loopThreadStarter();
 		inline void updateInputsCallbackBuffer(KeyboardInputCallback inputCallback) {
 			inputEventsBuffer[currUpdateInputsNr].keyboardInputCallback = inputCallback;				
 			inputEventsBuffer[currUpdateInputsNr].cursorInputCallback = NULL;
@@ -570,7 +570,7 @@ namespace Corium3D {
 
 		renderer = new Renderer(assetsFilesFullPaths.modelsDescsPath, assetsFilesFullPaths.vertexShadersFullPaths, assetsFilesFullPaths.fragShadersFullPaths, assetsFilesFullPaths.shadersNr, *(guis[0]), guis[0]->accessTxtControl(0), guis[0]->accessTxtControl(1));
 
-		loopThread = std::thread(Corium3DEngineImpl::loopThreadStarter, this);
+		loopThread = std::thread(&Corium3DEngineImpl::loop, this);
 	}
 
 	Corium3DEngine::Corium3DEngineImpl::~Corium3DEngineImpl() {
@@ -946,9 +946,15 @@ namespace Corium3D {
 		}
 	}
 
+	/*
 	void* Corium3DEngine::Corium3DEngineImpl::loopThreadStarter(void* corium3DEngineImpl) {
 		return (void*)((Corium3DEngine::Corium3DEngineImpl*)corium3DEngineImpl)->loop();
+	}	
+	
+	bool Corium3DEngine::Corium3DEngineImpl::loopThreadStarter() {
+		return loop();
 	}
+	*/
 
 	Corium3DEngine::GameLmnt::GameLmnt(InitData const& initData) {
 		gameLmntImpl = new GameLmntImpl(*this, initData);		
