@@ -3,11 +3,18 @@ using System;
 using System.Collections.ObjectModel;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media.Media3D;
 
 namespace Corium3DGI
 {
     public class SceneM : ObservableObject
-    {        
+    {
+        private class SceneModelMShell : SceneModelM
+        {
+            public SceneModelMShell(SceneM sceneM, ModelM modelM) : base(sceneM, modelM) { }
+        }
+
+
         public DxVisualizer.IScene IDxScene { get; private set; }
 
         private string name;
@@ -23,14 +30,24 @@ namespace Corium3DGI
                     OnPropertyChanged("Name");
                 }
             }
+        }        
+
+        private DxVisualizer.MouseCallbacks dxVisualizerMouseNotifiers;
+        public DxVisualizer.OnMouseMoveCallback DxVisualizerMouseMoveNotifier { 
+            get { return dxVisualizerMouseNotifiers.onMouseMoveCallback; } 
+        }
+
+        public DxVisualizer.OnMouseUpCallback DxVisualizerMouseUpNotifier
+        {
+            get { return dxVisualizerMouseNotifiers.onMouseUpCallback; }
         }
 
         public ObservableCollection<SceneModelM> SceneModelMs { get; } = new ObservableCollection<SceneModelM>();
 
-        public SceneM(string name, DxVisualizer.IScene iDxScene) 
+        public SceneM(DxVisualizer dxVisualizer, string name, DxVisualizer.IScene.TransformCallbackHandlers transformCallbackHandlers) 
         {
             this.name = name;
-            IDxScene = iDxScene;
+            IDxScene = dxVisualizer.createScene(transformCallbackHandlers, out dxVisualizerMouseNotifiers);
         }
 
         public void releaseDxLmnts()
@@ -39,14 +56,14 @@ namespace Corium3DGI
         }
 
         public SceneModelM addSceneModel(ModelM model)
-        {
+        {            
             foreach (SceneModelM sceneModel in SceneModelMs)
             {
                 if (sceneModel.ModelMRef == model)
                     return null;
             }
 
-            SceneModelM sceneModelM = new SceneModelM(this, model);
+            SceneModelM sceneModelM = new SceneModelMShell(this, model);
             SceneModelMs.Add(sceneModelM);
 
             return sceneModelM;
@@ -77,6 +94,36 @@ namespace Corium3DGI
               //  IDxScene.dimHighlightedInstance();
 
             return wasSceneModelInstanceSelected;
+        }
+
+        public void transformGrpTranslate(Vector3D translation)
+        {
+            IDxScene.transformGrpTranslate(translation);
+        }
+
+        public void transformGrpSetTranslation(Vector3D translation)
+        {
+            IDxScene.transformGrpSetTranslation(translation);
+        }
+
+        public void transformGrpScale(Vector3D scaleFactorQ)
+        {
+            IDxScene.transformGrpScale(scaleFactorQ);
+        }
+
+        public void transformGrpSetScale(Vector3D scaleFactor)
+        {
+            IDxScene.transformGrpSetScale(scaleFactor);
+        }
+
+        public void transformGrpRotate(Vector3D ax, double ang)
+        {
+            IDxScene.transformGrpRotate(ax, (float)ang);
+        }
+
+        public void transformGrpSetRotation(Vector3D ax, double ang)
+        {
+            IDxScene.transformGrpSetRotation(ax, (float)ang);
         }
     }
 

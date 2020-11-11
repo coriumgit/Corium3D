@@ -1,16 +1,18 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Media.Media3D;
 using Corium3DGI.Utils;
 using CoriumDirectX;
+using System.Windows.Media;
 
 namespace Corium3DGI
 {
     public class SceneModelInstanceM : ObservableObject
     {
         private int instanceIdx;
-        private DxVisualizer.IScene.SelectionHandler selectionHandler;        
-        private OnSelected selectionHandlerExt;
+        private EventHandlers eventHandlers;
+        private DxVisualizer.IScene.ISceneModelInstance.SelectionHandler selectionHandler;
 
         public DxVisualizer.IScene.ISceneModelInstance IDxSceneModelInstance { get; private set; }
         
@@ -37,7 +39,9 @@ namespace Corium3DGI
 
         public ObservableVector3D Scale { get; }
 
-        public ObservableQuaternion Rot { get; }
+        public Quaternion RotQuat { get; private set; }
+
+        public ObservableVector3D RotEueler { get; }
 
         private bool isShown = true;
         public bool IsShown
@@ -53,41 +57,43 @@ namespace Corium3DGI
                 }
             }
         }
-        
-        public delegate void OnSelected(SceneModelInstanceM thisSelected);        
-        public SceneModelInstanceM(SceneModelM sceneModel, int instanceIdx, Vector3D translate, Vector3D scale, Vector3D rotAx, float rotAng, OnSelected selectionHandlerExt)
+
+        public delegate void OnThisInstanceSelection(SceneModelInstanceM thisInstance);
+
+        public struct EventHandlers
         {
-            selectionHandler = new DxVisualizer.IScene.SelectionHandler(onSelected);            
-            this.selectionHandlerExt = selectionHandlerExt;
-            this.instanceIdx = instanceIdx;
-            SceneModelMRef = sceneModel;                        
-            name = sceneModel.Name + instanceIdx.ToString();
-            Translate = new ObservableVector3D(translate);
-            Scale = new ObservableVector3D(scale);
-            Rot = new ObservableQuaternion(rotAx, rotAng);
-            
-            IDxSceneModelInstance = sceneModel.IDxScene.createModelInstance(sceneModel.ModelMRef.DxModelID, translate, scale, rotAx, rotAng, selectionHandler);            
-            Translate.PropertyChanged += onTranslatePropertyChanged;
-            Scale.PropertyChanged += onScalePropertyChanged;
-            Rot.PropertyChanged += onRotPropertyChanged;
+            public OnThisInstanceSelection onThisInstanceSelection;
+            public PropertyChangedEventHandler transformPanelTranslationEditHander;
+            public PropertyChangedEventHandler transformPanelScaleEditHander;
+            public PropertyChangedEventHandler transformPanelRotEditHander;
         }
 
-        public delegate void OnTranslationSet(Vector3D translate);
-        public delegate void OnScaleSet(Vector3D scale);
-        public delegate void OnRotSet(Quaternion rot);
+        protected SceneModelInstanceM(SceneModelM sceneModel, int instanceIdx, Vector3D translate, Vector3D scale, Vector3D rotAx, float rotAng, EventHandlers eventHandlers)
+        {                        
+            this.instanceIdx = instanceIdx;
+            this.eventHandlers = eventHandlers;
+            SceneModelMRef = sceneModel;
+            name = sceneModel.Name + instanceIdx.ToString();
+            Translate = new ObservableVector3D(translate);
+            Translate.PropertyChanged += this.eventHandlers.transformPanelTranslationEditHander;
+            Scale = new ObservableVector3D(scale);
+            Scale.PropertyChanged += this.eventHandlers.transformPanelScaleEditHander;
+            RotQuat = new Quaternion(rotAx, rotAng);
+            RotEueler = new ObservableVector3D(RotQuat.toEuler());
+            RotEueler.PropertyChanged += onInstanceRotated;
 
-        public event OnTranslationSet TranslationSet;
-        public event OnScaleSet ScaleSet;
-        public event OnRotSet RotSet;
+            selectionHandler = new DxVisualizer.IScene.ISceneModelInstance.SelectionHandler(onInstanceSelected);
+            IDxSceneModelInstance = sceneModel.IDxScene.createModelInstance(sceneModel.ModelMRef.DxModelID, Color.FromArgb(0, 0, 0, 0), translate, scale, rotAx, rotAng, selectionHandler);
+        }        
 
-        public void setTranslation(Vector3D translation)
+        public void setDisplayedTranslation(Vector3D translation)
         {
-            Translate.PropertyChanged -= onTranslatePropertyChanged;
+            Translate.PropertyChanged -= eventHandlers.transformPanelTranslationEditHander;
             Translate.X = translation.X;
             Translate.Y = translation.Y;
             Translate.Z = translation.Z;
-            Translate.PropertyChanged += onTranslatePropertyChanged;
-            onTranslatePropertyChanged(null, null);
+            Translate.PropertyChanged += eventHandlers.transformPanelTranslationEditHander;
+            //onTranslatePropertyChanged(null, null);
             /*
             IDxSceneModelInstance.setTranslation(translation);
             if (TranslationSet != null)
@@ -98,14 +104,19 @@ namespace Corium3DGI
             */
         }
 
-        public void setScale(Vector3D scale)
+        public void translateDisplayedTranslation(float x, float y, float z)
         {
-            Scale.PropertyChanged -= onScalePropertyChanged;
+            setDisplayedTranslation(Translate.Vector3DCpy + new Vector3D(x, y, z));
+        }
+
+        public void setDisplayedScale(Vector3D scale)
+        {
+            Scale.PropertyChanged -= eventHandlers.transformPanelScaleEditHander;
             Scale.X = scale.X;
             Scale.Y = scale.Y;
             Scale.Z = scale.Z;
-            Scale.PropertyChanged += onScalePropertyChanged;
-            onScalePropertyChanged(null, null);
+            Scale.PropertyChanged += eventHandlers.transformPanelScaleEditHander;
+            //onScalePropertyChanged(null, null);
             /*
             IDxSceneModelInstance.setScale(scale);
             if (ScaleSet != null)
@@ -116,15 +127,23 @@ namespace Corium3DGI
             */
         }
 
-        public void setRotation(Quaternion rot)
+        public void scaleDisplayedScale(float x, float y, float z)
         {
-            Rot.PropertyChanged -= onRotPropertyChanged;
-            Rot.X = rot.X;
-            Rot.Y = rot.Y;
-            Rot.Z = rot.Z;
-            Rot.W = rot.W;
-            Rot.PropertyChanged += onRotPropertyChanged;
-            onRotPropertyChanged(null, null);
+            setDisplayedScale(Scale.Vector3DCpy + new Vector3D(x, y, z));            
+        }
+
+        public void setDisplayedRotation(Quaternion rot)
+        {
+            RotQuat = rot;
+
+            Vector3D rotEuler = rot.toEuler();
+            RotEueler.PropertyChanged -= onInstanceRotated;
+            RotEueler.X = rotEuler.X;
+            RotEueler.Y = rotEuler.Y;
+            RotEueler.Z = rotEuler.Z;
+            RotEueler.PropertyChanged += onInstanceRotated;
+
+            //onRotPropertyChanged(null, null);
             /*
             IDxSceneModelInstance.setRotation(rot.Axis, (float)rot.Angle);
             if (RotSet != null)
@@ -133,6 +152,21 @@ namespace Corium3DGI
                     handler.Invoke(rot);
             }
             */
+        }
+
+        public void rotateDisplayedRotation(float axX, float axY, float axZ, float ang)
+        {
+            setDisplayedRotation(new Quaternion(new Vector3D(axX, axY, axZ), ang) * RotQuat);
+        }
+            
+        public void addToTransformGrp()
+        {
+            IDxSceneModelInstance.addToTransformGrp();
+        }
+
+        public void removeFromTransformGrp()
+        {
+            IDxSceneModelInstance.removeFromTransformGrp();
         }
 
         public int getInstanceIdx() { return instanceIdx; }
@@ -160,44 +194,17 @@ namespace Corium3DGI
                 IDxSceneModelInstance.show();
             else
                 IDxSceneModelInstance.hide();            
-        }
-
-        private void onSelected(float x, float y)
-        {            
-            selectionHandlerExt(this);
-        }
-
-        private void onTranslatePropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            IDxSceneModelInstance.setTranslation(Translate.Vector3DCpy);
-            if (TranslationSet != null)
-            {
-                foreach (OnTranslationSet handler in TranslationSet.GetInvocationList())
-                    handler.Invoke(Translate.Vector3DCpy);
-            }
-        }
-
-        private void onScalePropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            IDxSceneModelInstance.setScale(Scale.Vector3DCpy);
-            if (ScaleSet != null)
-            {
-                foreach (OnScaleSet handler in ScaleSet.GetInvocationList())
-                    handler.Invoke(Scale.Vector3DCpy);
-            }
-        }
-
-        private void onRotPropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            IDxSceneModelInstance.setRotation(Rot.Axis.Vector3DCpy, (float)Rot.Angle);
-            Quaternion rot = new Quaternion(Rot.Axis.Vector3DCpy, Rot.Angle);
-            if (RotSet != null)
-            {
-                foreach (OnRotSet handler in RotSet.GetInvocationList())
-                    handler.Invoke(rot);
-            }
-        } 
+        }       
         
+        private void onInstanceSelected(float x, float y)
+        {
+            eventHandlers.onThisInstanceSelection(this);
+        }
 
+        private void onInstanceRotated(object sender, PropertyChangedEventArgs e)
+        {
+            RotQuat = RotEueler.Vector3DCpy.asEulerToQuaternion();            
+            eventHandlers.transformPanelRotEditHander(sender, e);
+        }
     }
 }

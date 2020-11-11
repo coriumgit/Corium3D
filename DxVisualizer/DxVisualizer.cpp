@@ -16,6 +16,10 @@ namespace CoriumDirectX {
 		return XMFLOAT3((float)src->X, (float)src->Y, (float)src->Z);
 	}
 
+	inline XMFLOAT4 marshalColor(Color color) {
+		return XMFLOAT4(color.ScR, color.ScG, color.ScB, color.ScA);
+	}
+
 	/*
 	DxVisualizer::Scene::SceneModelInstance::SceneModelInstance(DxRenderer::Scene* sceneRef, unsigned int modelID, DxRenderer::Transform const& transformInit, IScene::SelectionHandler^ selectionHandler) {					
 		DxRenderer::Scene::SceneModelInstance::SelectionHandler selectionHandlerMarshaled;
@@ -30,37 +34,14 @@ namespace CoriumDirectX {
 	}
 	*/
 
-	DxVisualizer::Scene::SceneModelInstance::SceneModelInstance(DxRenderer::Scene::SceneModelInstance* _sceneModelInstanceRef) :
+	DxVisualizer::Scene::SceneModelInstance::SceneModelInstance(DxRenderer::Scene::SceneModelInstance* _sceneModelInstanceRef) : 
 		sceneModelInstanceRef(_sceneModelInstanceRef) {}
-
-	void DxVisualizer::Scene::SceneModelInstance::translate(Vector3D^ translation) {
-		sceneModelInstanceRef->translate(marshalVector3D(translation));
-	}
-
-	void DxVisualizer::Scene::SceneModelInstance::setTranslation(Media3D::Vector3D^ translation) {
-		sceneModelInstanceRef->setTranslation(marshalVector3D(translation));
-	}
 
 	Media3D::Vector3D^ DxVisualizer::Scene::SceneModelInstance::getTranslation()
 	{
 		XMFLOAT3 ret = sceneModelInstanceRef->getTranslation();
 		
 		return gcnew Vector3D(ret.x, ret.y, ret.z);
-	}
-
-	void DxVisualizer::Scene::SceneModelInstance::scale(Vector3D^ scale) {
-		sceneModelInstanceRef->scale(marshalVector3D(scale));
-	}
-
-	void DxVisualizer::Scene::SceneModelInstance::setScale(Media3D::Vector3D^ scaleFactor) {
-		sceneModelInstanceRef->setScale(marshalVector3D(scaleFactor));
-	}
-
-	void DxVisualizer::Scene::SceneModelInstance::rotate(Vector3D^ ax, float ang) {
-		sceneModelInstanceRef->rotate(marshalVector3D(ax), ang);
-	}
-	void DxVisualizer::Scene::SceneModelInstance::setRotation(Media3D::Vector3D^ ax, float ang) {
-		sceneModelInstanceRef->setRotation(marshalVector3D(ax), ang);
 	}
 
 	void DxVisualizer::Scene::SceneModelInstance::highlight() {
@@ -79,21 +60,66 @@ namespace CoriumDirectX {
 		sceneModelInstanceRef->hide();
 	}
 
-	void DxVisualizer::Scene::SceneModelInstance::release() {
+	void DxVisualizer::Scene::SceneModelInstance::release() {		
 		sceneModelInstanceRef->release();
 	}
-		
-	DxVisualizer::Scene::Scene(DxRenderer::Scene* _sceneRef) : sceneRef(_sceneRef) {}
+
+	void DxVisualizer::Scene::SceneModelInstance::addToTransformGrp()
+	{
+		sceneModelInstanceRef->addToTransformGrp();
+	}
+
+	void DxVisualizer::Scene::SceneModelInstance::removeFromTransformGrp()
+	{
+		sceneModelInstanceRef->removeFromTransformGrp();
+	}
+	
+	DxVisualizer::Scene::Scene(DxRenderer* dxRenderer, DxRenderer::Scene::TransformCallbackHandlers const& transformCallbackHandlers, [System::Runtime::InteropServices::Out] DxVisualizer::MouseCallbacks^% mouseCallbacksManaged) :
+			sceneRef(dxRenderer->createScene(transformCallbackHandlers, *(mouseCallbacksNative = new DxRenderer::MouseCallbacks))) {
+		mouseCallbacksManaged = gcnew DxVisualizer::MouseCallbacks();
+		mouseCallbacksManaged->onMouseMoveCallback = gcnew DxVisualizer::OnMouseMoveCallback(this, &DxVisualizer::Scene::onMouseMove);
+		mouseCallbacksManaged->onMouseUpCallback = gcnew DxVisualizer::OnMouseUpCallback(this, &DxVisualizer::Scene::onMouseUp);
+	}
 
 	void DxVisualizer::Scene::activate() {
 		sceneRef->activate();
 	}
 
-	DxVisualizer::IScene::ISceneModelInstance^ DxVisualizer::Scene::createModelInstance(unsigned int modelID, Vector3D^ translationInit, Vector3D^ scaleFactorInit, Vector3D^ rotAxInit, float rotAngInit, IScene::SelectionHandler^ selectionHandler) {
+	DxVisualizer::IScene::ISceneModelInstance^ DxVisualizer::Scene::createModelInstance(unsigned int modelID, Media::Color instanceColorMask, Vector3D^ translationInit, Vector3D^ scaleFactorInit, Vector3D^ rotAxInit, float rotAngInit, IScene::ISceneModelInstance::SelectionHandler^ selectionHandler) {
 		DxRenderer::Transform transform = { marshalVector3D(translationInit), marshalVector3D(scaleFactorInit), marshalVector3D(rotAxInit), rotAngInit };
 		DxRenderer::Scene::SceneModelInstance::SelectionHandler selectionHandlerMarshaled =
 			selectionHandler ? static_cast<DxRenderer::Scene::SceneModelInstance::SelectionHandler>(Marshal::GetFunctionPointerForDelegate(selectionHandler).ToPointer()) : NULL;
-		return gcnew SceneModelInstance(sceneRef->createModelInstance(modelID, transform, selectionHandlerMarshaled));
+		return gcnew SceneModelInstance(sceneRef->createModelInstance(modelID, marshalColor(instanceColorMask), transform, selectionHandlerMarshaled));
+	}	
+
+	void DxVisualizer::Scene::transformGrpTranslate(Media3D::Vector3D^ translation)
+	{
+		sceneRef->transformGrpTranslate(marshalVector3D(translation));
+	}
+
+	void DxVisualizer::Scene::transformGrpSetTranslation(Media3D::Vector3D^ translation)
+	{
+		sceneRef->transformGrpSetTranslation(marshalVector3D(translation));
+	}
+
+	void DxVisualizer::Scene::transformGrpScale(Media3D::Vector3D^ scaleFactorQ)
+	{
+		sceneRef->transformGrpScale(marshalVector3D(scaleFactorQ));
+	}
+
+	void DxVisualizer::Scene::transformGrpSetScale(Media3D::Vector3D^ scaleFactor)
+	{
+		sceneRef->transformGrpSetScale(marshalVector3D(scaleFactor));
+	}
+
+	void DxVisualizer::Scene::transformGrpRotate(Media3D::Vector3D^ ax, float ang)
+	{
+		sceneRef->transformGrpRotate(marshalVector3D(ax), ang);
+	}
+
+	void DxVisualizer::Scene::transformGrpSetRotation(Media3D::Vector3D^ ax, float ang)
+	{
+		sceneRef->transformGrpSetRotation(marshalVector3D(ax), ang);
 	}
 
 	void DxVisualizer::Scene::panCamera(float x, float y) {
@@ -136,18 +162,28 @@ namespace CoriumDirectX {
 	}
 
 	void DxVisualizer::Scene::release() {
+		delete mouseCallbacksNative;
 		sceneRef->release();
-	}	
-
-	DxVisualizer::DxVisualizer(float fov, float nearZ, float farZ) {
-		renderer = new DxRenderer(fov, nearZ, farZ);
+	}
+	void DxVisualizer::Scene::onMouseMove(float cursorPosX, float cursorPosY)
+	{
+		mouseCallbacksNative->onMouseMoveCallback(cursorPosX, cursorPosY);
 	}
 
-	DxVisualizer::~DxVisualizer() {
+	void DxVisualizer::Scene::onMouseUp()
+	{
+		mouseCallbacksNative->onMouseUpCallback();
+	}
+
+	DxVisualizer::DxVisualizer(float fov, float nearZ, float farZ) {	
+		renderer = new DxRenderer(fov, nearZ, farZ);		
+	}
+
+	DxVisualizer::~DxVisualizer() {		
 		delete renderer;
 	}
 
-	void DxVisualizer::addModel(array<Point3D>^ modelVertices, array<unsigned short>^ modelVertexIndices, Color modelColor, Point3D^ boundingSphereCenter, float boundingSphereRadius, PrimitiveTopology primitiveTopology, bool doDepthTest, [System::Runtime::InteropServices::Out] UINT% modelIDOut) {
+	void DxVisualizer::addModel(array<Point3D>^ modelVertices, array<unsigned short>^ modelVertexIndices, Color modelColor, Point3D^ boundingSphereCenter, float boundingSphereRadius, PrimitiveTopology primitiveTopology, [System::Runtime::InteropServices::Out] UINT% modelIDOut) {
 		std::vector<DxRenderer::VertexData> verticesData(modelVertices->Length);		
 		std::vector<WORD> vertexIndicesMarshaled(modelVertexIndices->Length); 
 		XMFLOAT3 boundingSphereCenterMarshaled;
@@ -155,7 +191,7 @@ namespace CoriumDirectX {
 		marshalModelData(modelVertices, modelColor, verticesData, modelVertexIndices, vertexIndicesMarshaled, boundingSphereCenter, boundingSphereCenterMarshaled, primitiveTopology, primitiveTopologyMarshaled);
 
 		UINT modelID;		
-		renderer->addModel(verticesData, vertexIndicesMarshaled, boundingSphereCenterMarshaled, boundingSphereRadius, primitiveTopologyMarshaled, doDepthTest, &modelID);
+		renderer->addModel(verticesData, vertexIndicesMarshaled, boundingSphereCenterMarshaled, boundingSphereRadius, primitiveTopologyMarshaled, &modelID);
 		modelIDOut = modelID;
 	}
 
@@ -172,14 +208,20 @@ namespace CoriumDirectX {
 	void DxVisualizer::removeModel(unsigned int modelID) {
 		renderer->removeModel(modelID);
 	}
-
-	DxVisualizer::IScene^ DxVisualizer::createScene() {
-		return gcnew Scene(renderer->createScene());
+	
+	DxVisualizer::IScene^ DxVisualizer::createScene(IScene::TransformCallbackHandlers^ transformCallbackHandlers, [System::Runtime::InteropServices::Out] DxVisualizer::MouseCallbacks^% mouseCallbacks) {
+		DxRenderer::Scene::TransformCallbackHandlers transformCallbackHandlersMarshaled {
+			static_cast<void(*)(float, float, float)>(Marshal::GetFunctionPointerForDelegate(transformCallbackHandlers->translationHandler).ToPointer()),
+			static_cast<void(*)(float, float, float)>(Marshal::GetFunctionPointerForDelegate(transformCallbackHandlers->scaleHandler).ToPointer()),
+			static_cast<void(*)(float, float, float, float)>(Marshal::GetFunctionPointerForDelegate(transformCallbackHandlers->rotationHandler).ToPointer())
+		};
+		
+		return gcnew Scene(renderer, transformCallbackHandlersMarshaled, mouseCallbacks);
 	}
 
 	void DxVisualizer::initRenderer(System::IntPtr surface) {
 		renderer->initDirectXLmnts((void*)surface);
-	}
+	}	 		
 
 	void DxVisualizer::render()
 	{
@@ -219,5 +261,5 @@ namespace CoriumDirectX {
 				primitiveTopologyMarshaled = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 				break;
 		}
-	}
+	}	
 }

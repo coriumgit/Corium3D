@@ -8,6 +8,12 @@ namespace Corium3DGI
 {
     public class SceneModelM : ObservableObject, IEquatable<SceneModelM>
     {
+        private class SceneModelInstanceMShell : SceneModelInstanceM
+        {
+            public SceneModelInstanceMShell(SceneModelM sceneModel, int instanceIdx, Vector3D translate, Vector3D scale, Vector3D rotAx, float rotAng, EventHandlers eventHandlers) : 
+                base(sceneModel, instanceIdx, translate, scale, rotAx, rotAng, eventHandlers) { }
+        }
+
         private IdxPool idxPool = new IdxPool();
 
         public DxVisualizer.IScene IDxScene { get; private set; }
@@ -47,7 +53,7 @@ namespace Corium3DGI
 
         public ObservableCollection<SceneModelInstanceM> SceneModelInstanceMs { get; } = new ObservableCollection<SceneModelInstanceM>();
 
-        public SceneModelM(SceneM sceneM, ModelM modelM)
+        protected SceneModelM(SceneM sceneM, ModelM modelM)
         {                        
             ModelMRef = modelM;
             name = modelM.Name;            
@@ -60,9 +66,9 @@ namespace Corium3DGI
                 instance.releaseDxLmnts();            
         }
 
-        public SceneModelInstanceM addSceneModelInstance(Vector3D instanceTranslationInit, Vector3D instanceScaleFactorInit, Vector3D instanceRotAxInit, float instanceRotAngInit, SceneModelInstanceM.OnSelected selectionHandler)
+        public SceneModelInstanceM addSceneModelInstance(Vector3D instanceTranslationInit, Vector3D instanceScaleFactorInit, Vector3D instanceRotAxInit, float instanceRotAngInit, SceneModelInstanceM.EventHandlers eventHandlers)
         {
-            SceneModelInstanceM sceneModelInstance = new SceneModelInstanceM(this, idxPool.acquireIdx(), instanceTranslationInit, instanceScaleFactorInit, instanceRotAxInit, instanceRotAngInit, selectionHandler);
+            SceneModelInstanceM sceneModelInstance = new SceneModelInstanceMShell(this, idxPool.acquireIdx(), instanceTranslationInit, instanceScaleFactorInit, instanceRotAxInit, instanceRotAngInit, eventHandlers);
             SceneModelInstanceMs.Add(sceneModelInstance);
 
             return sceneModelInstance;

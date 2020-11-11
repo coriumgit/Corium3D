@@ -270,7 +270,7 @@
                         </DockPanel>
                     </Border>
                     
-                    <!-- scene's model's focused instance params-->
+                    <!-- scene-model's focused instance params-->
                     <Border Grid.Row="1" BorderThickness="5" BorderBrush="DarkGray">
                         <DockPanel IsEnabled="True">
                             <Label DockPanel.Dock="Top" Style="{StaticResource SubsectionHeader}">Instance Params</Label>

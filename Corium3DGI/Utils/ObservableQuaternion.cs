@@ -126,6 +126,23 @@ namespace Corium3DGI.Utils
             quat = new Quaternion(axis, angle);
         }
         
+        public void completeUpdate(double x, double y, double z, double w)
+        {
+            quat.X = x;
+            quat.Y = y;
+            quat.Z = z;
+            quat.W = w;
+            OnPropertyChanged("X");
+            OnPropertyChanged("Y");
+            OnPropertyChanged("Z");
+            OnPropertyChanged("W");
+            angle = quat.Angle;
+            OnPropertyChanged("Angle");
+            axis = new ObservableVector3D(quat.Axis);
+            axis.PropertyChanged += OnAxisChanged;
+            OnPropertyChanged("Axis");
+        }
+
         private void OnAxisChanged(object sender, PropertyChangedEventArgs e)
         {
             OnPropertyChanged("Axis");

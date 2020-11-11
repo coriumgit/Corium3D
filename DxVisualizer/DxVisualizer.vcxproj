@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -20,20 +20,35 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BoundingSphere.h" />
-    <ClInclude Include="BSH.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="DxRenderer.h" />
     <ClInclude Include="DxUtils.h" />
     <ClInclude Include="DxVisualizer.h" />
     <ClInclude Include="IdxPool.h" />
+    <ClInclude Include="KDTree.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BoundingSphere.cpp" />
-    <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="DxRenderer.cpp" />
-    <ClCompile Include="DxUtils.cpp" />
-    <ClCompile Include="DxVisualizer.cpp" />
-    <ClCompile Include="IdxPool.cpp" />
+    <ClCompile Include="BoundingSphere.cpp">
+      <SupportJustMyCode Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</SupportJustMyCode>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <SupportJustMyCode Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</SupportJustMyCode>
+    </ClCompile>
+    <ClCompile Include="DxRenderer.cpp">
+      <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</CompileAsManaged>
+      <SupportJustMyCode Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</SupportJustMyCode>
+    </ClCompile>
+    <ClCompile Include="DxUtils.cpp">
+      <SupportJustMyCode Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</SupportJustMyCode>
+    </ClCompile>
+    <ClCompile Include="DxVisualizer.cpp">
+      <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</CompileAsManaged>
+      <DebugInformationFormat Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ProgramDatabase</DebugInformationFormat>
+      <SupportJustMyCode Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</SupportJustMyCode>
+    </ClCompile>
+    <ClCompile Include="IdxPool.cpp">
+      <SupportJustMyCode Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</SupportJustMyCode>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="PresentationCore" />
@@ -121,10 +136,15 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalOptions>/Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>C:\games programming\windows programming\Corium3D\externals\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAsManaged>true</CompileAsManaged>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxguid.lib;winmm.lib;comctl32.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>

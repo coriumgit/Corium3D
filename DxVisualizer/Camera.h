@@ -24,17 +24,18 @@ namespace CoriumDirectX {
         void updateNearZ(float nearZ);
         void updateFarZ(float farZ);                
 
-        float getFOV() { return fovVert; }
-        float getNearZ() { return nearZ; }
-        float getFarZ() { return farZ; }
-        DirectX::XMVECTOR getPos() { return pos; }
-        DirectX::XMVECTOR getLookAtVec() { return lookAtVec; }
-        DirectX::XMVECTOR getUpVec() { return upVec; }
-        DirectX::FXMMATRIX getProjMat() { return projMat; }
-        DirectX::FXMMATRIX getViewMat() { return viewMat; }
-        DirectX::XMVECTOR screenVecToWorldVec(float x, float y);
-        DirectX::XMVECTOR cursorPosToRayDirection(float x, float y);        
+        float getFOV() const { return fovVert; }
+        float getNearZ() const { return nearZ; }
+        float getFarZ() const { return farZ; }
+        DirectX::CXMVECTOR getPos() const { return pos; }
+        DirectX::CXMVECTOR getLookAtVec() const { return lookAtVec; }
+        DirectX::CXMVECTOR getUpVec() const { return upVec; }
+        DirectX::CXMMATRIX getProjMat() const { return projMat; }
+        DirectX::CXMMATRIX getViewMat() const { return viewMat; }
+        DirectX::XMVECTOR screenVecToWorldVec(float x, float y) const;
+        DirectX::XMVECTOR cursorPosToRayDirection(float x, float y) const;        
         bool isBoundingSphereVisible(BoundingSphere const& boundingSphere) const;
+        bool isAabbVisible(DirectX::CXMVECTOR aabbMin, DirectX::CXMVECTOR aabbMax) const;
 
     private:         
         // TODO: have camera be part of the renderer

@@ -140,6 +140,7 @@
     <Compile Include="SceneModelM.cs" />
     <Compile Include="Utils\BindingProxy.cs" />
     <Compile Include="Utils\DoubleToBoolConverter.cs" />
+    <Compile Include="Utils\Extensions.cs" />
     <Compile Include="Utils\IdxPool.cs" />
     <Compile Include="Utils\ObservableObject.cs" />
     <Compile Include="Utils\ObservablePoint.cs" />

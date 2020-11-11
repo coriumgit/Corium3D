@@ -90,11 +90,11 @@ namespace CoriumDirectX {
 		recompProjRectAndMat();
 	}
 
-	DirectX::XMVECTOR Camera::screenVecToWorldVec(float x, float y) {
+	DirectX::XMVECTOR Camera::screenVecToWorldVec(float x, float y) const {
 		return x*rightVec + y*upVec;
 	}
 
-	DirectX::XMVECTOR Camera::cursorPosToRayDirection(float x, float y) {				
+	DirectX::XMVECTOR Camera::cursorPosToRayDirection(float x, float y) const  {
 		XMFLOAT2 cursorPosOffsetedByMid = { x - screenWidthDiv2, screenHeightDiv2 - y };
 
 		return XMVector3Normalize(nearZ * lookAtVec +
@@ -125,7 +125,24 @@ namespace CoriumDirectX {
 		isVisible = XMVectorAndInt(XMVectorLessOrEqual(XMPlaneDotCoord(frustumBotPlane, sphereC), sphereR), isVisible);
 		
 		return XMVector4EqualInt(isVisible, XMVectorTrueInt());
-	}	
+	}
+
+	inline XMVECTOR isNPointBehindPlane(DirectX::FXMVECTOR planeNormal, DirectX::FXMVECTOR aabbMin, DirectX::FXMVECTOR aabbMax) {
+		XMVECTOR zeroVector = XMVectorZero();
+		XMVECTOR nPoint = XMVectorAdd(XMVectorAndInt(XMVectorGreater(planeNormal, zeroVector), aabbMin), XMVectorAndInt(XMVectorLess(planeNormal, zeroVector), aabbMax));
+		return XMVectorLess(XMPlaneDotCoord(planeNormal, nPoint), zeroVector);
+	}
+
+	bool Camera::isAabbVisible(DirectX::CXMVECTOR aabbMin, DirectX::CXMVECTOR aabbMax) const {		
+		XMVECTOR isVisible = isNPointBehindPlane(frustumFarPlane, aabbMin, aabbMax);
+		isVisible = XMVectorAndInt(isNPointBehindPlane(frustumNearPlane, aabbMin, aabbMax), isVisible);
+		isVisible = XMVectorAndInt(isNPointBehindPlane(frustumLeftPlane, aabbMin, aabbMax), isVisible);
+		isVisible = XMVectorAndInt(isNPointBehindPlane(frustumRightPlane, aabbMin, aabbMax), isVisible);
+		isVisible = XMVectorAndInt(isNPointBehindPlane(frustumTopPlane, aabbMin, aabbMax), isVisible);
+		isVisible = XMVectorAndInt(isNPointBehindPlane(frustumBotPlane, aabbMin, aabbMax), isVisible);
+		
+		return XMVector4EqualInt(isVisible, XMVectorTrueInt());
+	}
 
 	void Camera::recompFovHorizon() {
 		fovHorizon = atanf(tanf(fovVert) * screenHeight / screenWidth);
