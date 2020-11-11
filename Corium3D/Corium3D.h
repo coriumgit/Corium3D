@@ -40,7 +40,8 @@ namespace Corium3D {
 			unsigned int shadersNr;
 		};
 
-		// REMINDER: CallbacksPtrs -> [out] parameter to be assigned functions for the system inputs callbacks to call	
+		// REMINDER: system functions of CallbacksPtrs -> [out] parameter to be assigned functions for the system inputs callbacks to call	
+		// TODO: seperate corium3DEngineOnlineCallback from the [out] functions 
 		Corium3DEngine(CallbackPtrs& callbacksPtrs, AssetsFilesFullPaths const& assetsFilesFullPaths);
 		Corium3DEngine(Corium3DEngine const& corium3DEngine) = delete;
 		~Corium3DEngine();
