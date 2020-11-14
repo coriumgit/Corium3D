@@ -55,8 +55,7 @@ namespace Corium3D {
 		bool init(Corium3DEngineNativeWindowType window);
 		void destroy();
 		bool surfaceSzChanged(unsigned int width, unsigned int height);
-		void loadScene(unsigned int* modelDescsIdxs, unsigned int staticModelDescsNr, unsigned int mobileModelDescsNr,
-			unsigned int* modelsInstancesNrsMaxima, BVH& bvh);
+		void loadScene(unsigned int* modelDescsIdxs, unsigned int staticModelDescsNr, unsigned int mobileModelDescsNr, unsigned int* modelsInstancesNrsMaxima, BVH& bvh);
 		void unloadScene();
 		void translateCamera(glm::vec3 const& translation);
 		void resetCameraPivot();

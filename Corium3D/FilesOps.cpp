@@ -79,53 +79,43 @@ namespace Corium3D {
 		modelDescOut.animationsNr = readVal<unsigned int>(modelDescFile);
 		modelDescOut.animationsDescs = readValsArr<ModelDesc::AnimationDesc>(modelDescFile, modelDescOut.animationsNr);
 
-		modelDescFile.close();
-	}	
-
-	void readColliderData(std::string const& colliderDataFileName, ColliderData& colliderDataOut) {
-		std::ifstream colliderDataFile(colliderDataFileName, std::ios::in | std::ios::binary);
-#if DEBUG
-		if (!colliderDataFile.is_open())
-			throw std::ios_base::failure(colliderDataFileName + "failed to open.");
-#endif	
-
-		colliderDataOut.boundingSphereCenter = readVal<glm::vec3>(colliderDataFile);
-		colliderDataOut.boundingSphereRadius = readVal<float>(colliderDataFile);
-		colliderDataOut.aabb3DMinVertex = readVal<glm::vec3>(colliderDataFile);
-		colliderDataOut.aabb3DMaxVertex = readVal<glm::vec3>(colliderDataFile);
-		colliderDataOut.collisionPrimitive3DType = readVal<CollisionPrimitive3DType>(colliderDataFile);
-		colliderDataOut.collisionPrimitive2DType = readVal<CollisionPrimitive2DType>(colliderDataFile);
-		switch (colliderDataOut.collisionPrimitive3DType) {
+		modelDescOut.colliderData.boundingSphereCenter = readVal<glm::vec3>(modelDescFile);
+		modelDescOut.colliderData.boundingSphereRadius = readVal<float>(modelDescFile);
+		modelDescOut.colliderData.aabb3DMinVertex = readVal<glm::vec3>(modelDescFile);
+		modelDescOut.colliderData.aabb3DMaxVertex = readVal<glm::vec3>(modelDescFile);
+		modelDescOut.colliderData.collisionPrimitive3DType = readVal<enum CollisionPrimitive3DType>(modelDescFile);
+		modelDescOut.colliderData.collisionPrimitive2DType = readVal<enum CollisionPrimitive2DType>(modelDescFile);
+		switch (modelDescOut.colliderData.collisionPrimitive3DType) {
 		case CollisionPrimitive3DType::BOX:
-			colliderDataOut.collisionBoxData = readVal<ColliderData::CollisionBoxData>(colliderDataFile);
+			modelDescOut.colliderData.collisionPrimitive3dData.collisionBoxData = readVal<ColliderData::CollisionBoxData>(modelDescFile);
 			break;
 		case CollisionPrimitive3DType::SPHERE:
-			colliderDataOut.collisionSphereData = readVal<ColliderData::CollisionSphereData>(colliderDataFile);
+			modelDescOut.colliderData.collisionPrimitive3dData.collisionSphereData = readVal<ColliderData::CollisionSphereData>(modelDescFile);
 			break;
 		case CollisionPrimitive3DType::CAPSULE:
-			colliderDataOut.collisionCapsuleData = readVal<ColliderData::CollisionCapsuleData>(colliderDataFile);
+			modelDescOut.colliderData.collisionPrimitive3dData.collisionCapsuleData = readVal<ColliderData::CollisionCapsuleData>(modelDescFile);
 			break;
 		}
 
-		if (colliderDataOut.collisionPrimitive2DType != CollisionPrimitive2DType::NO_2D_COLLIDER) {
-			colliderDataOut.aabb2DMinVertex = readVal<glm::vec2>(colliderDataFile);
-			colliderDataOut.aabb2DMaxVertex = readVal<glm::vec2>(colliderDataFile);
-			switch (colliderDataOut.collisionPrimitive2DType) {
+		if (modelDescOut.colliderData.collisionPrimitive2DType != CollisionPrimitive2DType::NO_2D_COLLIDER) {
+			modelDescOut.colliderData.aabb2DMinVertex = readVal<glm::vec2>(modelDescFile);
+			modelDescOut.colliderData.aabb2DMaxVertex = readVal<glm::vec2>(modelDescFile);
+			switch (modelDescOut.colliderData.collisionPrimitive2DType) {
 			case CollisionPrimitive2DType::RECT:
-				colliderDataOut.collisionRectData = readVal<ColliderData::CollisionRectData>(colliderDataFile);
+				modelDescOut.colliderData.collisionPrimitive2dData.collisionRectData = readVal<ColliderData::CollisionRectData>(modelDescFile);
 				break;
 			case CollisionPrimitive2DType::CIRCLE:
-				colliderDataOut.collisionCircleData = readVal<ColliderData::CollisionCircleData>(colliderDataFile);
+				modelDescOut.colliderData.collisionPrimitive2dData.collisionCircleData = readVal<ColliderData::CollisionCircleData>(modelDescFile);
 				break;
 			case CollisionPrimitive2DType::STADIUM:
-				colliderDataOut.collisionStadiumData = readVal<ColliderData::CollisionStadiumData>(colliderDataFile);
+				modelDescOut.colliderData.collisionPrimitive2dData.collisionStadiumData = readVal<ColliderData::CollisionStadiumData>(modelDescFile);
 				break;
 			}
 		}
 
-		colliderDataFile.close();
-	}
-
+		modelDescFile.close();
+	}	
+	
 	void writeSceneDesc(std::string const& sceneDescFileName, SceneDesc const& sceneDesc) {
 		std::ofstream sceneDescFile(sceneDescFileName, std::ios::in | std::ios::binary);
 #if DEBUG
@@ -172,52 +162,42 @@ namespace Corium3D {
 		writeVal<unsigned int>(modelDescFile, modelDesc.animationsNr);
 		writeValsArr<ModelDesc::AnimationDesc>(modelDescFile, modelDesc.animationsDescs, modelDesc.animationsNr);
 
-		modelDescFile.close();
-	}
-
-	void writeColliderData(std::string const& colliderDataFileName, ColliderData const& colliderData) {
-		std::ofstream colliderDataFile(colliderDataFileName, std::ios::out | std::ios::binary);
-#if DEBUG
-		if (!colliderDataFile.is_open())
-			throw std::ios_base::failure(colliderDataFileName + "failed to open.");
-#endif	
-
-		writeVal<glm::vec3>(colliderDataFile, colliderData.boundingSphereCenter);
-		writeVal<float>(colliderDataFile, colliderData.boundingSphereRadius);
-		writeVal<glm::vec3>(colliderDataFile, colliderData.aabb3DMinVertex);
-		writeVal<glm::vec3>(colliderDataFile, colliderData.aabb3DMaxVertex);
-		writeVal<CollisionPrimitive3DType>(colliderDataFile, colliderData.collisionPrimitive3DType);
-		writeVal<CollisionPrimitive2DType>(colliderDataFile, colliderData.collisionPrimitive2DType);
-		switch (colliderData.collisionPrimitive3DType) {
+		writeVal<glm::vec3>(modelDescFile, modelDesc.colliderData.boundingSphereCenter);
+		writeVal<float>(modelDescFile, modelDesc.colliderData.boundingSphereRadius);
+		writeVal<glm::vec3>(modelDescFile, modelDesc.colliderData.aabb3DMinVertex);
+		writeVal<glm::vec3>(modelDescFile, modelDesc.colliderData.aabb3DMaxVertex);
+		writeVal<CollisionPrimitive3DType>(modelDescFile, modelDesc.colliderData.collisionPrimitive3DType);
+		writeVal<CollisionPrimitive2DType>(modelDescFile, modelDesc.colliderData.collisionPrimitive2DType);
+		switch (modelDesc.colliderData.collisionPrimitive3DType) {
 		case CollisionPrimitive3DType::BOX:
-			writeVal<ColliderData::CollisionBoxData>(colliderDataFile, colliderData.collisionBoxData);
+			writeVal<ColliderData::CollisionBoxData>(modelDescFile, modelDesc.colliderData.collisionPrimitive3dData.collisionBoxData);
 			break;
 		case CollisionPrimitive3DType::SPHERE:
-			writeVal<ColliderData::CollisionSphereData>(colliderDataFile, colliderData.collisionSphereData);
+			writeVal<ColliderData::CollisionSphereData>(modelDescFile, modelDesc.colliderData.collisionPrimitive3dData.collisionSphereData);
 			break;
 		case CollisionPrimitive3DType::CAPSULE:
-			writeVal<ColliderData::CollisionCapsuleData>(colliderDataFile, colliderData.collisionCapsuleData);
+			writeVal<ColliderData::CollisionCapsuleData>(modelDescFile, modelDesc.colliderData.collisionPrimitive3dData.collisionCapsuleData);
 			break;
 		}
 
-		if (colliderData.collisionPrimitive2DType != CollisionPrimitive2DType::NO_2D_COLLIDER) {
-			writeVal<glm::vec2>(colliderDataFile, colliderData.aabb2DMinVertex);
-			writeVal<glm::vec2>(colliderDataFile, colliderData.aabb2DMaxVertex);
-			switch (colliderData.collisionPrimitive2DType) {
+		if (modelDesc.colliderData.collisionPrimitive2DType != CollisionPrimitive2DType::NO_2D_COLLIDER) {
+			writeVal<glm::vec2>(modelDescFile, modelDesc.colliderData.aabb2DMinVertex);
+			writeVal<glm::vec2>(modelDescFile, modelDesc.colliderData.aabb2DMaxVertex);
+			switch (modelDesc.colliderData.collisionPrimitive2DType) {
 			case CollisionPrimitive2DType::RECT:
-				writeVal<ColliderData::CollisionRectData>(colliderDataFile, colliderData.collisionRectData);
+				writeVal<ColliderData::CollisionRectData>(modelDescFile, modelDesc.colliderData.collisionPrimitive2dData.collisionRectData);
 				break;
 			case CollisionPrimitive2DType::CIRCLE:
-				writeVal<ColliderData::CollisionCircleData>(colliderDataFile, colliderData.collisionCircleData);
+				writeVal<ColliderData::CollisionCircleData>(modelDescFile, modelDesc.colliderData.collisionPrimitive2dData.collisionCircleData);
 				break;
 			case CollisionPrimitive2DType::STADIUM:
-				writeVal<ColliderData::CollisionStadiumData>(colliderDataFile, colliderData.collisionStadiumData);
+				writeVal<ColliderData::CollisionStadiumData>(modelDescFile, modelDesc.colliderData.collisionPrimitive2dData.collisionStadiumData);
 				break;
 			}
 		}
 
-		colliderDataFile.close();
-	}
+		modelDescFile.close();
+	}	
 
 	void readFileToStr(std::string const& fileName, std::string& strOut) {
 		std::ifstream file(fileName);

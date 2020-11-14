@@ -339,8 +339,7 @@ namespace Corium3D {
 		return true;
 	}
 
-	void Renderer::loadScene(unsigned int* modelDescsIdxs, unsigned int staticModelDescsNr, unsigned int mobileModelDescsNr,
-		unsigned int* _modelsInstancesNrsMaxima, BVH& _bvh) {
+	void Renderer::loadScene(unsigned int* modelDescsIdxs, unsigned int staticModelDescsNr, unsigned int mobileModelDescsNr, unsigned int* _modelsInstancesNrsMaxima, BVH& _bvh) {
 		std::ifstream modelDescsFile(modelDescsFullPath, std::ios::in | std::ios::binary);
 	#if DEBUG
 		if (!modelDescsFile.is_open())
@@ -352,7 +351,7 @@ namespace Corium3D {
 		modelsNrTotal = staticModelsNr + mobileModelsNr;
 		this->modelsInstancesNrsMaxima = new unsigned int[modelsNrTotal];
 		memcpy(modelsInstancesNrsMaxima, _modelsInstancesNrsMaxima, modelsNrTotal);
-		modelDescsBuffer = new ModelDesc[modelsNrTotal]{};
+		modelDescsBuffer = new ModelDesc[modelsNrTotal];
 		for (unsigned int modelIdx = 0; modelIdx < modelsNrTotal; modelIdx++) {
 			
 			modelDescsFile.read((char*)& modelDescsBuffer[modelIdx], sizeof(ModelDesc));

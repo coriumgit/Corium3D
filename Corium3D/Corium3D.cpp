@@ -656,12 +656,11 @@ namespace Corium3D {
 
 	void Corium3DEngine::Corium3DEngineImpl::loadScene(unsigned int sceneIdx) {
 		unloadScene();
-
 		
 		//staticModelsNr =
 		unsigned int mobileModelsNr =0;
 		//modelsNr = staticModelsNr + mobileModelsNr;		
-		unsigned int* modelsIdxs = new unsigned int [1]();
+		unsigned int* modelsIdxs = new unsigned int[1]();
 		//modelsInstancesNrsMaxima = 	
 				
 		unsigned int collisionPrimitives3DInstancesNrsMaxima[CollisionPrimitive3DType::__PRIMITIVE3D_TYPES_NR__];
@@ -682,8 +681,9 @@ namespace Corium3D {
 		unsigned int staticInstancesNrOverallMax = 0;
 		unsigned int mobileInstancesNrOverallMax = 0;
 		for (unsigned int modelIdx = 0; modelIdx < modelsNr; modelIdx++) {	
-			ColliderData colliderData{};
-			readColliderData(std::string(""), colliderData);
+			
+			ColliderData colliderData;
+			//readColliderData(std::string(""), colliderData);
 			modelsPrimalBoundingSpheres[modelIdx] = BoundingSphere(colliderData.boundingSphereCenter, colliderData.boundingSphereRadius);
 			modelsPrimalAABB3Ds[modelIdx] = AABB3DRotatable(colliderData.aabb3DMinVertex, colliderData.aabb3DMaxVertex);
 			if (colliderData.collisionPrimitive3DType != CollisionPrimitive3DType::NO_3D_COLLIDER) {
@@ -734,7 +734,7 @@ namespace Corium3D {
 					}
 				}
 			}
-
+			
 			unsigned int instancesNrMax = modelsInstancesNrsMaxima[modelIdx];
 			if (modelIdx < staticModelsNr)
 				staticInstancesNrOverallMax += instancesNrMax;
