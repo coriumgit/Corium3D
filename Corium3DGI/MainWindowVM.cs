@@ -1,18 +1,17 @@
-﻿using System;
-using Microsoft.WindowsAPICodePack.Dialogs;
+﻿using Corium3D;
+using CoriumDirectX;
+
+using System;
+using System.IO;
 using System.Collections.ObjectModel;
 using System.Windows;
-using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
-
 using System.Windows.Controls;
-using CoriumDirectX;
 using System.Collections.Generic;
-using Corium3DGI.Utils;
 using System.ComponentModel;
-
+using Microsoft.WindowsAPICodePack.Dialogs;
 
 //TODO: Change the framework: SceneModelM and SceneModelInstanceM are nested and private in SceneM, and SceneM exposes interfaces
 namespace Corium3DGI
@@ -36,7 +35,8 @@ namespace Corium3DGI
         private bool isModelTransforming = false;
         private Point prevMousePos;
         private SceneModelInstanceM draggedSceneModelInstance = null;        
-        private DxVisualizer.IScene.TransformCallbackHandlers transformGrpCallbackHandlers = new DxVisualizer.IScene.TransformCallbackHandlers();        
+        private DxVisualizer.IScene.TransformCallbackHandlers transformGrpCallbackHandlers = new DxVisualizer.IScene.TransformCallbackHandlers();
+        private Dictionary<string, ModelAssetGen> modelAssetGens = new Dictionary<string, ModelAssetGen>();
 
         public ObservableCollection<ModelM> ModelMs { get; } = new ObservableCollection<ModelM>();
         public ObservableCollection<SceneM> SceneMs { get; } = new ObservableCollection<SceneM>();
@@ -71,14 +71,9 @@ namespace Corium3DGI
                 if (selectedScene != value)
                 {
                     selectedScene = value;
-                    if (selectedScene != null)
-                    {
+                    if (selectedScene != null)                    
                         selectedScene.IDxScene.activate();
-                        //manipulator = manipulators[SceneMs.IndexOf(selectedScene)];
-                    }
-                    //else
-                    //    manipulator = null;
-
+                                                                
                     OnPropertyChanged("SelectedScene");
                 }
             }
@@ -111,16 +106,14 @@ namespace Corium3DGI
                     if (selectedSceneModelInstance != null)
                     {
                         selectedSceneModelInstance.dim();
-                        selectedSceneModelInstance.removeFromTransformGrp();
-                        //manipulator.unbind();
+                        selectedSceneModelInstance.removeFromTransformGrp();                        
                     }
 
                     selectedSceneModelInstance = value;
                     if (selectedSceneModelInstance != null)
                     {
                         selectedSceneModelInstance.highlight();
-                        selectedSceneModelInstance.addToTransformGrp();
-                        //manipulator.bindSceneModelInstance(selectedSceneModelInstance);
+                        selectedSceneModelInstance.addToTransformGrp();                        
                     }
                     OnPropertyChanged("SelectedSceneModelInstance");
                 }
@@ -226,12 +219,7 @@ namespace Corium3DGI
             CollisionCapsule collisionCapsule = new CollisionCapsule(new Point3D(), new Vector3D(), 0, 0);
             CollisionRect collisionRect = new CollisionRect(new Point(), new Point());
             CollisionCircle collisionCircle = new CollisionCircle(new Point(), 0);
-            CollisionStadium collisionStadium = new CollisionStadium(new Point(), new Vector(), 0, 0);
-
-
-            //private DxVisualizer.IScene.TranslationHandler translationHandler;
-            //private DxVisualizer.IScene.ScaleHandler scaleHandler;
-            //private DxVisualizer.IScene.RotationHandler rotationHandler;
+            CollisionStadium collisionStadium = new CollisionStadium(new Point(), new Vector(), 0, 0);            
             
             transformGrpCallbackHandlers.translationHandler = new DxVisualizer.IScene.TranslationHandler(onTransformGrpTranslated);
             transformGrpCallbackHandlers.scaleHandler = new DxVisualizer.IScene.ScaleHandler(onTransformGrpScaled);
@@ -251,17 +239,26 @@ namespace Corium3DGI
             bool? result = dlg.ShowDialog();
             if (result == true)
             {
-                foreach (string modelColladaPath in dlg.FileNames)
-                {
-                    AssetsImporter.NamedModelData importedModelData = AssetsImporter.Instance.importModel(modelColladaPath);                    
+                foreach (string model3dDatalFilePath in dlg.FileNames)
+                {                    
+                    string modelName = Path.GetFileNameWithoutExtension(model3dDatalFilePath);
+                    ModelAssetGen modelAssetGen;
+                    if (modelAssetGens.ContainsKey(modelName))
+                        modelAssetGen = modelAssetGens[modelName];
+                    else
+                    {
+                        modelAssetGen = new ModelAssetGen(model3dDatalFilePath);
+                        modelAssetGens.Add(modelName, modelAssetGen);
+                    }
+                    
                     uint dxModelID;
-                    dxVisualizer.addModel(importedModelData.importData.meshesVertices[0], 
-                        importedModelData.importData.meshesVertexIndices[0], 
+                    dxVisualizer.addModel(modelAssetGen.ManagedImportedDataRef.meshesVertices[0],
+                        modelAssetGen.ManagedImportedDataRef.meshesVertexIndices[0], 
                         Color.FromArgb(255, 175, 175, 175),
-                        importedModelData.importData.boundingSphereCenter, 
-                        importedModelData.importData.boundingSphereRadius, 
+                        modelAssetGen.ManagedImportedDataRef.boundingSphereCenter,
+                        modelAssetGen.ManagedImportedDataRef.boundingSphereRadius, 
                         PrimitiveTopology.TRIANGLELIST, out dxModelID);
-                    ModelM model = new ModelM(importedModelData, dxModelID);
+                    ModelM model = new ModelM(modelName, modelAssetGen, dxModelID);
                     ModelMs.Add(model);
                 }
             }
@@ -269,7 +266,7 @@ namespace Corium3DGI
 
         private void removeModel()
         {
-            AssetsImporter.Instance.removeModel(SelectedModel.Name);
+            modelAssetGens.Remove(SelectedModel.Name);
             dxVisualizer.removeModel(SelectedModel.DxModelID);
             foreach (SceneM scene in SceneMs)
                 scene.removeSceneModel(SelectedModel);
@@ -285,44 +282,8 @@ namespace Corium3DGI
 
             if (selectFolderDlg.ShowDialog() == CommonFileDialogResult.Ok)
             {
-                foreach (ModelM model in ModelMs)
-                {
-                    switch (model.CollisionPrimitive3DSelected)
-                    {
-                        case CollisionBox cb:
-                            AssetsImporter.Instance.assignCollisionBox(model.Name, cb.Center.Point3DCpy, cb.Scale.Point3DCpy);
-                            break;
-                        case CollisionSphere cs:
-                            AssetsImporter.Instance.assignCollisionSphere(model.Name, cs.Center.Point3DCpy, cs.Radius);
-                            break;
-                        case CollisionCapsule cc:
-                            Vector3D axisVec = cc.Height * cc.AxisVec.Vector3DCpy;
-                            AssetsImporter.Instance.assignCollisionCapsule(model.Name, cc.Center.Point3DCpy - 0.5 * axisVec, axisVec, cc.Radius);
-                            break;
-                        default:
-                            AssetsImporter.Instance.clearCollisionPrimitive3D(model.Name);
-                            break;
-                    }
-
-                    switch (model.CollisionPrimitive2DSelected)
-                    {
-                        case CollisionRect cr:
-                            AssetsImporter.Instance.assignCollisionRect(model.Name, cr.Center.PointCpy, cr.Scale.PointCpy);
-                            break;
-                        case CollisionCircle cc:
-                            AssetsImporter.Instance.assignCollisionCircle(model.Name, cc.Center.PointCpy, cc.Radius);
-                            break;
-                        case CollisionStadium cs:
-                            Vector axisVec = cs.Height * cs.AxisVec.VectorCpy;
-                            AssetsImporter.Instance.assignCollisionStadium(model.Name, cs.Center.PointCpy - 0.5 * axisVec, axisVec, cs.Radius);
-                            break;
-                        default:
-                            AssetsImporter.Instance.clearCollisionPrimitive2D(model.Name);
-                            break;
-                    }
-                }
-
-                AssetsImporter.Instance.saveImportedModels(selectFolderDlg.FileName);
+                foreach (ModelM modelM in ModelMs)
+                    modelM.genCorium3dAssetFile();
             }
         }
 
@@ -330,16 +291,12 @@ namespace Corium3DGI
         {
             SceneM addedSceneM = new SceneM(dxVisualizer, ((TextBox)e.Source).Text, transformGrpCallbackHandlers);
             addedSceneM.IDxScene.createModelInstance(gridDxModelId, Color.FromArgb(0, 0, 0, 0), new Vector3D(0, 0, 0), new Vector3D(1, 1, 1), new Vector3D(1, 0, 0), 0, null);
-            SceneMs.Add(addedSceneM);
-            //manipulators.Add(new SceneModelInstanceDxManipulator(dxVisualizer, addedSceneM.IDxScene));
+            SceneMs.Add(addedSceneM);            
             SelectedScene = addedSceneM;                        
         }
 
         private void removeScene()
-        {
-            //manipulators.Remove(manipulator);
-            //manipulator.releaseDxLmnts();
-            //manipulator = null;            
+        {        
             SelectedScene.releaseDxLmnts();
             SceneMs.Remove(SelectedScene);
         }
@@ -567,8 +524,6 @@ namespace Corium3DGI
             if (cameraAction == CameraAction.REST)
             {
                 SelectedScene.IDxScene.zoomCamera(e.Delta);
-                //if (manipulator != null)
-                //    manipulator.onCameraTranslation();
             }
         }        
 

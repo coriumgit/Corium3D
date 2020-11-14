@@ -10,9 +10,9 @@ namespace Media = System::Windows::Media;
 
 namespace Corium3D {
 
-	public ref class ModelImporter {
+	public ref class ModelAssetGen {
 	public:
-		ref struct ImportData {
+		ref struct ManagedImportedData {
 			array<Media3D::MeshGeometry3D^>^ meshesGeometries;
 			array<array<Media3D::Point3D>^>^ meshesVertices;			
 			array<array<unsigned short>^>^ meshesVertexIndices;
@@ -26,9 +26,14 @@ namespace Corium3D {
 			float boundingCapsuleRadius;
 		};
 
-		ModelImporter(System::String^ modelPath, [System::Runtime::InteropServices::Out] ImportData^% importData);
+		property ManagedImportedData^ ManagedImportedDataRef { 
+			public: ManagedImportedData^ get() { return managedImportedData; }
+			private: void set(ManagedImportedData^ val) { managedImportedData = val; }
+		}
 
-		~ModelImporter();
+		ModelAssetGen(System::String^ modelPath);
+
+		~ModelAssetGen();
 
 		void assignExtraColors(array<array<array<float>^>^>^ extraColors);
 
@@ -50,12 +55,11 @@ namespace Corium3D {
 
 		void assignCollisionStadium(Win::Point^ center1, Win::Vector^ axisVec, float radius);
 
-		void genFiles(System::String^ path);
+		void genCorium3dAsset(System::String^ path);
 
-	private:
-
+	private:		
+		ManagedImportedData^ managedImportedData;
 		Assimp::Importer* importer;
-		ModelDesc* modelDesc;
-		ColliderData* colliderData;
+		ModelDesc* modelDesc;		
 	};
 } // namespace Corium3D

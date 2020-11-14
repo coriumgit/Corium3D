@@ -7,7 +7,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Corium3D", "Corium3D\Corium
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Corium3DGI", "Corium3DGI\Corium3DGI.csproj", "{3BBAEF20-463F-4BDD-98C8-3600FB57519F}"
 	ProjectSection(ProjectDependencies) = postProject
-		{4ECB6A32-CE77-4303-8360-D3E123FC5EE6} = {4ECB6A32-CE77-4303-8360-D3E123FC5EE6}
+		{8536B474-541C-4D0B-A7E9-25687C2D5179} = {8536B474-541C-4D0B-A7E9-25687C2D5179}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Corium3DImporter", "Corium3DImporter\Corium3DImporter.vcxproj", "{4ECB6A32-CE77-4303-8360-D3E123FC5EE6}"
@@ -16,6 +16,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Corium3DImporter", "Corium3
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DxVisualizer", "DxVisualizer\DxVisualizer.vcxproj", "{84C31B4C-42AE-4DBB-AC8B-DFF66CCAD590}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Corium3DAssetsGen", "Corium3DAssetsGen\Corium3DAssetsGen.vcxproj", "{8536B474-541C-4D0B-A7E9-25687C2D5179}"
+	ProjectSection(ProjectDependencies) = postProject
+		{374BF6B8-937B-43C9-B0AF-E55009BA3444} = {374BF6B8-937B-43C9-B0AF-E55009BA3444}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -69,6 +74,16 @@ Global
 		{84C31B4C-42AE-4DBB-AC8B-DFF66CCAD590}.Release|x64.Build.0 = Release|x64
 		{84C31B4C-42AE-4DBB-AC8B-DFF66CCAD590}.Release|x86.ActiveCfg = Release|Win32
 		{84C31B4C-42AE-4DBB-AC8B-DFF66CCAD590}.Release|x86.Build.0 = Release|Win32
+		{8536B474-541C-4D0B-A7E9-25687C2D5179}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{8536B474-541C-4D0B-A7E9-25687C2D5179}.Debug|x64.ActiveCfg = Debug|x64
+		{8536B474-541C-4D0B-A7E9-25687C2D5179}.Debug|x64.Build.0 = Debug|x64
+		{8536B474-541C-4D0B-A7E9-25687C2D5179}.Debug|x86.ActiveCfg = Debug|Win32
+		{8536B474-541C-4D0B-A7E9-25687C2D5179}.Debug|x86.Build.0 = Debug|Win32
+		{8536B474-541C-4D0B-A7E9-25687C2D5179}.Release|Any CPU.ActiveCfg = Release|Win32
+		{8536B474-541C-4D0B-A7E9-25687C2D5179}.Release|x64.ActiveCfg = Release|x64
+		{8536B474-541C-4D0B-A7E9-25687C2D5179}.Release|x64.Build.0 = Release|x64
+		{8536B474-541C-4D0B-A7E9-25687C2D5179}.Release|x86.ActiveCfg = Release|Win32
+		{8536B474-541C-4D0B-A7E9-25687C2D5179}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

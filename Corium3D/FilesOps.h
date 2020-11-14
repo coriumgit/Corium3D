@@ -4,11 +4,11 @@
 
 namespace Corium3D {
 
-	void readSceneDesc(std::string const& sceneDescFileName, SceneDesc& sceneDescOut);
+	void readSceneDesc(std::string const& sceneDescFileName, SceneData& sceneDescOut);
 
 	void readModelDesc(std::string const& modelDescFileName, ModelDesc& modelDescOut);	
 
-	void writeSceneDesc(std::string const& sceneDescFileName, SceneDesc const& sceneDesc);
+	void writeSceneDesc(std::string const& sceneDescFileName, SceneData const& sceneDesc);
 
 	void writeModelDesc(std::string const& modelDescFileName, ModelDesc const& modelDesc);		
 

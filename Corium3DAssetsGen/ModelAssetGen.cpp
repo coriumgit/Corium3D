@@ -1,4 +1,4 @@
-#include "ModelImporter.h"
+#include "ModelAssetGen.h"
 
 #include "../Corium3D/FilesOps.h"
 #include "../Corium3D/BoundingSphere.h"
@@ -51,7 +51,7 @@ namespace Corium3D {
 		}
 	}
 
-	ModelImporter::ModelImporter(System::String^ modelPath, [System::Runtime::InteropServices::Out] ImportData^% importData)
+	ModelAssetGen::ModelAssetGen(System::String^ modelPath)
 	{	
 		modelDesc = new ModelDesc;
 		modelDesc->colladaPath = systemStringToAnsiString(modelPath);
@@ -174,9 +174,10 @@ namespace Corium3D {
 		modelDesc->extraColors = new float** [scene->mNumMeshes]();
 		
 		unsigned int vertexIdxOverall = 0;
-		importData->meshesGeometries = gcnew array<MeshGeometry3D^>(scene->mNumMeshes);
-		importData->meshesVertices = gcnew array<array<Point3D>^>(scene->mNumMeshes);
-		importData->meshesVertexIndices = gcnew array<array<unsigned short>^>(scene->mNumMeshes);
+		managedImportedData = gcnew ManagedImportedData;
+		managedImportedData->meshesGeometries = gcnew array<MeshGeometry3D^>(scene->mNumMeshes);
+		managedImportedData->meshesVertices = gcnew array<array<Point3D>^>(scene->mNumMeshes);
+		managedImportedData->meshesVertexIndices = gcnew array<array<unsigned short>^>(scene->mNumMeshes);
 		for (unsigned int meshIdx = 0; meshIdx < scene->mNumMeshes; meshIdx++) {
 			const aiMesh* mesh = scene->mMeshes[meshIdx];
 			if (!mesh->HasPositions() || !mesh->HasFaces()) {
@@ -191,34 +192,34 @@ namespace Corium3D {
 
 			modelDesc->verticesNrsPerMesh[meshIdx] += mesh->mNumVertices;
 			modelDesc->verticesNr += mesh->mNumVertices;
-			importData->meshesGeometries[meshIdx] = gcnew MeshGeometry3D();
-			importData->meshesVertices[meshIdx] = gcnew array<Point3D>(mesh->mNumVertices);			
+			managedImportedData->meshesGeometries[meshIdx] = gcnew MeshGeometry3D();
+			managedImportedData->meshesVertices[meshIdx] = gcnew array<Point3D>(mesh->mNumVertices);			
 			for (unsigned int vertexIdx = 0; vertexIdx < mesh->mNumVertices; vertexIdx++) {
 				aiVector3D vertex = mesh->mVertices[vertexIdx];				
-				importData->meshesVertices[meshIdx][vertexIdx] = Point3D(vertex.x, vertex.y, vertex.z);
-				importData->meshesGeometries[meshIdx]->Positions->Add(Point3D(vertex.x, vertex.y, vertex.z));
+				managedImportedData->meshesVertices[meshIdx][vertexIdx] = Point3D(vertex.x, vertex.y, vertex.z);
+				managedImportedData->meshesGeometries[meshIdx]->Positions->Add(Point3D(vertex.x, vertex.y, vertex.z));
 			}			
 
 			
 			if (mesh->HasNormals()) {
-				importData->meshesGeometries[meshIdx]->Normals = gcnew Vector3DCollection(modelDesc->verticesNr);
+				managedImportedData->meshesGeometries[meshIdx]->Normals = gcnew Vector3DCollection(modelDesc->verticesNr);
 				for (unsigned int vertexIdx = 0; vertexIdx < mesh->mNumVertices; vertexIdx++) {
 					aiVector3D normal = mesh->mNormals[vertexIdx];
-					importData->meshesGeometries[meshIdx]->Normals->Add(Vector3D(normal.x, normal.y, normal.z));
+					managedImportedData->meshesGeometries[meshIdx]->Normals->Add(Vector3D(normal.x, normal.y, normal.z));
 				}
 			}		
 
 			modelDesc->facesNrsPerMesh[meshIdx] = mesh->mNumFaces;
 			modelDesc->facesNr += mesh->mNumFaces;									
-			importData->meshesVertexIndices[meshIdx] = gcnew array<unsigned short>(modelDesc->facesNr * 3);							
+			managedImportedData->meshesVertexIndices[meshIdx] = gcnew array<unsigned short>(modelDesc->facesNr * 3);							
 			for (unsigned int faceIdx = 0; faceIdx < mesh->mNumFaces; faceIdx++) {
 				unsigned int* indices = mesh->mFaces[faceIdx].mIndices;
-				importData->meshesGeometries[meshIdx]->TriangleIndices->Add(indices[0]);
-				importData->meshesGeometries[meshIdx]->TriangleIndices->Add(indices[1]);
-				importData->meshesGeometries[meshIdx]->TriangleIndices->Add(indices[2]);
-				importData->meshesVertexIndices[meshIdx][faceIdx*3	  ] = indices[0];
-				importData->meshesVertexIndices[meshIdx][faceIdx*3 + 1] = indices[1];
-				importData->meshesVertexIndices[meshIdx][faceIdx*3 + 2] = indices[2];				
+				managedImportedData->meshesGeometries[meshIdx]->TriangleIndices->Add(indices[0]);
+				managedImportedData->meshesGeometries[meshIdx]->TriangleIndices->Add(indices[1]);
+				managedImportedData->meshesGeometries[meshIdx]->TriangleIndices->Add(indices[2]);
+				managedImportedData->meshesVertexIndices[meshIdx][faceIdx*3	  ] = indices[0];
+				managedImportedData->meshesVertexIndices[meshIdx][faceIdx*3 + 1] = indices[1];
+				managedImportedData->meshesVertexIndices[meshIdx][faceIdx*3 + 2] = indices[2];				
 			}
 			
 			modelDesc->progIdx = 0;
@@ -417,9 +418,7 @@ namespace Corium3D {
 			*/
 		}
 		else
-			modelDesc->animationsDescs = nullptr;												
-		
-		modelDesc->collbinFileName = std::filesystem::path(modelDesc->colladaPath).stem().string() + ".collbin";
+			modelDesc->animationsDescs = nullptr;																
 
 		glm::vec3* vec3Arr = new glm::vec3[modelDesc->verticesNr];
 		for (unsigned int meshIdx = 0; meshIdx < scene->mNumMeshes; meshIdx++) {
@@ -429,86 +428,84 @@ namespace Corium3D {
 				vec3Arr[vertexIdxOverall++] = { vertex.x, vertex.y, vertex.z };
 			}
 		}
-
-		colliderData = new ColliderData{};
+		
 		BoundingSphere bs = BoundingSphere::calcBoundingSphereEfficient(vec3Arr, modelDesc->verticesNr);
-		colliderData->boundingSphereCenter = bs.getCenter();
-		importData->boundingSphereCenter = Point3D(colliderData->boundingSphereCenter.x, colliderData->boundingSphereCenter.y, colliderData->boundingSphereCenter.z);
-		importData->boundingSphereRadius = colliderData->boundingSphereRadius = bs.getRadius();
+		modelDesc->colliderData.boundingSphereCenter = bs.getCenter();
+		managedImportedData->boundingSphereCenter = Point3D(modelDesc->colliderData.boundingSphereCenter.x, modelDesc->colliderData.boundingSphereCenter.y, modelDesc->colliderData.boundingSphereCenter.z);
+		managedImportedData->boundingSphereRadius = modelDesc->colliderData.boundingSphereRadius = bs.getRadius();
 
 		AABB3D aabb3D = AABB3D::calcAABB(vec3Arr, modelDesc->verticesNr);
-		colliderData->aabb3DMinVertex = aabb3D.getMinVertex();
-		importData->aabb3DMinVertex = Point3D(colliderData->aabb3DMinVertex.x, colliderData->aabb3DMinVertex.y, colliderData->aabb3DMinVertex.z);
-		colliderData->aabb3DMaxVertex = aabb3D.getMaxVertex();
-		importData->aabb3DMaxVertex = Point3D(colliderData->aabb3DMaxVertex.x, colliderData->aabb3DMaxVertex.y, colliderData->aabb3DMaxVertex.z);
+		modelDesc->colliderData.aabb3DMinVertex = aabb3D.getMinVertex();
+		managedImportedData->aabb3DMinVertex = Point3D(modelDesc->colliderData.aabb3DMinVertex.x, modelDesc->colliderData.aabb3DMinVertex.y, modelDesc->colliderData.aabb3DMinVertex.z);
+		modelDesc->colliderData.aabb3DMaxVertex = aabb3D.getMaxVertex();
+		managedImportedData->aabb3DMaxVertex = Point3D(modelDesc->colliderData.aabb3DMaxVertex.x, modelDesc->colliderData.aabb3DMaxVertex.y, modelDesc->colliderData.aabb3DMaxVertex.z);
 
-		float verticesSpreadX = colliderData->aabb3DMaxVertex.x - colliderData->aabb3DMinVertex.x;
-		float verticesSpreadY = colliderData->aabb3DMaxVertex.y - colliderData->aabb3DMinVertex.y;
-		float verticesSpreadZ = colliderData->aabb3DMaxVertex.z - colliderData->aabb3DMinVertex.z;
-		importData->boundingCapsuleAxisVec = Vector3D(0, 0, 0);
+		float verticesSpreadX = modelDesc->colliderData.aabb3DMaxVertex.x - modelDesc->colliderData.aabb3DMinVertex.x;
+		float verticesSpreadY = modelDesc->colliderData.aabb3DMaxVertex.y - modelDesc->colliderData.aabb3DMinVertex.y;
+		float verticesSpreadZ = modelDesc->colliderData.aabb3DMaxVertex.z - modelDesc->colliderData.aabb3DMinVertex.z;
+		managedImportedData->boundingCapsuleAxisVec = Vector3D(0, 0, 0);
 		if (verticesSpreadX > verticesSpreadY) {
 			if (verticesSpreadX > verticesSpreadZ) {				
 				if (verticesSpreadZ > verticesSpreadY) {
 					// largest: X, 2nd: Z						
-					importData->boundingCapsuleAxisVec.X = 1;					
-					importData->boundingCapsuleHeight = verticesSpreadX;
-					importData->boundingCapsuleRadius = 0.5 * verticesSpreadZ;
+					managedImportedData->boundingCapsuleAxisVec.X = 1;					
+					managedImportedData->boundingCapsuleHeight = verticesSpreadX;
+					managedImportedData->boundingCapsuleRadius = 0.5 * verticesSpreadZ;
 				}
 				else {
 					// largest: X, 2nd: Y
-					importData->boundingCapsuleAxisVec.X = 1;
-					importData->boundingCapsuleHeight = verticesSpreadX;
-					importData->boundingCapsuleRadius = 0.5 * verticesSpreadY;
+					managedImportedData->boundingCapsuleAxisVec.X = 1;
+					managedImportedData->boundingCapsuleHeight = verticesSpreadX;
+					managedImportedData->boundingCapsuleRadius = 0.5 * verticesSpreadY;
 				}
 			}
 			else {
 				// largest: Z, 2nd: X
-				importData->boundingCapsuleAxisVec.Z = 1;
-				importData->boundingCapsuleHeight = verticesSpreadZ;
-				importData->boundingCapsuleRadius = 0.5 * verticesSpreadX;
+				managedImportedData->boundingCapsuleAxisVec.Z = 1;
+				managedImportedData->boundingCapsuleHeight = verticesSpreadZ;
+				managedImportedData->boundingCapsuleRadius = 0.5 * verticesSpreadX;
 			}			
 		}
 		else if (verticesSpreadY > verticesSpreadZ) {
 			if (verticesSpreadX > verticesSpreadZ) {
 				// largest: Y, 2nd: X
-				importData->boundingCapsuleAxisVec.Y = 1;
-				importData->boundingCapsuleHeight = verticesSpreadY;
-				importData->boundingCapsuleRadius = 0.5 * verticesSpreadX;
+				managedImportedData->boundingCapsuleAxisVec.Y = 1;
+				managedImportedData->boundingCapsuleHeight = verticesSpreadY;
+				managedImportedData->boundingCapsuleRadius = 0.5 * verticesSpreadX;
 			}
 			else { // largest: Y, 2nd: Z
-				importData->boundingCapsuleAxisVec.Y = 1;
-				importData->boundingCapsuleHeight = verticesSpreadY;
-				importData->boundingCapsuleRadius = 0.5 * verticesSpreadZ;
+				managedImportedData->boundingCapsuleAxisVec.Y = 1;
+				managedImportedData->boundingCapsuleHeight = verticesSpreadY;
+				managedImportedData->boundingCapsuleRadius = 0.5 * verticesSpreadZ;
 			}
 		}
 		else {
 			// largest: Z, 2nd: Y
-			importData->boundingCapsuleAxisVec.Z = 1;
-			importData->boundingCapsuleHeight = verticesSpreadZ;
-			importData->boundingCapsuleRadius = 0.5 * verticesSpreadY;
+			managedImportedData->boundingCapsuleAxisVec.Z = 1;
+			managedImportedData->boundingCapsuleHeight = verticesSpreadZ;
+			managedImportedData->boundingCapsuleRadius = 0.5 * verticesSpreadY;
 		}		
-		importData->boundingCapsuleCenter = Point3D(0.5 * (colliderData->aabb3DMinVertex.x + colliderData->aabb3DMaxVertex.x),
-													0.5 * (colliderData->aabb3DMinVertex.y + colliderData->aabb3DMaxVertex.y),
-													0.5 * (colliderData->aabb3DMinVertex.z + colliderData->aabb3DMaxVertex.z));
+		managedImportedData->boundingCapsuleCenter = Point3D(0.5 * (modelDesc->colliderData.aabb3DMinVertex.x + modelDesc->colliderData.aabb3DMaxVertex.x),
+															 0.5 * (modelDesc->colliderData.aabb3DMinVertex.y + modelDesc->colliderData.aabb3DMaxVertex.y),
+															 0.5 * (modelDesc->colliderData.aabb3DMinVertex.z + modelDesc->colliderData.aabb3DMaxVertex.z));
 
-		colliderData->collisionPrimitive3DType = CollisionPrimitive3DType::NO_3D_COLLIDER;
-		colliderData->collisionPrimitive2DType = CollisionPrimitive2DType::NO_2D_COLLIDER;
+		modelDesc->colliderData.collisionPrimitive3DType = CollisionPrimitive3DType::NO_3D_COLLIDER;
+		modelDesc->colliderData.collisionPrimitive2DType = CollisionPrimitive2DType::NO_2D_COLLIDER;
 		AABB2D aabb2D = AABB2D::calcAABB(vec3Arr, modelDesc->verticesNr);		
-		colliderData->aabb2DMinVertex = aabb2D.getMinVertex();
-		colliderData->aabb2DMaxVertex = aabb2D.getMaxVertex();		
+		modelDesc->colliderData.aabb2DMinVertex = aabb2D.getMinVertex();
+		modelDesc->colliderData.aabb2DMaxVertex = aabb2D.getMaxVertex();		
 
 		delete[] vec3Arr;					
 #endif
 	}	
 
-	ModelImporter::~ModelImporter()
+	ModelAssetGen::~ModelAssetGen()
 	{
 		delete importer;		
-		delete modelDesc;
-		delete colliderData;
+		delete modelDesc;		
 	}
 
-	void ModelImporter::assignExtraColors(array<array<array<float>^>^>^ extraColors)
+	void ModelAssetGen::assignExtraColors(array<array<array<float>^>^>^ extraColors)
 	{
 		modelDesc->verticesColorsNrTotal = 0;
 		for (unsigned int meshIdx = 0; meshIdx < extraColors->Length; meshIdx++) {
@@ -531,62 +528,61 @@ namespace Corium3D {
 		}
 	}
 
-	void ModelImporter::assignProgIdx(unsigned int progIdx)
+	void ModelAssetGen::assignProgIdx(unsigned int progIdx)
 	{
 		modelDesc->progIdx = progIdx;
 	}
 
-	void ModelImporter::clearCollisionPrimitive3D()
+	void ModelAssetGen::clearCollisionPrimitive3D()
 	{
-		colliderData->collisionPrimitive3DType = CollisionPrimitive3DType::NO_3D_COLLIDER;
+		modelDesc->colliderData.collisionPrimitive3DType = CollisionPrimitive3DType::NO_3D_COLLIDER;
 	}
 
-	void ModelImporter::assignCollisionBox(Point3D^ center, Point3D^ scale)
+	void ModelAssetGen::assignCollisionBox(Point3D^ center, Point3D^ scale)
 	{
-		colliderData->collisionPrimitive3DType = CollisionPrimitive3DType::BOX;
-		colliderData->collisionBoxData = { marshalPoint3D(center), marshalPoint3D(scale) };
+		modelDesc->colliderData.collisionPrimitive3DType = CollisionPrimitive3DType::BOX;
+		modelDesc->colliderData.collisionPrimitive3dData.collisionBoxData = { marshalPoint3D(center), marshalPoint3D(scale) };
 	}
 
-	void ModelImporter::assignCollisionSphere(Point3D^ center, float radius)
+	void ModelAssetGen::assignCollisionSphere(Point3D^ center, float radius)
 	{
-		colliderData->collisionPrimitive3DType = CollisionPrimitive3DType::SPHERE;
-		colliderData->collisionSphereData = { marshalPoint3D(center), radius };
+		modelDesc->colliderData.collisionPrimitive3DType = CollisionPrimitive3DType::SPHERE;
+		modelDesc->colliderData.collisionPrimitive3dData.collisionSphereData = { marshalPoint3D(center), radius };
 	}
 
-	void ModelImporter::assignCollisionCapsule(Point3D^ center1, Vector3D^ axisVec, float radius)
+	void ModelAssetGen::assignCollisionCapsule(Point3D^ center1, Vector3D^ axisVec, float radius)
 	{
-		colliderData->collisionPrimitive3DType = CollisionPrimitive3DType::CAPSULE;
-		colliderData->collisionCapsuleData = { marshalPoint3D(center1), marshalVector3D(axisVec), radius };
+		modelDesc->colliderData.collisionPrimitive3DType = CollisionPrimitive3DType::CAPSULE;
+		modelDesc->colliderData.collisionPrimitive3dData.collisionCapsuleData = { marshalPoint3D(center1), marshalVector3D(axisVec), radius };
 	}
 
-	void ModelImporter::clearCollisionPrimitive2D()
+	void ModelAssetGen::clearCollisionPrimitive2D()
 	{
-		colliderData->collisionPrimitive2DType = CollisionPrimitive2DType::NO_2D_COLLIDER;
+		modelDesc->colliderData.collisionPrimitive2DType = CollisionPrimitive2DType::NO_2D_COLLIDER;
 	}
 
-	void ModelImporter::assignCollisionRect(Point^ center, Point^ scale)
+	void ModelAssetGen::assignCollisionRect(Point^ center, Point^ scale)
 	{
-		colliderData->collisionPrimitive2DType = CollisionPrimitive2DType::RECT;
-		colliderData->collisionRectData = { marshalPoint(center), marshalPoint(scale) };
+		modelDesc->colliderData.collisionPrimitive2DType = CollisionPrimitive2DType::RECT;
+		modelDesc->colliderData.collisionPrimitive2dData.collisionRectData = { marshalPoint(center), marshalPoint(scale) };
 	}
 
-	void ModelImporter::assignCollisionCircle(Point^ center, float radius)
+	void ModelAssetGen::assignCollisionCircle(Point^ center, float radius)
 	{
-		colliderData->collisionPrimitive2DType = CollisionPrimitive2DType::CIRCLE;
-		colliderData->collisionCircleData = { marshalPoint(center), radius };
+		modelDesc->colliderData.collisionPrimitive2DType = CollisionPrimitive2DType::CIRCLE;
+		modelDesc->colliderData.collisionPrimitive2dData.collisionCircleData = { marshalPoint(center), radius };
 	}
 
-	void ModelImporter::assignCollisionStadium(Point^ center1, Vector^ axisVec, float radius)
+	void ModelAssetGen::assignCollisionStadium(Point^ center1, Vector^ axisVec, float radius)
 	{
-		colliderData->collisionPrimitive2DType = CollisionPrimitive2DType::STADIUM;
-		colliderData->collisionStadiumData = { marshalPoint(center1), marshalVector(axisVec), radius };
+		modelDesc->colliderData.collisionPrimitive2DType = CollisionPrimitive2DType::STADIUM;
+		modelDesc->colliderData.collisionPrimitive2dData.collisionStadiumData = { marshalPoint(center1), marshalVector(axisVec), radius };
 	}
 
-	void ModelImporter::genFiles(System::String^ path)
+	void ModelAssetGen::genCorium3dAsset(System::String^ path)
 	{
 		std::filesystem::path savePath(systemStringToAnsiString(path));
-		writeModelDesc((savePath / std::filesystem::path(modelDesc->colladaPath).stem()).string() + ".moddesc", *modelDesc);
-		writeColliderData((savePath / modelDesc->collbinFileName).string(), *colliderData);
+		writeModelDesc((savePath / std::filesystem::path(modelDesc->colladaPath).stem()).string() + ".moddesc", *modelDesc);		
 	}	
 
 } // namespace Corium3D

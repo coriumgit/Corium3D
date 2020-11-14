@@ -1,8 +1,9 @@
-﻿using System.Linq;
+﻿using Corium3D;
+
+using System.Linq;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using System.Xml.Linq;
-using Corium3DGI.Utils;
 
 namespace Corium3DGI
 {
@@ -65,9 +66,8 @@ namespace Corium3DGI
             avatars3D = new Model3DCollection();
             foreach (XElement modelPathLmnt in avatarsPathsNode.Descendants().Where(e => e.Name == "Model"))
             {
-                AssetsImporter.NamedModelData namedModelData = AssetsImporter.Instance.importModel(modelPathLmnt.Value);
-                AssetsImporter.Instance.removeModel(namedModelData.name);                               
-                avatars3D.Add(new GeometryModel3D(namedModelData.importData.meshesGeometries[0],
+                ModelAssetGen modelAssetGen = new ModelAssetGen(modelPathLmnt.Value);                                               
+                avatars3D.Add(new GeometryModel3D(modelAssetGen.ManagedImportedDataRef.meshesGeometries[0],
                                                   new DiffuseMaterial(new SolidColorBrush(primitiveColor))));
             }
         }

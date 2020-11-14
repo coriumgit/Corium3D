@@ -151,7 +151,6 @@
     <Compile Include="Behaviours\OnRoutedEventCmdExecutor.cs" />
     <Compile Include="Utils\RadToDegConverter.cs" />
     <Compile Include="Utils\RelayCommand.cs" />
-    <Compile Include="AssetsImporter.cs" />
     <Compile Include="ModelM.cs" />
     <Compile Include="SceneM.cs" />
     <Compile Include="Behaviours\OnKeyPressBindingUpdater.cs" />
@@ -310,9 +309,9 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Corium3DImporter\Corium3DImporter.vcxproj">
-      <Project>{4ecb6a32-ce77-4303-8360-d3e123fc5ee6}</Project>
-      <Name>Corium3DImporter</Name>
+    <ProjectReference Include="..\Corium3DAssetsGen\Corium3DAssetsGen.vcxproj">
+      <Project>{8536b474-541c-4d0b-a7e9-25687c2d5179}</Project>
+      <Name>Corium3DAssetsGen</Name>
     </ProjectReference>
     <ProjectReference Include="..\DxVisualizer\DxVisualizer.vcxproj">
       <Project>{84c31b4c-42ae-4dbb-ac8b-dff66ccad590}</Project>

@@ -17,7 +17,7 @@ namespace Corium3D {
 
 		unsigned int staticModelsNr;
 		unsigned int mobileModelsNr;
-		SceneModelData* sceneModels;
+		SceneModelData* sceneModelsData;
 		unsigned int* collisionPrimitives3DInstancesNrsMaxima;
 		unsigned int* collisionPrimitives2DInstancesNrsMaxima;
 	};

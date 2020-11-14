@@ -29,20 +29,20 @@ namespace Corium3D {
 		file.write((char*)valsArr, sizeof(T) * arrSz);
 	}
 
-	void readSceneDesc(std::string const& sceneDescFileName, SceneDesc& sceneDescOut) {
+	void readSceneDesc(std::string const& sceneDescFileName, SceneData& sceneDataOut) {
 		std::ifstream sceneDescFile(sceneDescFileName, std::ios::in | std::ios::binary);
 #if DEBUG
 		if (!sceneDescFile.is_open())
 			throw std::ios_base::failure(sceneDescFileName + "failed to open.");
 #endif	
 
-		sceneDescOut.staticModelsNr = readVal<unsigned int>(sceneDescFile);
-		sceneDescOut.mobileModelsNr = readVal<unsigned int>(sceneDescFile);
-		unsigned int modelsNr = sceneDescOut.staticModelsNr + sceneDescOut.mobileModelsNr;
-		sceneDescOut.modelsIdxs = readValsArr<unsigned int>(sceneDescFile, modelsNr);
-		sceneDescOut.modelsInstancesNrsMaxima = readValsArr<unsigned int>(sceneDescFile, modelsNr);		
-		sceneDescOut.collisionPrimitives3DInstancesNrsMaxima = readValsArr<unsigned int>(sceneDescFile, CollisionPrimitive3DType::__PRIMITIVE3D_TYPES_NR__);
-		sceneDescOut.collisionPrimitives2DInstancesNrsMaxima = readValsArr<unsigned int>(sceneDescFile, CollisionPrimitive2DType::__PRIMITIVE2D_TYPES_NR__);
+		sceneDataOut.staticModelsNr = readVal<unsigned int>(sceneDescFile);
+		sceneDataOut.mobileModelsNr = readVal<unsigned int>(sceneDescFile);
+		unsigned int modelsNr = sceneDataOut.staticModelsNr + sceneDataOut.mobileModelsNr;
+		//sceneDataOut.sceneModelsData.modelsIdxs = readValsArr<unsigned int>(sceneDescFile, modelsNr);
+		//sceneDataOut.sceneModelsData.modelsInstancesNrsMaxima = readValsArr<unsigned int>(sceneDescFile, modelsNr);
+		sceneDataOut.collisionPrimitives3DInstancesNrsMaxima = readValsArr<unsigned int>(sceneDescFile, CollisionPrimitive3DType::__PRIMITIVE3D_TYPES_NR__);
+		sceneDataOut.collisionPrimitives2DInstancesNrsMaxima = readValsArr<unsigned int>(sceneDescFile, CollisionPrimitive2DType::__PRIMITIVE2D_TYPES_NR__);
 
 		sceneDescFile.close();
 	}
@@ -116,20 +116,20 @@ namespace Corium3D {
 		modelDescFile.close();
 	}	
 	
-	void writeSceneDesc(std::string const& sceneDescFileName, SceneDesc const& sceneDesc) {
+	void writeSceneDesc(std::string const& sceneDescFileName, SceneData const& sceneData) {
 		std::ofstream sceneDescFile(sceneDescFileName, std::ios::in | std::ios::binary);
 #if DEBUG
 		if (!sceneDescFile.is_open())
 			throw std::ios_base::failure(sceneDescFileName + "failed to open.");
 #endif
 
-		writeVal<unsigned int>(sceneDescFile, sceneDesc.staticModelsNr);
-		writeVal<unsigned int>(sceneDescFile, sceneDesc.mobileModelsNr);		
-		unsigned int modelsNr = sceneDesc.staticModelsNr + sceneDesc.mobileModelsNr;
-		writeValsArr<unsigned int>(sceneDescFile, sceneDesc.modelsIdxs, modelsNr);
-		writeValsArr<unsigned int>(sceneDescFile, sceneDesc.modelsInstancesNrsMaxima, modelsNr);
-		writeValsArr<unsigned int>(sceneDescFile, sceneDesc.collisionPrimitives3DInstancesNrsMaxima, CollisionPrimitive3DType::__PRIMITIVE3D_TYPES_NR__);
-		writeValsArr<unsigned int>(sceneDescFile, sceneDesc.collisionPrimitives2DInstancesNrsMaxima, CollisionPrimitive2DType::__PRIMITIVE2D_TYPES_NR__);		
+		writeVal<unsigned int>(sceneDescFile, sceneData.staticModelsNr);
+		writeVal<unsigned int>(sceneDescFile, sceneData.mobileModelsNr);		
+		unsigned int modelsNr = sceneData.staticModelsNr + sceneData.mobileModelsNr;
+		//writeValsArr<unsigned int>(sceneDescFile, sceneData.modelsIdxs, modelsNr);
+		//writeValsArr<unsigned int>(sceneDescFile, sceneData.modelsInstancesNrsMaxima, modelsNr);
+		writeValsArr<unsigned int>(sceneDescFile, sceneData.collisionPrimitives3DInstancesNrsMaxima, CollisionPrimitive3DType::__PRIMITIVE3D_TYPES_NR__);
+		writeValsArr<unsigned int>(sceneDescFile, sceneData.collisionPrimitives2DInstancesNrsMaxima, CollisionPrimitive2DType::__PRIMITIVE2D_TYPES_NR__);		
 
 		sceneDescFile.close();
 	}
