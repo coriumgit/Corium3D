@@ -1,6 +1,6 @@
 #include "ModelAssetGen.h"
 
-#include "../Corium3D/FilesOps.h"
+#include "../Corium3D/AssetsOps.h"
 #include "../Corium3D/BoundingSphere.h"
 #include "../Corium3D/AABB.h"
 #include "../Corium3D/ServiceLocator.h"

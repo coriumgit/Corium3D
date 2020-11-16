@@ -1,4 +1,4 @@
-#include "FilesOps.h"
+#include "Assets.h"
 
 #include <fstream>
 
@@ -29,7 +29,7 @@ namespace Corium3D {
 		file.write((char*)valsArr, sizeof(T) * arrSz);
 	}
 
-	void readSceneDesc(std::string const& sceneDescFileName, SceneData& sceneDataOut) {
+	void readSceneData(std::string const& sceneDescFileName, SceneData& sceneDataOut) {
 		std::ifstream sceneDescFile(sceneDescFileName, std::ios::in | std::ios::binary);
 #if DEBUG
 		if (!sceneDescFile.is_open())
@@ -116,7 +116,7 @@ namespace Corium3D {
 		modelDescFile.close();
 	}	
 	
-	void writeSceneDesc(std::string const& sceneDescFileName, SceneData const& sceneData) {
+	void writeSceneData(std::string const& sceneDescFileName, SceneData const& sceneData) {
 		std::ofstream sceneDescFile(sceneDescFileName, std::ios::in | std::ios::binary);
 #if DEBUG
 		if (!sceneDescFile.is_open())

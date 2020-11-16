@@ -56,7 +56,7 @@ namespace Corium3D {
 			glm::vec2 center1;
 			glm::vec2 axisVec;
 			float radius;
-		};		
+		};
 
 		glm::vec3 boundingSphereCenter;
 		float boundingSphereRadius;
@@ -71,7 +71,7 @@ namespace Corium3D {
 			CollisionBoxData collisionBoxData;
 			CollisionSphereData collisionSphereData;
 			CollisionCapsuleData collisionCapsuleData;
-		} collisionPrimitive3dData { glm::vec3{}, glm::vec3{} };
+		} collisionPrimitive3dData{ glm::vec3{}, glm::vec3{} };
 
 		CollisionPrimitive2DType collisionPrimitive2DType;
 		union {
@@ -93,9 +93,9 @@ namespace Corium3D {
 
 		std::string colladaPath;
 		unsigned int verticesNr;
-		unsigned int meshesNr;		
+		unsigned int meshesNr;
 		unsigned int* verticesNrsPerMesh;
-		unsigned int verticesColorsNrTotal; 
+		unsigned int verticesColorsNrTotal;
 		unsigned int* extraColorsNrsPerMesh; // TODO: incorporate this -data- to the collada
 		float*** extraColors; // TODO: incorporate this -data- to the collada
 		unsigned int texesNr;
@@ -108,6 +108,16 @@ namespace Corium3D {
 		unsigned int animationsNr;
 		AnimationDesc* animationsDescs;
 		ColliderData colliderData; // TODO: incorporate this -data- to the collada and convert ColliderData to ColliderDesc
-	};		
+	};
+
+	void readSceneData(std::string const& sceneDescFileName, SceneData& sceneDescOut);
+
+	void readModelDesc(std::string const& modelDescFileName, ModelDesc& modelDescOut);	
+
+	void writeSceneData(std::string const& sceneDescFileName, SceneData const& sceneDesc);
+
+	void writeModelDesc(std::string const& modelDescFileName, ModelDesc const& modelDesc);		
+
+	void readFileToStr(std::string const& fileName, std::string& strOut);
 
 } // namespace Corium3D
