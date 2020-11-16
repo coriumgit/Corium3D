@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Corium3D/FilesStructs.h"
+#include "../Corium3D/AssetsOps.h"
 
 #include <assimp/Importer.hpp>
 
