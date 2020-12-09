@@ -21,13 +21,13 @@
     <ClInclude Include="..\Corium3D\BoundingSphere.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Corium3D\FilesOps.h">
+    <ClInclude Include="..\Corium3D\AssetsOps.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Corium3D\FilesStructs.h">
+    <ClInclude Include="Marshalers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ModelAssetGen.h">
+    <ClInclude Include="AssetsGen.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -38,10 +38,10 @@
     <ClCompile Include="..\Corium3D\BoundingSphere.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Corium3D\FilesOps.cpp">
+    <ClCompile Include="..\Corium3D\AssetsOps.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ModelAssetGen.cpp">
+    <ClCompile Include="AssetsGen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

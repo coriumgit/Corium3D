@@ -1,0 +1,11 @@
+[DEBUG]Corium3DEngineImpl>> signalSurfaceCreated called.
+[DEBUG]Corium3DEngine>> onWindowFocusChanged called.
+[DEBUG]Corium3DEngine>> signalSurfaceSzChanged called.
+[DEBUG]OpenGlContext>> OpenGL version created: 4.3
+[DEBUG]Renderer>> surfaceChanged called.
+[DEBUG]Renderer>> initializing gl components.
+[DEBUG]Renderer>> Scene import succeeded.
+[DEBUG]shoot ray>> ray missed.
+[DEBUG]Corium3DEngine>> onWindowFocusChanged called.
+[DEBUG]Corium3DEngine>> signalSurfaceDestroyed called.
+[DEBUG]Corium3DEngine>> onDitachedFromWindow called.

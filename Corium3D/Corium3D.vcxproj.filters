@@ -75,12 +75,6 @@
     <ClInclude Include="CollisionPrimitives.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FilesStructs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FilesOps.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="TransformsStructs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -88,6 +82,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SystemDefs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AssetsOps.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -155,10 +152,10 @@
     <ClCompile Include="InputsIDs.h">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="FilesOps.cpp">
+    <ClCompile Include="OpenGL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="OpenGL.cpp">
+    <ClCompile Include="AssetsOps.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

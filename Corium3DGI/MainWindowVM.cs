@@ -31,12 +31,12 @@ namespace Corium3DGI
 
         private DxVisualizer dxVisualizer;
         private uint gridDxModelId;
+        private DxVisualizer.IScene.ISceneModelInstance gridDxInstance;
         private CameraAction cameraAction = CameraAction.REST;
         private bool isModelTransforming = false;
         private Point prevMousePos;
         private SceneModelInstanceM draggedSceneModelInstance = null;        
-        private DxVisualizer.IScene.TransformCallbackHandlers transformGrpCallbackHandlers = new DxVisualizer.IScene.TransformCallbackHandlers();
-        private Dictionary<string, ModelAssetGen> modelAssetGens = new Dictionary<string, ModelAssetGen>();
+        private DxVisualizer.IScene.TransformCallbackHandlers transformGrpCallbackHandlers = new DxVisualizer.IScene.TransformCallbackHandlers();        
 
         public ObservableCollection<ModelM> ModelMs { get; } = new ObservableCollection<ModelM>();
         public ObservableCollection<SceneM> SceneMs { get; } = new ObservableCollection<SceneM>();
@@ -235,69 +235,47 @@ namespace Corium3DGI
                 Filter = "Collada|*.dae;*.fbx",
                 Multiselect = true
             };
-
-            bool? result = dlg.ShowDialog();
-            if (result == true)
+            
+            if (dlg.ShowDialog() == true)
             {
                 foreach (string model3dDatalFilePath in dlg.FileNames)
-                {                    
-                    string modelName = Path.GetFileNameWithoutExtension(model3dDatalFilePath);
-                    ModelAssetGen modelAssetGen;
-                    if (modelAssetGens.ContainsKey(modelName))
-                        modelAssetGen = modelAssetGens[modelName];
-                    else
-                    {
-                        modelAssetGen = new ModelAssetGen(model3dDatalFilePath);
-                        modelAssetGens.Add(modelName, modelAssetGen);
-                    }
-                    
-                    uint dxModelID;
-                    dxVisualizer.addModel(modelAssetGen.ManagedImportedDataRef.meshesVertices[0],
-                        modelAssetGen.ManagedImportedDataRef.meshesVertexIndices[0], 
-                        Color.FromArgb(255, 175, 175, 175),
-                        modelAssetGen.ManagedImportedDataRef.boundingSphereCenter,
-                        modelAssetGen.ManagedImportedDataRef.boundingSphereRadius, 
-                        PrimitiveTopology.TRIANGLELIST, out dxModelID);
-                    ModelM model = new ModelM(modelName, modelAssetGen, dxModelID);
+                {                                                         
+                    ModelM model = new ModelM(model3dDatalFilePath, dxVisualizer);
                     ModelMs.Add(model);
                 }
             }
         }
 
         private void removeModel()
-        {
-            modelAssetGens.Remove(SelectedModel.Name);
-            dxVisualizer.removeModel(SelectedModel.DxModelID);
+        {                        
             foreach (SceneM scene in SceneMs)
                 scene.removeSceneModel(SelectedModel);
             ModelMs.Remove(SelectedModel);
+            SelectedModel.Dispose();
         }
 
         private void saveImportedModels()
         {
-            CommonOpenFileDialog selectFolderDlg = new CommonOpenFileDialog()
+            Microsoft.Win32.SaveFileDialog selectFolderDlg = new Microsoft.Win32.SaveFileDialog()
             {
-                IsFolderPicker = true
+                Title = "Save Corium3D Assets File",                
+                Filter = "Assets File|*.assets",
             };
-
-            if (selectFolderDlg.ShowDialog() == CommonFileDialogResult.Ok)
-            {
-                foreach (ModelM modelM in ModelMs)
-                    modelM.genCorium3dAssetFile();
-            }
+            if (selectFolderDlg.ShowDialog() == true)            
+                AssetsGen.generateAssets(selectFolderDlg.FileName);                            
         }
 
         private void addScene(KeyboardFocusChangedEventArgs e)
         {
-            SceneM addedSceneM = new SceneM(dxVisualizer, ((TextBox)e.Source).Text, transformGrpCallbackHandlers);
-            addedSceneM.IDxScene.createModelInstance(gridDxModelId, Color.FromArgb(0, 0, 0, 0), new Vector3D(0, 0, 0), new Vector3D(1, 1, 1), new Vector3D(1, 0, 0), 0, null);
+            SceneM addedSceneM = new SceneM(((TextBox)e.Source).Text, dxVisualizer, transformGrpCallbackHandlers);
+            gridDxInstance = addedSceneM.IDxScene.createModelInstance(gridDxModelId, Color.FromArgb(0, 0, 0, 0), new Vector3D(0, 0, 0), new Vector3D(1, 1, 1), new Vector3D(1, 0, 0), 0, null);
             SceneMs.Add(addedSceneM);            
             SelectedScene = addedSceneM;                        
         }
 
         private void removeScene()
         {        
-            SelectedScene.releaseDxLmnts();
+            SelectedScene.Dispose();
             SceneMs.Remove(SelectedScene);
         }
 
@@ -308,7 +286,7 @@ namespace Corium3DGI
 
         private void removeSceneModel()
         {
-            SelectedScene.removeSceneModel(SelectedSceneModel);            
+            SelectedSceneModel.Dispose();            
         }
 
         private void onViewportLoaded()
@@ -367,7 +345,7 @@ namespace Corium3DGI
         {
             if (draggedSceneModelInstance != null)
             {
-                SelectedSceneModel.removeSceneModelInstance(draggedSceneModelInstance);
+                draggedSceneModelInstance.Dispose();
                 SelectedSceneModelInstance = draggedSceneModelInstance = null;
                 CommandManager.InvalidateRequerySuggested();
             }
@@ -449,7 +427,7 @@ namespace Corium3DGI
 
         private void removeSceneModelInstance()
         {
-            SelectedSceneModel.removeSceneModelInstance(SelectedSceneModelInstance);            
+            SelectedSceneModelInstance.Dispose();            
         }
 
         private void saveScene()

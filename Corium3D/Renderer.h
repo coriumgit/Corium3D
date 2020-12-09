@@ -11,7 +11,7 @@
 #include "BVH.h"
 #include "OpenGL.h"
 #include "GUI.h"
-#include "FilesStructs.h"
+#include "AssetsOps.h"
 #include <glm/glm.hpp>
 #include <math.h>
 
@@ -48,14 +48,14 @@ namespace Corium3D {
 
 		// TODO: Add differentiation between permanent and impermanent static models descs - 
 		// will demand adding and removing impermanent static instances	
-		Renderer(const char* modelDescsFullPath, const char** vertexShadersFullPaths, const char** fragShadersFullPaths, unsigned int shadersNr,
+		Renderer(const char** vertexShadersFullPaths, const char** fragShadersFullPaths, unsigned int shadersNr,
 			GUI& gui, GUI::TxtControl& fpsDisplay, GUI::TxtControl& visiblesDisplay);
 		Renderer(Renderer const&) = delete;
 		~Renderer();
 		bool init(Corium3DEngineNativeWindowType window);
 		void destroy();
 		bool surfaceSzChanged(unsigned int width, unsigned int height);
-		void loadScene(unsigned int* modelDescsIdxs, unsigned int staticModelDescsNr, unsigned int mobileModelDescsNr, unsigned int* modelsInstancesNrsMaxima, BVH& bvh);
+		void loadScene(std::vector<ModelDesc>&& modelDescs, unsigned int staticModelDescsNr, unsigned int mobileModelDescsNr, unsigned int* modelsInstancesNrsMaxima, BVH& bvh);
 		void unloadScene();
 		void translateCamera(glm::vec3 const& translation);
 		void resetCameraPivot();
@@ -117,12 +117,11 @@ namespace Corium3D {
 		unsigned int framesCount = 0;
 		unsigned int framesNrForFpsUpdate = FRAMES_NR_FOR_FPS_UPDATE;
 		double prevRenderTime = 0;
-
-		std::string modelDescsFullPath;
+		
 		std::string* vertexShadersFullPaths;
 		std::string* fragShadersFullPaths;
 		unsigned int shadersNr;
-		ModelDesc* modelDescsBuffer;
+		std::vector<ModelDesc> modelDescsBuffer;
 		unsigned int staticModelsNr;
 		unsigned int mobileModelsNr;
 		unsigned int modelsNrTotal;

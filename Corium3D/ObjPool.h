@@ -12,6 +12,8 @@ namespace Corium3DUtils {
 		ObjPool(ObjPool const& objPool) = delete;
 		~ObjPool();
 		T* acquire();
+		template <class ...Args>
+		T* acquire(Args&&... args);
 		template <class S>
 		T* acquire(S const& initObj);
 		template <class S>
@@ -31,6 +33,7 @@ namespace Corium3DUtils {
 	template <class T>
 	ObjPool<T>::ObjPool(unsigned int _maxSz) : maxSz(_maxSz), memPtr(new char[sizeof(T) * maxSz]), idxPool(new IdxPool(maxSz)) {}
 
+	// TODO: call destructors of all unreleased objects (?)
 	template <class T>
 	ObjPool<T>::~ObjPool() {
 		delete idxPool;
@@ -46,6 +49,17 @@ namespace Corium3DUtils {
 			throw std::underflow_error("No more objects.");
 		}
 	}	
+
+	template <class T>
+	template <class ...Args>
+	T* ObjPool<T>::acquire(Args&&... args) {
+		try {
+			return new((T*)memPtr + idxPool->acquire()) T(std::forward<Args>(args)...);
+		}
+		catch (std::underflow_error) {
+			throw std::underflow_error("No more objects.");
+		}
+	}
 
 	template <class T>
 	template <class S>
@@ -98,7 +112,7 @@ namespace Corium3DUtils {
 	template <class T>
 	class ObjPoolIteratable {
 	public:
-		// REMINDER: Iteration is not in respect to the elements' order relation
+		// REMINDER: Iteration order is unspecified
 		class ObjPoolIt {
 		public:
 			ObjPoolIt(ObjPoolIteratable& _objPool);
@@ -116,8 +130,10 @@ namespace Corium3DUtils {
 		ObjPoolIteratable(unsigned int maxSz);
 		ObjPoolIteratable(ObjPoolIteratable const& objPool) = delete;
 		~ObjPoolIteratable();
-		T* acquire();
+		T* acquire();		
 		T* acquire(T const& initObj);
+		template <class ...Args>
+		T* acquire(Args... args);
 		template <class S>
 		T* acquire(S const& initObj);
 		template <class S>
@@ -133,7 +149,10 @@ namespace Corium3DUtils {
 		struct DataRec {
 			DataRec() : data() {}
 			DataRec(T const& initObj) : data(initObj) {}
-			
+
+			template <class ...Args>
+			DataRec(Args... args) : data(args...) {}
+
 			template <class S>
 			DataRec(S const& initObj) : data(initObj) {}			
 
@@ -164,6 +183,26 @@ namespace Corium3DUtils {
 			DataRec* dataPtr = new((DataRec*)memPtr + idxPool->acquire()) DataRec();
 			if (listTail != NULL) {
 				dataPtr->prev = listTail;
+				listTail = dataPtr;
+			}
+			else
+				listHead = listTail = dataPtr;
+
+			return &(dataPtr->data);
+		}
+		catch (std::underflow_error) {
+			throw std::underflow_error("No more objects.");
+		}
+	}
+
+	template <class T>
+	template <class ...Args>
+	T* ObjPoolIteratable<T>::acquire(Args... args) {
+		try {			
+			DataRec* dataPtr = new((DataRec*)memPtr + idxPool->acquire()) DataRec(args...);
+			if (listTail != NULL) {
+				dataPtr->prev = listTail;
+				listTail->next = dataPtr;
 				listTail = dataPtr;
 			}
 			else

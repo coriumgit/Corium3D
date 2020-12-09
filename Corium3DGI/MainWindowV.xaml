@@ -255,6 +255,8 @@
                                     </DataGridTextColumn>
                                     
                                     <DataGridTextColumn IsReadOnly="False" Width="*" Header="Inst. Max" Binding="{Binding Path=InstancesNrMax, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
+
+                                    <DataGridCheckBoxColumn IsReadOnly="False" Width="*" Header="Is Static" Binding="{Binding Path=IsStatic, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                             

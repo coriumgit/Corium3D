@@ -2,12 +2,14 @@
 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp> // for angleAxis(valType const &angle, detail::tvec3< valType > const &v)
+#include <vector>
 
-#define DEBUG 0 
+#define __DEBUG__ 0 
 
 using namespace Corium3D;
 
-#if DEBUG == 0
+#if __DEBUG__ == 0
+/*
 Transform3D transforms[TEST_LMNTS_NR] = { { glm::vec3(0.0f, 0.0f, -7.0),   glm::vec3(1.0f, 1.0f, 1.0f), glm::quat(cos(0 / 4) , sin(0 / 4), sin(0 / 4), sin(0 / 8)) }
 											  //{ glm::vec3(-4.0f, 2.5f, -7.0),   glm::vec3(0.6f, 0.6f, 0.6f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f) },
 										  	  //{ glm::vec3(-3.0f, 4.0f, -7.0),   glm::vec3(0.6f, 0.6f, 0.6f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f) }
@@ -25,10 +27,10 @@ Transform3D transforms[TEST_LMNTS_NR] = { { glm::vec3(0.0f, 0.0f, -7.0),   glm::
 											  //{ glm::vec3(6.0f, 2.0f, -7.0),   glm::vec3(0.6f, 0.6f, 0.6f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f) },
 											  //{ glm::vec3(5.0f, 3.0f, -7.0),   glm::vec3(0.6f, 0.6f, 0.6f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f) }
 };
-
-glm::vec3  linVels[TEST_LMNTS_NR] = { glm::vec3(0.0f, 0.0f, 0.0f)
-									//glm::vec3(0.0f, 0.0f, 0.0f),
-									//glm::vec3(0.0f, 0.0f, 0.0f) 
+*/
+glm::vec3  linVels[TEST_LMNTS_NR] = { glm::vec3(0.0f, 0.0f, 0.0f),
+									glm::vec3(0.0f, 0.0f, 0.0f),
+									glm::vec3(0.0f, 0.0f, 0.0f) 
 									//glm::vec3(0.0f, 0.0f, 0.0f)
 									//glm::vec3(0.0f, 0.0f, 0.0f), 
 									//glm::vec3(0.0f, 0.1f, 0.0f)
@@ -44,9 +46,9 @@ glm::vec3  linVels[TEST_LMNTS_NR] = { glm::vec3(0.0f, 0.0f, 0.0f)
 									//glm::vec3(-1.0f, 0.1f, 0.0f)
 };
 
-float angVelMag[TEST_LMNTS_NR] = {  0.0f
-								    //0.0f,
-								    //0.0f
+float angVelMag[TEST_LMNTS_NR] = {  0.0f,
+								    0.0f,
+								    0.0f
 								    //0.0f,
 								    //0.0f, 
 							  	    //0.0f, 
@@ -57,9 +59,9 @@ float angVelMag[TEST_LMNTS_NR] = {  0.0f
 };
 
 // REMINDER: angular velocity axis must not equal the zero vector
-glm::vec3 angVelAx[TEST_LMNTS_NR] = { glm::vec3(1.0f, 0.0f, 1.0f)
-									//glm::vec3(1.0f, 0.0f, 0.0f),
-									//glm::vec3(1.0f, 0.0f, 0.0f) 
+glm::vec3 angVelAx[TEST_LMNTS_NR] = { glm::vec3(1.0f, 0.0f, 1.0f),
+									glm::vec3(1.0f, 0.0f, 0.0f),
+									glm::vec3(1.0f, 0.0f, 0.0f) 
 									//glm::vec3(0.0f, -1.5f, 0.0f)
 									//glm::vec3(0.0f, 0.0f, 0.0f), 
 									//glm::vec3(0.0f, 0.1f, 0.0f)
@@ -77,7 +79,7 @@ glm::vec3 angVelAx[TEST_LMNTS_NR] = { glm::vec3(1.0f, 0.0f, 1.0f)
 
 #define TEST_PRIMITIVES 0
 
-#elif DEBUG == 1
+#elif __DEBUG__ == 1
 
 Corium::Transform const transforms[TEST_LMNTS_NR] = { { glm::vec3(1.0f, 3.5f, -7.0),   glm::vec3(0.5f, 0.5f, 0.5f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f) },
 													  { glm::vec3(3.0f, -1.0f, -7.0),   glm::vec3(0.5f, 0.5f, 0.5f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f) },
@@ -94,28 +96,21 @@ glm::vec3  linVels[TEST_LMNTS_NR] = { glm::vec3(0.0f, 0.0f, 0.0f),
 									  glm::vec3(0.0f, 0.0f, 0.0f) }; 
 #endif
 
-GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium3Dengine), cubesPool(TEST_LMNTS_NR), spheresPool(TEST_LMNTS_NR), capsulesPool(TEST_LMNTS_NR) {
-	Corium3DEngine::GameLmnt::ProximityHandlingMethods coloringCallbacksBuffer[3];
-	Corium3DEngine::GameLmnt::ProximityHandlingMethods removingCallabackBuffer[3];
-		
-	coloringCallbacksBuffer[0].collisionCallback = std::bind(&GameMaster::primitiveColoringCollisionCallback, this, std::placeholders::_1, std::placeholders::_2);
-	coloringCallbacksBuffer[0].detachmentCallback = std::bind(&GameMaster::primitiveColoringDetachmentCallback, this, std::placeholders::_1, std::placeholders::_2);
-	coloringCallbacksBuffer[1].collisionCallback = std::bind(&GameMaster::primitiveColoringCollisionCallback, this, std::placeholders::_1, std::placeholders::_2);
-	coloringCallbacksBuffer[1].detachmentCallback = std::bind(&GameMaster::primitiveColoringDetachmentCallback, this, std::placeholders::_1, std::placeholders::_2);
-	coloringCallbacksBuffer[2].collisionCallback = std::bind(&GameMaster::primitiveColoringCollisionCallback, this, std::placeholders::_1, std::placeholders::_2);
-	coloringCallbacksBuffer[2].detachmentCallback = std::bind(&GameMaster::primitiveColoringDetachmentCallback, this, std::placeholders::_1, std::placeholders::_2);
-	removingCallabackBuffer[0].collisionCallback = std::bind(&GameMaster::removingCollisionCallbackCubeCube, this, std::placeholders::_1, std::placeholders::_2);	
-	removingCallabackBuffer[1].collisionCallback = std::bind(&GameMaster::removingCollisionCallbackCubeCube, this, std::placeholders::_1, std::placeholders::_2);		
-	
-	//for (unsigned int cubeIdx = 0; cubeIdx < TEST_LMNTS_NR / 2; cubeIdx ++)
-	//	cubes[cubeIdx] = cubesPool.acquire<TheCube::InitStruct>(TheCube::InitStruct({ corium3D, transforms + cubeIdx, linVels[cubeIdx], angVelMag[cubeIdx], angVelAx[cubeIdx], coloringCallbacksBuffer }));
-	//for (unsigned int cubeIdx = TEST_LMNTS_NR / 2; cubeIdx < TEST_LMNTS_NR; cubeIdx++)
-	//	cubes[cubeIdx] = cubesPool.acquire<TheCube::InitStruct>(TheCube::InitStruct({ corium3D, transforms + cubeIdx, linVels[cubeIdx], angVelMag[cubeIdx], angVelAx[cubeIdx], coloringCallbacksBuffer }));
-#if TEST_PRIMITIVES == 0
-	for (unsigned int lmntIdx = 0; lmntIdx < TEST_LMNTS_NR / 2; lmntIdx++)
-		cubes[lmntIdx] = cubesPool.acquire<TheCube::InitStruct>(TheCube::InitStruct({ corium3DEngine, transforms + lmntIdx, 2 * asinf(transforms[lmntIdx].rot.z), linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer }));
-	for (unsigned int lmntIdx = TEST_LMNTS_NR / 2; lmntIdx < TEST_LMNTS_NR; lmntIdx++)
-		cubes[lmntIdx] = cubesPool.acquire<TheCube::InitStruct>(TheCube::InitStruct({ corium3DEngine, transforms + lmntIdx, 2 * asinf(transforms[lmntIdx].rot.z), linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer }));
+GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium3Dengine), cubesPool(TEST_LMNTS_NR)//, spheresPool(TEST_LMNTS_NR), capsulesPool(TEST_LMNTS_NR) 
+{							
+	std::vector<std::vector<Transform3D>> transformsInit = corium3DEngine.loadScene(0);
+
+	// THE PRIMITIVES INSTANTIATION
+	Corium3DEngine::GameLmnt::ProximityHandlingMethods coloringCallbacks = {
+		std::bind(&GameMaster::primitiveColoringCollisionCallback, this, std::placeholders::_1, std::placeholders::_2),
+		std::bind(&GameMaster::primitiveColoringDetachmentCallback, this, std::placeholders::_1, std::placeholders::_2)
+	};
+	Corium3DEngine::GameLmnt::ProximityHandlingMethods coloringCallbacksBuffer[] = 
+		{ coloringCallbacks, coloringCallbacks, coloringCallbacks, coloringCallbacks };
+
+#if TEST_PRIMITIVES == 0	
+	for (unsigned int lmntIdx = 0; lmntIdx < TEST_LMNTS_NR; lmntIdx++)
+		cubes[lmntIdx] = cubesPool.acquire(corium3DEngine, transformsInit[0][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);	
 #elif TEST_PRIMITIVES == 1
 	for (unsigned int lmntIdx = 0; lmntIdx < TEST_LMNTS_NR / 2; lmntIdx++)
 		spheres[lmntIdx] = spheresPool.acquire<TheSphere::InitStruct>(TheSphere::InitStruct({ corium3D, transforms + lmntIdx, 2 * asinf(transforms[lmntIdx].rot.z), linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer }));
@@ -126,18 +121,17 @@ GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium
 		capsules[lmntIdx] = capsulesPool.acquire<TheCapsule::InitStruct>(TheCapsule::InitStruct({ corium3D, transforms + lmntIdx, M_PI / 4.0f , linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer }));
 	for (unsigned int lmntIdx = TEST_LMNTS_NR / 2; lmntIdx < TEST_LMNTS_NR; lmntIdx++)
 		capsules[lmntIdx] = capsulesPool.acquire<TheCapsule::InitStruct>(TheCapsule::InitStruct({ corium3D, transforms + lmntIdx, 2 * asinf(transforms[lmntIdx].rot.z), linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer }));
-#endif
+#endif	
 
-	Transform3D playerTransform({ glm::vec3(4.5f, 0.0f, -7.0), glm::vec3(1.0f, 1.0f, 1.0f), glm::quat(cos(0 / 6), sin(0 / 4), sin(0 / 4), sin(0 / 6)) });
-	float playerCollisionPrimitiveRot = 0 / 3; // 2 * asinf(playerTransform.rot.z);
-	Corium3DEngine::GameLmnt::ProximityHandlingMethods playerProximityHandlingMethods[3];
-	playerProximityHandlingMethods[0].collisionCallback = std::bind(&GameMaster::playerCollisionCallback, this, std::placeholders::_1, std::placeholders::_2);
-	playerProximityHandlingMethods[0].detachmentCallback = std::bind(&GameMaster::playerDetachmentCallback, this, std::placeholders::_1, std::placeholders::_2);
-	playerProximityHandlingMethods[1].collisionCallback = std::bind(&GameMaster::playerCollisionCallback, this, std::placeholders::_1, std::placeholders::_2);
-	playerProximityHandlingMethods[1].detachmentCallback = std::bind(&GameMaster::playerDetachmentCallback, this, std::placeholders::_1, std::placeholders::_2);
-	playerProximityHandlingMethods[2].collisionCallback = std::bind(&GameMaster::playerCollisionCallback, this, std::placeholders::_1, std::placeholders::_2);
-	playerProximityHandlingMethods[2].detachmentCallback = std::bind(&GameMaster::playerDetachmentCallback, this, std::placeholders::_1, std::placeholders::_2);
-	player = new TheCube(TheCube::InitStruct({ corium3DEngine, &playerTransform, playerCollisionPrimitiveRot, glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, glm::vec3(1.0f, 0.0f, 1.0f), playerProximityHandlingMethods }));
+	// PLAYER INSTANTIATION
+	Transform3D playerTransform({ glm::vec3(4.5f, 0.0f, -7.0), glm::vec3(1.0f, 1.0f, 1.0f), glm::quat(cos(0 / 6), sin(0 / 4), sin(0 / 4), sin(0 / 6)) });		
+	Corium3DEngine::GameLmnt::ProximityHandlingMethods playerProximityCallbacks {
+		std::bind(&GameMaster::playerCollisionCallback, this, std::placeholders::_1, std::placeholders::_2),
+		std::bind(&GameMaster::playerDetachmentCallback, this, std::placeholders::_1, std::placeholders::_2)
+	};
+	Corium3DEngine::GameLmnt::ProximityHandlingMethods playerProximityHandlingMethods[] = 
+		{ playerProximityCallbacks, playerProximityCallbacks, playerProximityCallbacks, playerProximityCallbacks };
+	player = new TheCube(corium3DEngine, playerTransform, 0, glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, glm::vec3(1.0f, 0.0f, 1.0f), playerProximityHandlingMethods);
 	playerMobilityAPI = player->accessMobilityAPI();
 	corium3DEngine.registerKeyboardInputStartCallback(KeyboardInputID::LEFT_ARROW, std::bind(&GameMaster::movePlayerLeft, this, std::placeholders::_1));
 	corium3DEngine.registerKeyboardInputStartCallback(KeyboardInputID::RIGHT_ARROW, std::bind(&GameMaster::movePlayerRight, this, std::placeholders::_1));

@@ -116,16 +116,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\Corium3D\AABB.h" />
+    <ClInclude Include="..\Corium3D\AssetsOps.h" />
     <ClInclude Include="..\Corium3D\BoundingSphere.h" />
-    <ClInclude Include="..\Corium3D\FilesOps.h" />
-    <ClInclude Include="..\Corium3D\FilesStructs.h" />
-    <ClInclude Include="ModelAssetGen.h" />
+    <ClInclude Include="AssetsGen.h" />
+    <ClInclude Include="Marshalers.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Corium3D\AABB.cpp" />
+    <ClCompile Include="..\Corium3D\AssetsOps.cpp" />
     <ClCompile Include="..\Corium3D\BoundingSphere.cpp" />
-    <ClCompile Include="..\Corium3D\FilesOps.cpp" />
-    <ClCompile Include="ModelAssetGen.cpp" />
+    <ClCompile Include="AssetsGen.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="PresentationCore" />

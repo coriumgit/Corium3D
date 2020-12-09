@@ -4,163 +4,228 @@
 
 namespace Corium3D {	
 
+	typedef unsigned int file_loc_t;
+	typedef unsigned short collection_sz_t;
+
 	template <class T>
 	inline T readVal(std::ifstream& file) {
 		T buffer;
-		file.read((char*)&buffer, sizeof(T));
-		return buffer;
-	}
-
-	template <class T>
-	inline T* readValsArr(std::ifstream& file, unsigned int arrSz) {
-		T* buffer = new T[arrSz];
-		file.read((char*)buffer, sizeof(T) * arrSz);
-
+		file.read((char*)&buffer, sizeof(T));		
 		return buffer;
 	}
 
 	template <class T>
 	inline void writeVal(std::ofstream& file, T val) {
-		file.write((char*)&val, sizeof(T));
+		file.write((char*)&val, sizeof(T));		
+	}
+
+	inline void readStr(std::ifstream& file, std::string& outStr) {
+		unsigned int sz = readVal<collection_sz_t>(file);
+		outStr.resize(sz);		
+		//std::istreambuf_iterator<char> startIt(file);
+		//std::istreambuf_iterator<char> endIt(std::next(startIt, sz));		
+		//outStr.assign(startIt, endIt);	
+		if (sz > 0)
+			file.read(&outStr[0], sz);				
+	}
+	
+	inline void writeStr(std::ofstream& file, std::string const& outStr) {
+		collection_sz_t sz = outStr.length();
+		writeVal<collection_sz_t>(file, sz);
+		if (sz > 0)
+			file.write(outStr.data(), sz);			
+	}
+
+	template <class T, int SZ>
+	inline void readArr(std::ifstream& file, std::array<T,SZ>& outArr) {		
+		file.read((char*)&outArr[0], sizeof(T) * SZ);
+	}
+
+	template <class T, int SZ>
+	inline void writeArr(std::ofstream& file, std::array<T, SZ> const& arr) {
+		file.write((char*)&arr[0], sizeof(T) * SZ);		
 	}
 
 	template <class T>
-	inline void writeValsArr(std::ofstream& file, T const* valsArr, unsigned int arrSz) {
-		file.write((char*)valsArr, sizeof(T) * arrSz);
+	inline void readVec(std::ifstream& file, std::vector<T>& outVec) {		
+		collection_sz_t sz = readVal<collection_sz_t>(file);
+		outVec.resize(sz);
+		if (sz > 0)
+			file.read((char*)&outVec[0], sizeof(T) * sz);
+	}	
+
+	template <class T>
+	inline void writeVec(std::ofstream& file, std::vector<T> const& vec) {
+		collection_sz_t sz = vec.size();
+		writeVal<collection_sz_t>(file, sz);
+		if (sz > 0)
+			file.write((char*)&vec[0], sizeof(T) * sz);
 	}
 
-	void readSceneData(std::string const& sceneDescFileName, SceneData& sceneDataOut) {
-		std::ifstream sceneDescFile(sceneDescFileName, std::ios::in | std::ios::binary);
-#if DEBUG
-		if (!sceneDescFile.is_open())
-			throw std::ios_base::failure(sceneDescFileName + "failed to open.");
-#endif	
+	template <class T>
+	inline void readValsSeq(std::ifstream& file, collection_sz_t valsNr, std::vector<T>& outVec) {
+		outVec.resize(valsNr);
+		if (valsNr > 0)
+			file.read((char*)&outVec[0], sizeof(T) * valsNr);
+	}	
 
-		sceneDataOut.staticModelsNr = readVal<unsigned int>(sceneDescFile);
-		sceneDataOut.mobileModelsNr = readVal<unsigned int>(sceneDescFile);
-		unsigned int modelsNr = sceneDataOut.staticModelsNr + sceneDataOut.mobileModelsNr;
-		//sceneDataOut.sceneModelsData.modelsIdxs = readValsArr<unsigned int>(sceneDescFile, modelsNr);
-		//sceneDataOut.sceneModelsData.modelsInstancesNrsMaxima = readValsArr<unsigned int>(sceneDescFile, modelsNr);
-		sceneDataOut.collisionPrimitives3DInstancesNrsMaxima = readValsArr<unsigned int>(sceneDescFile, CollisionPrimitive3DType::__PRIMITIVE3D_TYPES_NR__);
-		sceneDataOut.collisionPrimitives2DInstancesNrsMaxima = readValsArr<unsigned int>(sceneDescFile, CollisionPrimitive2DType::__PRIMITIVE2D_TYPES_NR__);
-
-		sceneDescFile.close();
+	template <class T>
+	inline void writeValsSeq(std::ofstream& file, T const* valsArr, collection_sz_t arrSz) {
+		if (arrSz > 0) 
+			file.write((char*)valsArr, sizeof(T) * arrSz);
 	}
 
-	void readModelDesc(std::string const& modelDescFileName, ModelDesc& modelDescOut) {
-		std::ifstream modelDescFile(modelDescFileName, std::ios::binary);
-#if DEBUG
-		if (!modelDescFile.is_open())
-			throw std::ios_base::failure(modelDescFileName + "failed to open.");
+	void readModelDesc(std::ifstream& modelDescFile, ModelDesc& outSceneModl);
+
+	void writeModelDesc(std::ofstream& modelDescFile, ModelDesc const& modelDesc);
+	
+	void readSceneData(std::ifstream& sceneDataFile, SceneData& outSceneData);
+	
+	void writeSceneData(std::ofstream& sceneDataFile, SceneData const& sceneDesc);
+	
+	void readSceneAssets(std::string const& assetsFileFullPath, unsigned int sceneIdx, SceneData& outSceneData, std::vector<ModelDesc>& outModelDescs, std::vector<unsigned int>& outModelSceneModelIdxsMap)
+	{
+		std::ifstream assetsFile(assetsFileFullPath, std::ios::binary);
+#if DEBUG || _DEBUG
+		if (!assetsFile.is_open())
+			throw std::ios_base::failure(assetsFileFullPath + " failed to open.");
 #endif	
 
-		unsigned int colladaPathSz = readVal<unsigned int>(modelDescFile);
-		modelDescOut.colladaPath.reserve(colladaPathSz);
-		modelDescFile.read(&modelDescOut.colladaPath[0], colladaPathSz);
-		modelDescOut.verticesNr = readVal<unsigned int>(modelDescFile);
-		modelDescOut.meshesNr = readVal<unsigned int>(modelDescFile);
-		modelDescOut.verticesNrsPerMesh = readValsArr<unsigned int>(modelDescFile, modelDescOut.meshesNr);
-		modelDescOut.verticesColorsNrTotal = readVal<unsigned int>(modelDescFile);
-		modelDescOut.extraColorsNrsPerMesh = readValsArr<unsigned int>(modelDescFile, modelDescOut.meshesNr);
-		modelDescOut.extraColors = new float** [modelDescOut.meshesNr];
-		for (unsigned int meshIdx = 0; meshIdx < modelDescOut.meshesNr; meshIdx++) {
-			unsigned int extraColorsNr = modelDescOut.extraColorsNrsPerMesh[meshIdx];
-			modelDescOut.extraColors[meshIdx] = new float* [extraColorsNr];
-			for (unsigned int extraColorIdx = 0; extraColorIdx < extraColorsNr; extraColorIdx++)
-				modelDescOut.extraColors[meshIdx][extraColorIdx] = readValsArr<float>(modelDescFile, 4);
+		// readout models number
+		collection_sz_t modelsNr = readVal<collection_sz_t>(assetsFile);
+		assetsFile.seekg(sizeof(collection_sz_t) + modelsNr * sizeof(file_loc_t) + sceneIdx * sizeof(file_loc_t));		
+		assetsFile.seekg(readVal<file_loc_t>(assetsFile));
+		readSceneData(assetsFile, outSceneData);
+		unsigned int sceneModelsNr = outSceneData.sceneModelsData.size();
+		outModelDescs.resize(sceneModelsNr);
+		outModelSceneModelIdxsMap.resize(modelsNr);		
+
+		unsigned int staticModelIdx = 0;
+		unsigned int mobileModelIdx = 0;
+		for (unsigned int modelIdx = 0; modelIdx < sceneModelsNr; ++modelIdx) {
+			assetsFile.seekg(sizeof(collection_sz_t) + outSceneData.sceneModelsData[modelIdx].modelIdx * sizeof(file_loc_t));
+			assetsFile.seekg(readVal<file_loc_t>(assetsFile));			
+			if (outSceneData.sceneModelsData[modelIdx].isStatic) {				
+				outModelSceneModelIdxsMap[outSceneData.sceneModelsData[modelIdx].modelIdx] = staticModelIdx;
+				readModelDesc(assetsFile, outModelDescs[staticModelIdx++]);
+			}				
+			else {
+				unsigned int modelIdxMapped = sceneModelsNr - 1 - mobileModelIdx++;
+				outModelSceneModelIdxsMap[outSceneData.sceneModelsData[modelIdx].modelIdx] = modelIdxMapped;
+				readModelDesc(assetsFile, outModelDescs[modelIdxMapped]);				
+			}						
 		}
-		modelDescOut.texesNr = readVal<unsigned int>(modelDescFile);
-		modelDescOut.texesNrsPerMesh = readValsArr<unsigned int>(modelDescFile, modelDescOut.meshesNr);
-		modelDescOut.facesNr = readVal<unsigned int>(modelDescFile);
-		modelDescOut.facesNrsPerMesh = readValsArr<unsigned int>(modelDescFile, modelDescOut.meshesNr);
-		modelDescOut.progIdx = readVal<unsigned int>(modelDescFile);
-		modelDescOut.bonesNr = readVal<unsigned int>(modelDescFile);
-		modelDescOut.bonesNrsPerMesh = readValsArr<unsigned int>(modelDescFile, modelDescOut.meshesNr);
-		modelDescOut.animationsNr = readVal<unsigned int>(modelDescFile);
-		modelDescOut.animationsDescs = readValsArr<ModelDesc::AnimationDesc>(modelDescFile, modelDescOut.animationsNr);
 
-		modelDescOut.colliderData.boundingSphereCenter = readVal<glm::vec3>(modelDescFile);
-		modelDescOut.colliderData.boundingSphereRadius = readVal<float>(modelDescFile);
-		modelDescOut.colliderData.aabb3DMinVertex = readVal<glm::vec3>(modelDescFile);
-		modelDescOut.colliderData.aabb3DMaxVertex = readVal<glm::vec3>(modelDescFile);
-		modelDescOut.colliderData.collisionPrimitive3DType = readVal<enum CollisionPrimitive3DType>(modelDescFile);
-		modelDescOut.colliderData.collisionPrimitive2DType = readVal<enum CollisionPrimitive2DType>(modelDescFile);
-		switch (modelDescOut.colliderData.collisionPrimitive3DType) {
+		assetsFile.close();
+	}
+
+	void writeAssetsFile(std::string const& assetsFileFullPath, std::vector<ModelDesc const*> const& modelDescs, std::vector<SceneData const*> const& scenesData)
+	{
+		std::ofstream assetsFile(assetsFileFullPath, std::ios::binary);
+#if DEBUG || _DEBUG
+		if (!assetsFile.is_open())
+			throw std::ios_base::failure(assetsFileFullPath + " failed to open.");
+#endif	
+
+		unsigned int modelsNr = modelDescs.size();
+		unsigned int scenesNr = scenesData.size();
+		std::vector<file_loc_t> modelDescsFileLocs(modelsNr);
+		std::vector<file_loc_t> scenesDataFileLocs(scenesNr);
+		writeVec(assetsFile, modelDescsFileLocs);
+		writeValsSeq(assetsFile, &scenesDataFileLocs[0], scenesNr);
+		for (unsigned int modelIdx = 0; modelIdx < modelsNr; ++modelIdx) {
+			modelDescsFileLocs[modelIdx] = assetsFile.tellp();
+			writeModelDesc(assetsFile, *modelDescs[modelIdx]);						
+		}
+		for (unsigned int sceneIdx = 0; sceneIdx < scenesNr; ++sceneIdx) {
+			scenesDataFileLocs[sceneIdx] = assetsFile.tellp();
+			writeSceneData(assetsFile, *scenesData[sceneIdx]);
+		}
+
+		assetsFile.seekp(0);
+		writeVec(assetsFile, modelDescsFileLocs);
+		writeValsSeq(assetsFile, &scenesDataFileLocs[0], scenesNr);
+
+		assetsFile.close();
+	}
+
+	void readModelDesc(std::ifstream& modelDescFile, ModelDesc& outModelDesc) {
+		readStr(modelDescFile, outModelDesc.colladaPath);
+		outModelDesc.verticesNr = readVal<unsigned int>(modelDescFile);
+		outModelDesc.meshesNr = readVal<unsigned int>(modelDescFile);
+		readValsSeq<unsigned int>(modelDescFile, outModelDesc.meshesNr, outModelDesc.verticesNrsPerMesh);
+		outModelDesc.verticesColorsNrTotal = readVal<unsigned int>(modelDescFile);
+		readValsSeq<unsigned int>(modelDescFile, outModelDesc.meshesNr, outModelDesc.extraColorsNrsPerMesh);
+		outModelDesc.extraColors.resize(outModelDesc.meshesNr);
+		for (unsigned int meshIdx = 0; meshIdx < outModelDesc.meshesNr; meshIdx++) {
+			unsigned int extraColorsNr = outModelDesc.extraColorsNrsPerMesh[meshIdx];
+			outModelDesc.extraColors[meshIdx].resize(extraColorsNr);
+			for (unsigned int extraColorIdx = 0; extraColorIdx < extraColorsNr; extraColorIdx++)
+				readArr<float, 4>(modelDescFile, outModelDesc.extraColors[meshIdx][extraColorIdx]);
+		}
+		outModelDesc.texesNr = readVal<unsigned int>(modelDescFile);
+		readValsSeq<unsigned int>(modelDescFile, outModelDesc.meshesNr, outModelDesc.texesNrsPerMesh);
+		outModelDesc.facesNr = readVal<unsigned int>(modelDescFile);
+		readValsSeq<unsigned int>(modelDescFile, outModelDesc.meshesNr, outModelDesc.facesNrsPerMesh);
+		outModelDesc.progIdx = readVal<unsigned int>(modelDescFile);
+		outModelDesc.bonesNr = readVal<unsigned int>(modelDescFile);
+		readValsSeq<unsigned int>(modelDescFile, outModelDesc.meshesNr, outModelDesc.bonesNrsPerMesh);
+		readVec<ModelDesc::AnimationDesc>(modelDescFile, outModelDesc.animationsDescs);
+
+		outModelDesc.colliderData.boundingSphereCenter = readVal<glm::vec3>(modelDescFile);
+		outModelDesc.colliderData.boundingSphereRadius = readVal<float>(modelDescFile);
+		outModelDesc.colliderData.aabb3DMinVertex = readVal<glm::vec3>(modelDescFile);
+		outModelDesc.colliderData.aabb3DMaxVertex = readVal<glm::vec3>(modelDescFile);
+		outModelDesc.colliderData.collisionPrimitive3DType = readVal<enum CollisionPrimitive3DType>(modelDescFile);
+		outModelDesc.colliderData.collisionPrimitive2DType = readVal<enum CollisionPrimitive2DType>(modelDescFile);
+		switch (outModelDesc.colliderData.collisionPrimitive3DType) {
 		case CollisionPrimitive3DType::BOX:
-			modelDescOut.colliderData.collisionPrimitive3dData.collisionBoxData = readVal<ColliderData::CollisionBoxData>(modelDescFile);
+			outModelDesc.colliderData.collisionPrimitive3dData.collisionBoxData = readVal<ColliderData::CollisionBoxData>(modelDescFile);
 			break;
 		case CollisionPrimitive3DType::SPHERE:
-			modelDescOut.colliderData.collisionPrimitive3dData.collisionSphereData = readVal<ColliderData::CollisionSphereData>(modelDescFile);
+			outModelDesc.colliderData.collisionPrimitive3dData.collisionSphereData = readVal<ColliderData::CollisionSphereData>(modelDescFile);
 			break;
 		case CollisionPrimitive3DType::CAPSULE:
-			modelDescOut.colliderData.collisionPrimitive3dData.collisionCapsuleData = readVal<ColliderData::CollisionCapsuleData>(modelDescFile);
+			outModelDesc.colliderData.collisionPrimitive3dData.collisionCapsuleData = readVal<ColliderData::CollisionCapsuleData>(modelDescFile);
 			break;
 		}
 
-		if (modelDescOut.colliderData.collisionPrimitive2DType != CollisionPrimitive2DType::NO_2D_COLLIDER) {
-			modelDescOut.colliderData.aabb2DMinVertex = readVal<glm::vec2>(modelDescFile);
-			modelDescOut.colliderData.aabb2DMaxVertex = readVal<glm::vec2>(modelDescFile);
-			switch (modelDescOut.colliderData.collisionPrimitive2DType) {
+		if (outModelDesc.colliderData.collisionPrimitive2DType != CollisionPrimitive2DType::NO_2D_COLLIDER) {
+			outModelDesc.colliderData.aabb2DMinVertex = readVal<glm::vec2>(modelDescFile);
+			outModelDesc.colliderData.aabb2DMaxVertex = readVal<glm::vec2>(modelDescFile);
+			switch (outModelDesc.colliderData.collisionPrimitive2DType) {
 			case CollisionPrimitive2DType::RECT:
-				modelDescOut.colliderData.collisionPrimitive2dData.collisionRectData = readVal<ColliderData::CollisionRectData>(modelDescFile);
+				outModelDesc.colliderData.collisionPrimitive2dData.collisionRectData = readVal<ColliderData::CollisionRectData>(modelDescFile);
 				break;
 			case CollisionPrimitive2DType::CIRCLE:
-				modelDescOut.colliderData.collisionPrimitive2dData.collisionCircleData = readVal<ColliderData::CollisionCircleData>(modelDescFile);
+				outModelDesc.colliderData.collisionPrimitive2dData.collisionCircleData = readVal<ColliderData::CollisionCircleData>(modelDescFile);
 				break;
 			case CollisionPrimitive2DType::STADIUM:
-				modelDescOut.colliderData.collisionPrimitive2dData.collisionStadiumData = readVal<ColliderData::CollisionStadiumData>(modelDescFile);
+				outModelDesc.colliderData.collisionPrimitive2dData.collisionStadiumData = readVal<ColliderData::CollisionStadiumData>(modelDescFile);
 				break;
 			}
-		}
-
-		modelDescFile.close();
-	}	
-	
-	void writeSceneData(std::string const& sceneDescFileName, SceneData const& sceneData) {
-		std::ofstream sceneDescFile(sceneDescFileName, std::ios::in | std::ios::binary);
-#if DEBUG
-		if (!sceneDescFile.is_open())
-			throw std::ios_base::failure(sceneDescFileName + "failed to open.");
-#endif
-
-		writeVal<unsigned int>(sceneDescFile, sceneData.staticModelsNr);
-		writeVal<unsigned int>(sceneDescFile, sceneData.mobileModelsNr);		
-		unsigned int modelsNr = sceneData.staticModelsNr + sceneData.mobileModelsNr;
-		//writeValsArr<unsigned int>(sceneDescFile, sceneData.modelsIdxs, modelsNr);
-		//writeValsArr<unsigned int>(sceneDescFile, sceneData.modelsInstancesNrsMaxima, modelsNr);
-		writeValsArr<unsigned int>(sceneDescFile, sceneData.collisionPrimitives3DInstancesNrsMaxima, CollisionPrimitive3DType::__PRIMITIVE3D_TYPES_NR__);
-		writeValsArr<unsigned int>(sceneDescFile, sceneData.collisionPrimitives2DInstancesNrsMaxima, CollisionPrimitive2DType::__PRIMITIVE2D_TYPES_NR__);		
-
-		sceneDescFile.close();
+		}		
 	}
-
-	void writeModelDesc(std::string const& modelDescFileName, ModelDesc const& modelDesc) {
-		std::ofstream modelDescFile(modelDescFileName, std::ios::binary);
-#if DEBUG
-		if (!modelDescFile.is_open())
-			throw std::ios_base::failure(modelDescFileName + "failed to open.");
-#endif
-
-		writeVal<unsigned int>(modelDescFile, modelDesc.colladaPath.size());
-		writeValsArr<char>(modelDescFile, modelDesc.colladaPath.c_str(), modelDesc.colladaPath.size());
+		
+	void writeModelDesc(std::ofstream& modelDescFile, ModelDesc const& modelDesc) {		
+		writeStr(modelDescFile, modelDesc.colladaPath);
 		writeVal<unsigned int>(modelDescFile, modelDesc.verticesNr);
 		writeVal<unsigned int>(modelDescFile, modelDesc.meshesNr);
-		writeValsArr<unsigned int>(modelDescFile, modelDesc.verticesNrsPerMesh, modelDesc.meshesNr);
+		writeValsSeq<unsigned int>(modelDescFile, &modelDesc.verticesNrsPerMesh[0], modelDesc.meshesNr);
 		writeVal<unsigned int>(modelDescFile, modelDesc.verticesColorsNrTotal);
-		writeValsArr<unsigned int>(modelDescFile, modelDesc.extraColorsNrsPerMesh, modelDesc.meshesNr);
+		writeValsSeq<unsigned int>(modelDescFile, &modelDesc.extraColorsNrsPerMesh[0], modelDesc.meshesNr);
 		for (unsigned int meshIdx = 0; meshIdx < modelDesc.meshesNr; meshIdx++) {
 			for (unsigned int extraColorIdx = 0; extraColorIdx < modelDesc.extraColorsNrsPerMesh[meshIdx]; extraColorIdx++)
-				writeValsArr<float>(modelDescFile, modelDesc.extraColors[meshIdx][extraColorIdx], 4);
+				writeArr<float,4>(modelDescFile, modelDesc.extraColors[meshIdx][extraColorIdx]);
 		}
 		writeVal<unsigned int>(modelDescFile, modelDesc.texesNr);
-		writeValsArr<unsigned int>(modelDescFile, modelDesc.texesNrsPerMesh, modelDesc.meshesNr);
+		writeValsSeq<unsigned int>(modelDescFile, &modelDesc.texesNrsPerMesh[0], modelDesc.meshesNr);
 		writeVal<unsigned int>(modelDescFile, modelDesc.facesNr);
-		writeValsArr<unsigned int>(modelDescFile, modelDesc.facesNrsPerMesh, modelDesc.meshesNr);
+		writeValsSeq<unsigned int>(modelDescFile, &modelDesc.facesNrsPerMesh[0], modelDesc.meshesNr);
 		writeVal<unsigned int>(modelDescFile, modelDesc.progIdx);
 		writeVal<unsigned int>(modelDescFile, modelDesc.bonesNr);
-		writeValsArr<unsigned int>(modelDescFile, modelDesc.bonesNrsPerMesh, modelDesc.meshesNr);
-		writeVal<unsigned int>(modelDescFile, modelDesc.animationsNr);
-		writeValsArr<ModelDesc::AnimationDesc>(modelDescFile, modelDesc.animationsDescs, modelDesc.animationsNr);
+		writeValsSeq<unsigned int>(modelDescFile, &modelDesc.bonesNrsPerMesh[0], modelDesc.meshesNr);
+		writeVec<ModelDesc::AnimationDesc>(modelDescFile, modelDesc.animationsDescs);
 
 		writeVal<glm::vec3>(modelDescFile, modelDesc.colliderData.boundingSphereCenter);
 		writeVal<float>(modelDescFile, modelDesc.colliderData.boundingSphereRadius);
@@ -194,14 +259,44 @@ namespace Corium3D {
 				writeVal<ColliderData::CollisionStadiumData>(modelDescFile, modelDesc.colliderData.collisionPrimitive2dData.collisionStadiumData);
 				break;
 			}
+		}				
+	}
+
+	void readSceneData(std::ifstream& sceneDataFile, SceneData& outSceneData) {
+		outSceneData.staticModelsNr = readVal<unsigned int>(sceneDataFile);		
+		unsigned int modelsNr = readVal<unsigned int>(sceneDataFile);
+		outSceneData.sceneModelsData.resize(modelsNr);		
+		for (unsigned int modelIdx = 0; modelIdx < modelsNr; ++modelIdx) {
+			SceneData::SceneModelData& sceneModelData = outSceneData.sceneModelsData[modelIdx];
+			sceneModelData.modelIdx = readVal<unsigned int>(sceneDataFile);
+			sceneModelData.isStatic = readVal<bool>(sceneDataFile);
+			sceneModelData.instancesNrMax = readVal<unsigned int>(sceneDataFile);			
+			readVec<Transform3D>(sceneDataFile, sceneModelData.instancesTransformsInit);
 		}
 
-		modelDescFile.close();
-	}	
+		readArr<unsigned int, CollisionPrimitive3DType::__PRIMITIVE3D_TYPES_NR__>(sceneDataFile, outSceneData.collisionPrimitives3DInstancesNrsMaxima);
+		readArr<unsigned int, CollisionPrimitive2DType::__PRIMITIVE2D_TYPES_NR__>(sceneDataFile, outSceneData.collisionPrimitives2DInstancesNrsMaxima);		
+	}
 
+	void writeSceneData(std::ofstream& sceneDataFile, SceneData const& sceneData) {		
+		writeVal<unsigned int>(sceneDataFile, sceneData.staticModelsNr);
+		unsigned int modelsNr = sceneData.sceneModelsData.size();
+		writeVal<unsigned int>(sceneDataFile, modelsNr);
+		for (unsigned int modelIdx = 0; modelIdx < modelsNr; ++modelIdx) {
+			SceneData::SceneModelData const& sceneModelData = sceneData.sceneModelsData[modelIdx];
+			writeVal<unsigned int>(sceneDataFile, sceneModelData.modelIdx);
+			writeVal<bool>(sceneDataFile, sceneModelData.isStatic);
+			writeVal<unsigned int>(sceneDataFile, sceneModelData.instancesNrMax);
+			writeVec<Transform3D>(sceneDataFile, sceneModelData.instancesTransformsInit);
+		}
+
+		writeArr<unsigned int, CollisionPrimitive3DType::__PRIMITIVE3D_TYPES_NR__>(sceneDataFile, sceneData.collisionPrimitives3DInstancesNrsMaxima);
+		writeArr<unsigned int, CollisionPrimitive2DType::__PRIMITIVE2D_TYPES_NR__>(sceneDataFile, sceneData.collisionPrimitives2DInstancesNrsMaxima);		
+	}
+			
 	void readFileToStr(std::string const& fileName, std::string& strOut) {
 		std::ifstream file(fileName);
-#if DEBUG
+#if DEBUG || _DEBUG
 		if (!file.is_open())
 			throw std::ios_base::failure(fileName + std::string(" failed to open !"));
 #endif

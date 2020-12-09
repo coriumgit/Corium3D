@@ -10,7 +10,7 @@
 #include "Logger.h"
 #include "OpenGlTxtGen.h"
 #include "IdxPool.h"
-#include "FilesOps.h"
+#include "AssetsOps.h"
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -124,13 +124,13 @@ namespace Corium3D {
 		void signalSurfaceDestroyed();
 		void signalWindowFocusChanged(bool hasFocus);
 		void signalDetachedFromWindow();	
-		void loadScene(unsigned int sceneIdx);
+		std::vector<std::vector<Transform3D>> loadScene(Corium3DEngine& owningEngine, unsigned int sceneIdx);
 		void registerKeyboardInputStartCallback(KeyboardInputID inputId, KeyboardInputCallback inputCallback);
 		void registerKeyboardInputEndCallback(KeyboardInputID inputId, KeyboardInputCallback inputCallback);
 		void registerCursorInputCallback(CursorInputID inputId, CursorInputCallback inputCallback);
 		void systemKeyboardInputStartCallback(KeyboardInputID inputId);
 		void systemKeyboardInputEndCallback(KeyboardInputID inputId);
-		void systemCursorInputCallback(CursorInputID inputId, vec2 const& cursorPos);
+		void systemCursorInputCallback(CursorInputID inputId, vec2 const& cursorPos);		
 		Corium3DEngine::GuiAPI& accessGuiAPI(unsigned int guiIdx);	
 		Corium3DEngine::CameraAPI& accessCameraAPI();		
 
@@ -163,18 +163,19 @@ namespace Corium3D {
 		bool isSurfaceSzChangedSig = false;
 		bool isSceneLoaded = false;
 
-		std::string modelsDescsPath;
-		std::string guisDescsPath;
-		std::string scenesDescsPath;
+		std::string modelsScenesFullPath;
+		std::vector<unsigned int> modelSceneModelIdxsMap;
+		std::string guisDescsPath;		
 
-		unsigned int modelsNr;
-		unsigned int staticModelsNr;	
+		unsigned int sceneModelsNr;
+		unsigned int staticModelsNr;		
 		unsigned int* modelsInstancesNrsMaxima;
-		IdxPool** modelsInstancesIdxPools;
+		IdxPool** modelsInstancesIdxPools;		
 		GameLmnt*** gameLmnts;
 		GameLmnt::ProximityHandlingMethods*** proximityHandlingMethods;		
-		ObjPoolIteratable<GameLmnt::StateUpdater*>* stateUpdatersPool;
-		ObjPoolIteratable<GameLmnt::StateUpdater*>::ObjPoolIt* stateUpdatersIt;
+		GameLmnt::OnRayHit** onRayHitCallbacks;
+		ObjPoolIteratable<GameLmnt::StateUpdater>* stateUpdatersPool;
+		ObjPoolIteratable<GameLmnt::StateUpdater>::ObjPoolIt* stateUpdatersIt;
 
 		BoundingSphere* modelsPrimalBoundingSpheres;
 		AABB3DRotatable* modelsPrimalAABB3Ds;	
@@ -223,8 +224,16 @@ namespace Corium3D {
 
 	class Corium3DEngine::GameLmnt::GameLmntImpl {
 	public:			
-		GameLmntImpl(GameLmnt& owningGameLmnt, InitData const& initData);
-		~GameLmntImpl();	
+		GameLmntImpl(GameLmnt& owningGameLmnt, Corium3DEngineImpl& corium3DEngineImpl, 
+					 unsigned int components,
+					 StateUpdater stateUpdater,
+					 OnMovementMadeCallback onMovementMadeCallback,
+					 unsigned int modelIdx,
+					 Transform3D* initTransform,
+					 float initCollisionPerimeterRot,
+					 ProximityHandlingMethods* proximityHandlingMethods,
+					 OnRayHit onRayHitCallback);
+		~GameLmntImpl();
 		void changeVerticesColors(unsigned int meshIdx, unsigned int colorsArrIdx);
 		void changeAnimation(unsigned int animationIdx);
 		void translate(glm::vec3 const& translate) { mobilityInterface->translate(translate); }
@@ -238,15 +247,18 @@ namespace Corium3D {
 		void setLinVelX(float x) { mobilityInterface->setLinVelX(x); }
 		void setLinVelY(float y) { mobilityInterface->setLinVelY(y); }
 		void setLinVelZ(float z) { mobilityInterface->setLinVelZ(z); }
+		// void assignStateUpdater(StateUpdater stateUpdater);
+		// void assignOnMovementMadeCallback(OnMovementMadeCallback onMovementMadeCallback);
+		// void assignProximityHandlingMethods(ProximityHandlingMethods* proximityHandlingMethods);
 		GraphicsAPI* accessGraphicsAPI() { return graphicsAPI; }
 		MobilityAPI* accessMobilityAPI() { return mobilityAPI; }	
 
-	private:	
+	private:			
 		Corium3DEngineImpl& corium3DEngineImpl;	
 		GameLmnt& owningGameLmnt;
 		unsigned int modelIdx;
 		unsigned int instanceIdx;
-		StateUpdater** stateUpdater;
+		StateUpdater* stateUpdater;
 		unsigned int componentsFlag;
 		union {
 			BVH::DataNode3D* staticGameLmntBvhDataNode3D;
@@ -264,7 +276,7 @@ namespace Corium3D {
 		MobilityAPI* mobilityAPI = NULL;
 
 		void updateBvhNodeBVs(Transform3D const& transformDelta);
-		void updateBvhNodeBPs(Transform2D const& transformDelta);
+		void updateBvhNodeBPs(Transform2D const& transformDelta);		
 	};
 	
 	class Corium3DEngine::GuiAPI::GuiApiImpl {
@@ -326,7 +338,7 @@ namespace Corium3D {
 	};
 
 	Corium3DEngine::Corium3DEngine(CallbackPtrs& callbacksPtrs, AssetsFilesFullPaths const& assetsFilesFullPaths) { //const char* guisDescsPath
-		corium3DEngineImpl = new Corium3DEngineImpl(callbacksPtrs.corium3DEngineOnlineCallback, assetsFilesFullPaths);
+		corium3DEngineImpl = new Corium3DEngineImpl(callbacksPtrs.corium3DEngineOnlineCallback, assetsFilesFullPaths);		
 		callbacksPtrs.systemKeyboardInputStartCallbackPtr = std::bind(&Corium3DEngine::systemKeyboardInputStartCallback, this, std::placeholders::_1);
 		callbacksPtrs.systemKeyboardInputEndCallbackPtr = std::bind(&Corium3DEngine::systemKeyboardInputEndCallback, this, std::placeholders::_1);
 		callbacksPtrs.systemCursorInputCallbackPtr = std::bind(&Corium3DEngine::systemCursorInputCallback, this, std::placeholders::_1, std::placeholders::_2);
@@ -368,8 +380,9 @@ namespace Corium3D {
 		corium3DEngineImpl->signalDetachedFromWindow();
 	}
 
-	void Corium3DEngine::loadScene(unsigned int sceneIdx) {
-		corium3DEngineImpl->loadScene(sceneIdx);
+	std::vector<std::vector<Transform3D>> Corium3DEngine::loadScene(unsigned int sceneIdx)
+	{			
+		return corium3DEngineImpl->loadScene(*this, sceneIdx);		
 	}
 
 	void Corium3DEngine::registerKeyboardInputStartCallback(KeyboardInputID inputId, KeyboardInputCallback inputCallback) {
@@ -402,142 +415,10 @@ namespace Corium3D {
 
 	Corium3DEngine::CameraAPI& Corium3DEngine::accessCameraAPI() {
 		return corium3DEngineImpl->accessCameraAPI();
-	}
-
-	/*
-	inline Renderer::ModelDesc* genModelDescs(unsigned int modelsNr, const char** colladaPaths, AABB3DRotatable* aabb3Ds, BoundingSphere* boundingSpheres, CollisionPrimitive3DType* collisionPrimitives3DTypes, AABB2DRotatable* aabb2Ds, CollisionPrimitive2DType* collisionPrimitives2DTypes, CollisionPrimitivesFactory* collisionPrimitivesFactory, CollisionVolume** collisionVolumesPtrsOut, CollisionPerimeter** collisionPerimetersPtrsOut) {
-		Renderer::ModelDesc* modelDescs = new Renderer::ModelDesc[modelsNr];
-		Assimp::Importer* importer = new Assimp::Importer();	
-		for (unsigned int modelIdx = 0; modelIdx < modelsNr; modelIdx++) {
-			modelDescs[modelIdx].colladaPath = colladaPaths[modelIdx];
-			modelDescs[modelIdx].verticesNr = 0;				
-			modelDescs[modelIdx].verticesColorsNrTotal = 0;
-			modelDescs[modelIdx].texesNr = 0;
-			modelDescs[modelIdx].bonesNr = 0;
-			modelDescs[modelIdx].facesNr = 0;
-			modelDescs[modelIdx].animationDescs = NULL;
-			modelDescs[modelIdx].instancesNrMax = 50;
-			modelDescs[modelIdx].progIdx = 0;		
-	
-			aiScene const* scene;	
-			scene = importer->ReadFile(modelDescs[modelIdx].colladaPath, aiProcessPreset_TargetRealtime_Quality | aiProcess_JoinIdenticalVertices);
-			if (!scene) {
-				std::string errorString = importer->GetErrorString();
-				ServiceLocator::getLogger().loge("genModelDescs", "Scene import failed: %s", errorString.c_str());
-				throw std::exception();
-			}
-			else
-				ServiceLocator::getLogger().logd("Corium3D", "Scene import succeeded.");
-
-			if (scene->HasMeshes()) {
-				modelDescs[modelIdx].meshesNr = scene->mNumMeshes;
-				modelDescs[modelIdx].verticesNrsPerMesh = new unsigned int[scene->mNumMeshes]();
-				modelDescs[modelIdx].texesNrsPerMesh = new unsigned int[scene->mNumMeshes]();
-				modelDescs[modelIdx].bonesNrsPerMesh = new unsigned int[scene->mNumMeshes]();
-				modelDescs[modelIdx].facesNrsPerMesh = new unsigned int[scene->mNumMeshes]();
-				modelDescs[modelIdx].extraColorsArrsNrsPerMesh = new unsigned int[scene->mNumMeshes];
-				modelDescs[modelIdx].extraColorsArrs = new float**[scene->mNumMeshes];
-				for (unsigned int meshIdx = 0; meshIdx < scene->mNumMeshes; meshIdx++) {
-					const aiMesh* mesh = scene->mMeshes[meshIdx];
-					if (!mesh->HasPositions() || !mesh->HasFaces()) {
-						if (!mesh->HasPositions())
-							ServiceLocator::getLogger().loge("genModelDescs", "The mesh has no positions !");
-						else if (!mesh->HasFaces())
-							ServiceLocator::getLogger().loge("genModelDescs", "The mesh has no faces !");
-
-						delete importer;
-						throw std::exception();
-					}
-				
-					modelDescs[modelIdx].verticesNrsPerMesh[meshIdx] += mesh->mNumVertices;				
-					modelDescs[modelIdx].verticesNr += mesh->mNumVertices;
-					modelDescs[modelIdx].bonesNrsPerMesh[meshIdx] += mesh->mNumBones;				
-					modelDescs[modelIdx].bonesNr += mesh->mNumBones;
-					modelDescs[modelIdx].facesNrsPerMesh[meshIdx] += mesh->mNumFaces;
-					modelDescs[modelIdx].facesNr += mesh->mNumFaces;				
-					modelDescs[modelIdx].extraColorsArrsNrsPerMesh[meshIdx] = 1;
-				
-					modelDescs[modelIdx].extraColorsArrs[meshIdx] = new float*[modelDescs[modelIdx].extraColorsArrsNrsPerMesh[meshIdx]];
-					modelDescs[modelIdx].extraColorsArrs[meshIdx][0] = new float[4 * mesh->mNumVertices];
-					for (unsigned int vertexIdx = 0; vertexIdx < mesh->mNumVertices; vertexIdx++) {
-						modelDescs[modelIdx].extraColorsArrs[meshIdx][0][4 * vertexIdx + 0] = 1.0f - modelIdx;
-						modelDescs[modelIdx].extraColorsArrs[meshIdx][0][4 * vertexIdx + 1] = (float)modelIdx;
-						modelDescs[modelIdx].extraColorsArrs[meshIdx][0][4 * vertexIdx + 2] = 0.0f;
-						modelDescs[modelIdx].extraColorsArrs[meshIdx][0][4 * vertexIdx + 3] = 0.5f;
-					}
-					modelDescs[modelIdx].verticesColorsNrTotal += 2 * mesh->mNumVertices; 
-				}
-
-				glm::vec3* vec3Arr = new glm::vec3[modelDescs[modelIdx].verticesNr];
-				unsigned int vertexIdxOverall = 0;
-				for (unsigned int meshIdx = 0; meshIdx < scene->mNumMeshes; meshIdx++) {
-					const aiMesh* mesh = scene->mMeshes[meshIdx];
-					for (unsigned int vertexIdx = 0; vertexIdx < mesh->mNumVertices; vertexIdx++) {
-						vec3Arr[vertexIdxOverall++] = { mesh->mVertices[vertexIdx].x,
-														mesh->mVertices[vertexIdx].y,
-														mesh->mVertices[vertexIdx].z };
-					}
-				}
-
-				aabb3Ds[modelIdx] = AABB3DRotatable::calcAABB(vec3Arr, modelDescs[modelIdx].verticesNr);
-				boundingSpheres[modelIdx] = BoundingSphere::calcBoundingSphereEfficient(vec3Arr, modelDescs[modelIdx].verticesNr);
-				switch (collisionPrimitives3DTypes[modelIdx]) {
-					case CollisionPrimitive3DType::BOX:
-						collisionVolumesPtrsOut[modelIdx] = collisionPrimitivesFactory->genCollisionBox(0.5f*(aabb3Ds[modelIdx].getMinVertex() + aabb3Ds[modelIdx].getMaxVertex()),
-																										0.5f*(aabb3Ds[modelIdx].getMaxVertex() - aabb3Ds[modelIdx].getMinVertex()));
-						break;
-
-					case CollisionPrimitive3DType::SPHERE:
-						collisionVolumesPtrsOut[modelIdx] = collisionPrimitivesFactory->genCollisionSphere(boundingSpheres[modelIdx].center(), boundingSpheres[modelIdx].radius());
-						break;
-
-					case CollisionPrimitive3DType::CAPSULE: {
-						float r = (aabb3Ds[modelIdx].getMaxVertex().y - aabb3Ds[modelIdx].getMinVertex().y) / 2;
-						vec3 c1 = { 0.0f, 0.0f, (r - (aabb3Ds[modelIdx].getMaxVertex().z - aabb3Ds[modelIdx].getMinVertex().z) / 2) };
-						collisionVolumesPtrsOut[modelIdx] = collisionPrimitivesFactory->genCollisionCapsule(c1, -2.0f*c1, r);
-						break;
-					}				
-				}			
-				switch (collisionPrimitives2DTypes[modelIdx]) {
-					case CollisionPrimitive2DType::RECT:
-						aabb2Ds[modelIdx] = AABB2DRotatable::calcAABB(vec3Arr, modelDescs[modelIdx].verticesNr);
-						collisionPerimetersPtrsOut[modelIdx] = collisionPrimitivesFactory->genCollisionRect(0.5f * (aabb2Ds[modelIdx].getMinVertex() + aabb2Ds[modelIdx].getMaxVertex()),
-																											0.5f * (aabb2Ds[modelIdx].getMaxVertex() - aabb2Ds[modelIdx].getMinVertex()));
-						break;
-
-					case CollisionPrimitive2DType::CIRCLE:			
-						aabb2Ds[modelIdx] = AABB2DRotatable::calcAABB(vec3Arr, modelDescs[modelIdx].verticesNr);
-						collisionPerimetersPtrsOut[modelIdx] = collisionPrimitivesFactory->genCollisionCircle(0.5f * (aabb2Ds[modelIdx].getMinVertex() + aabb2Ds[modelIdx].getMaxVertex()), boundingSpheres[modelIdx].radius());
-						break;
-
-					case CollisionPrimitive2DType::STADIUM:
-						// reminder: the capsule is aligned with the z axis, so have to calculate the stadium with the aabb3D
-						//			 the calculated stadium is aligned with the y axis
-					
-						aabb2Ds[modelIdx] = AABB2DRotatable(glm::vec2(aabb3Ds[modelIdx].getMinVertex().x, aabb3Ds[modelIdx].getMinVertex().z), glm::vec2(aabb3Ds[modelIdx].getMaxVertex().x, aabb3Ds[modelIdx].getMaxVertex().z));
-						float r = (aabb3Ds[modelIdx].getMaxVertex().y - aabb3Ds[modelIdx].getMinVertex().y) / 2;
-						vec2 c1 = { 0.0f, (r - (aabb3Ds[modelIdx].getMaxVertex().z - aabb3Ds[modelIdx].getMinVertex().z) / 2) };
-						collisionPerimetersPtrsOut[modelIdx] = collisionPrimitivesFactory->genCollisionStadium(c1, -2.0f * c1, r);
-						break;
-				}			
-
-				delete[] vec3Arr;			
-			}
-			else {
-				ServiceLocator::getLogger().loge("genModelDescs", "The scene has no meshes !");
-				delete importer;
-				throw std::exception();
-			}
-		}
-	
-		delete importer;
-		return modelDescs;
-	}
-
-	*/
+	}	
 
 	Corium3DEngine::Corium3DEngineImpl::Corium3DEngineImpl(Corium3DEngineOnlineCallback& _corium3DEngineOnlineCallback, AssetsFilesFullPaths const& assetsFilesFullPaths) :
-			corium3DEngineOnlineCallback(_corium3DEngineOnlineCallback), modelsDescsPath(assetsFilesFullPaths.modelsDescsPath), scenesDescsPath(assetsFilesFullPaths.scenesDescsPath) { //guisDescsPath(_guisDescsPath), 
+			corium3DEngineOnlineCallback(_corium3DEngineOnlineCallback), modelsScenesFullPath(assetsFilesFullPaths.modelsScenesFullPath) { //guisDescsPath(_guisDescsPath), 		
 		unsigned int glyphsWidths[96] = { 8, 6, 0, 0, 0, 0, 0, 0, 12, 12, 0, 0, 8, 0, 8, 0,
 										30,16,27,25,27,26,27,25,25,27, 0, 0, 0, 0, 0, 0,
 										0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0,
@@ -568,7 +449,7 @@ namespace Corium3D {
 			keyboardInputStartCallbacks[keyboardInputCallbackIdx] = keyboardInputEndCallbacks[keyboardInputCallbackIdx] = NULL;
 		cursorInputCallbacks = new CursorInputCallback[CursorInputID::__CURSOR_INPUT_IDS_NR__];
 
-		renderer = new Renderer(assetsFilesFullPaths.modelsDescsPath, assetsFilesFullPaths.vertexShadersFullPaths, assetsFilesFullPaths.fragShadersFullPaths, assetsFilesFullPaths.shadersNr, *(guis[0]), guis[0]->accessTxtControl(0), guis[0]->accessTxtControl(1));
+		renderer = new Renderer(assetsFilesFullPaths.vertexShadersFullPaths, assetsFilesFullPaths.fragShadersFullPaths, assetsFilesFullPaths.shadersNr, *(guis[0]), guis[0]->accessTxtControl(0), guis[0]->accessTxtControl(1));
 
 		loopThread = std::thread(&Corium3DEngineImpl::loop, this);
 	}
@@ -586,7 +467,7 @@ namespace Corium3D {
 		delete guis[0];
 		delete[] guis;
 		delete[] guiApiImpls;
-		delete[] guiAPIs;
+		delete[] guiAPIs;		
 	}
 
 	void Corium3DEngine::Corium3DEngineImpl::startLoop() {
@@ -654,116 +535,7 @@ namespace Corium3D {
 		loopThread.join();
 	}
 
-	void Corium3DEngine::Corium3DEngineImpl::loadScene(unsigned int sceneIdx) {
-		unloadScene();
-		
-		//staticModelsNr =
-		unsigned int mobileModelsNr =0;
-		//modelsNr = staticModelsNr + mobileModelsNr;		
-		unsigned int* modelsIdxs = new unsigned int[1]();
-		//modelsInstancesNrsMaxima = 	
-				
-		unsigned int collisionPrimitives3DInstancesNrsMaxima[CollisionPrimitive3DType::__PRIMITIVE3D_TYPES_NR__];
-		unsigned int collisionPrimitives2DInstancesNrsMaxima[CollisionPrimitive2DType::__PRIMITIVE2D_TYPES_NR__];
-		
-		
-
-		// create game elements buffers
-		modelsPrimalAABB3Ds = new AABB3DRotatable[modelsNr];
-		modelsPrimalAABB2Ds = new AABB2DRotatable[modelsNr];
-		modelsPrimalCollisionVolumesPtrs = new CollisionVolume*[modelsNr];
-		modelsPrimalCollisionPerimetersPtrs = new CollisionPerimeter*[modelsNr];
-		modelsInstancesIdxPools = new IdxPool*[modelsNr];
-		proximityHandlingMethods = new GameLmnt::ProximityHandlingMethods**[modelsNr];
 	
-		gameLmnts = new GameLmnt**[modelsNr];
-		collisionPrimitivesFactory = new CollisionPrimitivesFactory(collisionPrimitives3DInstancesNrsMaxima, collisionPrimitives2DInstancesNrsMaxima);
-		unsigned int staticInstancesNrOverallMax = 0;
-		unsigned int mobileInstancesNrOverallMax = 0;
-		for (unsigned int modelIdx = 0; modelIdx < modelsNr; modelIdx++) {	
-			
-			ColliderData colliderData;
-			//readColliderData(std::string(""), colliderData);
-			modelsPrimalBoundingSpheres[modelIdx] = BoundingSphere(colliderData.boundingSphereCenter, colliderData.boundingSphereRadius);
-			modelsPrimalAABB3Ds[modelIdx] = AABB3DRotatable(colliderData.aabb3DMinVertex, colliderData.aabb3DMaxVertex);
-			if (colliderData.collisionPrimitive3DType != CollisionPrimitive3DType::NO_3D_COLLIDER) {
-				switch (colliderData.collisionPrimitive3DType) {
-					case CollisionPrimitive3DType::BOX: {
-						ColliderData::CollisionBoxData collisionBoxData;
-						
-						modelsPrimalCollisionVolumesPtrs[modelIdx] = collisionPrimitivesFactory->genCollisionBox(collisionBoxData.center, collisionBoxData.scale);
-						break;
-					}
-					case CollisionPrimitive3DType::SPHERE: {
-						ColliderData::CollisionSphereData collisionSphereData;
-						
-						modelsPrimalCollisionVolumesPtrs[modelIdx] = collisionPrimitivesFactory->genCollisionSphere(collisionSphereData.center, collisionSphereData.radius);
-						break;
-					}
-					case CollisionPrimitive3DType::CAPSULE: {
-						ColliderData::CollisionCapsuleData collisionCapsuleData;
-						
-						modelsPrimalCollisionVolumesPtrs[modelIdx] = collisionPrimitivesFactory->genCollisionCapsule(collisionCapsuleData.center1, collisionCapsuleData.axisVec, collisionCapsuleData.radius);
-						break;
-					}
-				}
-			}
-			else
-				modelsPrimalCollisionVolumesPtrs[modelIdx] = NULL;
-
-			if (colliderData.collisionPrimitive2DType != CollisionPrimitive2DType::NO_2D_COLLIDER) {
-				modelsPrimalAABB2Ds[modelIdx] = AABB2DRotatable(colliderData.aabb2DMinVertex, colliderData.aabb2DMaxVertex);
-				switch (colliderData.collisionPrimitive3DType) {
-					case CollisionPrimitive2DType::RECT: {
-						ColliderData::CollisionRectData collisionRectData;
-						
-						modelsPrimalCollisionPerimetersPtrs[modelIdx] = collisionPrimitivesFactory->genCollisionRect(collisionRectData.center, collisionRectData.scale);
-						break;
-					}
-					case CollisionPrimitive2DType::CIRCLE: {
-						ColliderData::CollisionCircleData collisionCircleData;
-						
-						modelsPrimalCollisionPerimetersPtrs[modelIdx] = collisionPrimitivesFactory->genCollisionCircle(collisionCircleData.center, collisionCircleData.radius);
-						break;
-					}
-					case CollisionPrimitive2DType::STADIUM: {
-						ColliderData::CollisionStadiumData collisionStadiumData;
-						
-						modelsPrimalCollisionPerimetersPtrs[modelIdx] = collisionPrimitivesFactory->genCollisionStadium(collisionStadiumData.center1, collisionStadiumData.axisVec, collisionStadiumData.radius);
-						break;
-					}
-				}
-			}
-			
-			unsigned int instancesNrMax = modelsInstancesNrsMaxima[modelIdx];
-			if (modelIdx < staticModelsNr)
-				staticInstancesNrOverallMax += instancesNrMax;
-			else
-				mobileInstancesNrOverallMax += instancesNrMax;
-			modelsInstancesIdxPools[modelIdx] = new IdxPool(instancesNrMax);		
-			gameLmnts[modelIdx] = new GameLmnt*[instancesNrMax];
-			proximityHandlingMethods[modelIdx] = new GameLmnt::ProximityHandlingMethods*[instancesNrMax];
-			for (unsigned int collidedWithModelIdx = 0; collidedWithModelIdx < instancesNrMax; collidedWithModelIdx++) {
-				proximityHandlingMethods[modelIdx][collidedWithModelIdx] = new GameLmnt::ProximityHandlingMethods[modelsNr];
-			}
-		}
-
-		bvh = new BVH(staticInstancesNrOverallMax, mobileInstancesNrOverallMax, staticInstancesNrOverallMax, mobileInstancesNrOverallMax, 100, 100);		
-		physicsEngine = new PhysicsEngine(mobileInstancesNrOverallMax + staticInstancesNrOverallMax, SECS_PER_UPDATE);
-		renderer->loadScene(modelsIdxs, staticModelsNr, mobileModelsNr, modelsInstancesNrsMaxima, *bvh);
-		delete[] modelsIdxs;
-		stateUpdatersPool = new ObjPoolIteratable<GameLmnt::StateUpdater*>(mobileInstancesNrOverallMax + staticInstancesNrOverallMax);	
-		stateUpdatersIt = new ObjPoolIteratable<GameLmnt::StateUpdater*>::ObjPoolIt(*stateUpdatersPool);
-
-		cameraApiImpl = new CameraAPI::CameraApiImpl(*this);
-		cameraAPI = new CameraAPI(*cameraApiImpl);
-
-		keyboardInputStartCallbacks = new KeyboardInputCallback[KeyboardInputID::__KEYBOARD_INPUT_IDS_NR__];
-		keyboardInputEndCallbacks = new KeyboardInputCallback[KeyboardInputID::__KEYBOARD_INPUT_IDS_NR__];
-		for (unsigned int keyboardInputCallbackIdx = 0; keyboardInputCallbackIdx < KeyboardInputID::__KEYBOARD_INPUT_IDS_NR__; keyboardInputCallbackIdx++)
-			keyboardInputStartCallbacks[keyboardInputCallbackIdx] = keyboardInputEndCallbacks[keyboardInputCallbackIdx] = NULL;
-		cursorInputCallbacks = new CursorInputCallback[CursorInputID::__CURSOR_INPUT_IDS_NR__];
-	}
 
 	void Corium3DEngine::Corium3DEngineImpl::registerKeyboardInputStartCallback(KeyboardInputID inputId, KeyboardInputCallback inputCallback) {
 		keyboardInputStartCallbacks[inputId] = inputCallback;
@@ -787,6 +559,114 @@ namespace Corium3D {
 
 	void Corium3DEngine::Corium3DEngineImpl::systemCursorInputCallback(CursorInputID inputId, vec2 const& cursorPos) {
 		updateInputsCallbackBuffer(cursorInputCallbacks[inputId], cursorPos);
+	}	
+
+	std::vector<std::vector<Transform3D>> Corium3DEngine::Corium3DEngineImpl::loadScene(Corium3DEngine& owningEngine, unsigned int sceneIdx) {
+		unloadScene();
+		
+		SceneData sceneData;
+		std::vector<ModelDesc> modelDescs;
+		readSceneAssets(modelsScenesFullPath, sceneIdx, sceneData, modelDescs, modelSceneModelIdxsMap);
+		staticModelsNr = sceneData.staticModelsNr;
+		sceneModelsNr = sceneData.sceneModelsData.size();
+		
+		// create game elements buffers		
+		gameLmnts = new GameLmnt**[sceneModelsNr];
+		modelsInstancesNrsMaxima = new unsigned int[sceneModelsNr];
+		proximityHandlingMethods = new GameLmnt::ProximityHandlingMethods**[sceneModelsNr];
+		onRayHitCallbacks = new GameLmnt::OnRayHit*[sceneModelsNr];
+		modelsInstancesIdxPools = new IdxPool*[sceneModelsNr];
+		modelsPrimalBoundingSpheres = new BoundingSphere[sceneModelsNr];
+		modelsPrimalAABB3Ds = new AABB3DRotatable[sceneModelsNr];
+		modelsPrimalCollisionVolumesPtrs = new CollisionVolume*[sceneModelsNr];
+		modelsPrimalAABB2Ds = new AABB2DRotatable[sceneModelsNr];
+		modelsPrimalCollisionPerimetersPtrs = new CollisionPerimeter*[sceneModelsNr];
+		std::vector<std::vector<Transform3D>> instancesTransformsInit(modelSceneModelIdxsMap.size());
+
+		collisionPrimitivesFactory = new CollisionPrimitivesFactory(&sceneData.collisionPrimitives3DInstancesNrsMaxima[0], &sceneData.collisionPrimitives2DInstancesNrsMaxima[0]);
+		unsigned int staticInstancesNrOverallMax = 0;
+		unsigned int mobileInstancesNrOverallMax = 0;
+		for (unsigned int sceneModelIdx = 0; sceneModelIdx < sceneModelsNr; ++sceneModelIdx)
+		{
+			SceneData::SceneModelData& sceneModelData = sceneData.sceneModelsData[sceneModelIdx];
+			unsigned int modelIdxMapped = modelSceneModelIdxsMap[sceneModelData.modelIdx];
+			unsigned int instancesNrMax = modelsInstancesNrsMaxima[modelIdxMapped] = sceneModelData.instancesNrMax;
+			if (sceneModelData.isStatic)
+				staticInstancesNrOverallMax += instancesNrMax;
+			else
+				mobileInstancesNrOverallMax += instancesNrMax;
+			modelsInstancesIdxPools[modelIdxMapped] = new IdxPool(instancesNrMax);
+			gameLmnts[modelIdxMapped] = new GameLmnt * [instancesNrMax];
+			proximityHandlingMethods[modelIdxMapped] = new GameLmnt::ProximityHandlingMethods * [instancesNrMax];
+			for (unsigned int collidedWithModelIdx = 0; collidedWithModelIdx < instancesNrMax; collidedWithModelIdx++)
+				proximityHandlingMethods[modelIdxMapped][collidedWithModelIdx] = new GameLmnt::ProximityHandlingMethods[sceneModelsNr];
+			onRayHitCallbacks[modelIdxMapped] = new GameLmnt::OnRayHit[instancesNrMax];
+
+			ColliderData colliderData = modelDescs[modelIdxMapped].colliderData;
+			modelsPrimalBoundingSpheres[modelIdxMapped] = BoundingSphere(colliderData.boundingSphereCenter, colliderData.boundingSphereRadius);
+			modelsPrimalAABB3Ds[modelIdxMapped] = AABB3DRotatable(colliderData.aabb3DMinVertex, colliderData.aabb3DMaxVertex);
+			if (colliderData.collisionPrimitive3DType != CollisionPrimitive3DType::NO_3D_COLLIDER) {
+				switch (colliderData.collisionPrimitive3DType) {
+					case CollisionPrimitive3DType::BOX: {
+						ColliderData::CollisionBoxData& collisionBoxData = colliderData.collisionPrimitive3dData.collisionBoxData;
+						modelsPrimalCollisionVolumesPtrs[modelIdxMapped] = collisionPrimitivesFactory->genCollisionBox(collisionBoxData.center, collisionBoxData.scale);
+						break;
+					}
+					case CollisionPrimitive3DType::SPHERE: {
+						ColliderData::CollisionSphereData& collisionSphereData = colliderData.collisionPrimitive3dData.collisionSphereData;
+						modelsPrimalCollisionVolumesPtrs[modelIdxMapped] = collisionPrimitivesFactory->genCollisionSphere(collisionSphereData.center, collisionSphereData.radius);
+						break;
+					}
+					case CollisionPrimitive3DType::CAPSULE: {
+						ColliderData::CollisionCapsuleData collisionCapsuleData = colliderData.collisionPrimitive3dData.collisionCapsuleData;
+						modelsPrimalCollisionVolumesPtrs[modelIdxMapped] = collisionPrimitivesFactory->genCollisionCapsule(collisionCapsuleData.center1, collisionCapsuleData.axisVec, collisionCapsuleData.radius);
+						break;
+					}
+				}
+			}
+			else
+				modelsPrimalCollisionVolumesPtrs[modelIdxMapped] = NULL;
+
+			if (colliderData.collisionPrimitive2DType != CollisionPrimitive2DType::NO_2D_COLLIDER) {
+				modelsPrimalAABB2Ds[modelIdxMapped] = AABB2DRotatable(colliderData.aabb2DMinVertex, colliderData.aabb2DMaxVertex);
+				switch (colliderData.collisionPrimitive3DType) {
+					case CollisionPrimitive2DType::RECT: {
+						ColliderData::CollisionRectData& collisionRectData = colliderData.collisionPrimitive2dData.collisionRectData;
+						modelsPrimalCollisionPerimetersPtrs[modelIdxMapped] = collisionPrimitivesFactory->genCollisionRect(collisionRectData.center, collisionRectData.scale);
+						break;
+					}
+					case CollisionPrimitive2DType::CIRCLE: {
+						ColliderData::CollisionCircleData& collisionCircleData = colliderData.collisionPrimitive2dData.collisionCircleData;
+						modelsPrimalCollisionPerimetersPtrs[modelIdxMapped] = collisionPrimitivesFactory->genCollisionCircle(collisionCircleData.center, collisionCircleData.radius);
+						break;
+					}
+					case CollisionPrimitive2DType::STADIUM: {
+						ColliderData::CollisionStadiumData& collisionStadiumData = colliderData.collisionPrimitive2dData.collisionStadiumData;
+						modelsPrimalCollisionPerimetersPtrs[modelIdxMapped] = collisionPrimitivesFactory->genCollisionStadium(collisionStadiumData.center1, collisionStadiumData.axisVec, collisionStadiumData.radius);
+						break;
+					}
+				}
+			}
+			
+			instancesTransformsInit[sceneModelData.modelIdx] = sceneModelData.instancesTransformsInit;
+		}
+
+		bvh = new BVH(staticInstancesNrOverallMax, mobileInstancesNrOverallMax, staticInstancesNrOverallMax, mobileInstancesNrOverallMax, 100, 100);
+		physicsEngine = new PhysicsEngine(mobileInstancesNrOverallMax + staticInstancesNrOverallMax, SECS_PER_UPDATE);
+		renderer->loadScene(std::move(modelDescs), staticModelsNr, sceneModelsNr - staticModelsNr, modelsInstancesNrsMaxima, *bvh);
+		stateUpdatersPool = new ObjPoolIteratable<GameLmnt::StateUpdater>(mobileInstancesNrOverallMax + staticInstancesNrOverallMax);
+		stateUpdatersIt = new ObjPoolIteratable<GameLmnt::StateUpdater>::ObjPoolIt(*stateUpdatersPool);
+
+		cameraApiImpl = new CameraAPI::CameraApiImpl(*this);
+		cameraAPI = new CameraAPI(*cameraApiImpl);
+
+		keyboardInputStartCallbacks = new KeyboardInputCallback[KeyboardInputID::__KEYBOARD_INPUT_IDS_NR__];
+		keyboardInputEndCallbacks = new KeyboardInputCallback[KeyboardInputID::__KEYBOARD_INPUT_IDS_NR__];
+		for (unsigned int keyboardInputCallbackIdx = 0; keyboardInputCallbackIdx < KeyboardInputID::__KEYBOARD_INPUT_IDS_NR__; keyboardInputCallbackIdx++)
+			keyboardInputStartCallbacks[keyboardInputCallbackIdx] = keyboardInputEndCallbacks[keyboardInputCallbackIdx] = NULL;
+		cursorInputCallbacks = new CursorInputCallback[CursorInputID::__CURSOR_INPUT_IDS_NR__];		
+
+		return instancesTransformsInit;
 	}
 
 	Corium3DEngine::GuiAPI& Corium3DEngine::Corium3DEngineImpl::accessGuiAPI(unsigned int guiIdx) {
@@ -883,20 +763,25 @@ namespace Corium3D {
 		delete bvh;	
 
 		delete collisionPrimitivesFactory;
-		for (unsigned int modelIdx = 0; modelIdx < modelsNr; modelIdx++) {		
+		for (unsigned int modelIdx = 0; modelIdx < sceneModelsNr; modelIdx++) {
 			delete modelsInstancesIdxPools[modelIdx];		
 			delete[] gameLmnts[modelIdx];	
 			for (unsigned int collidedWithModelIdx = 0; collidedWithModelIdx < modelsInstancesNrsMaxima[modelIdx]; collidedWithModelIdx++)
 				delete[] proximityHandlingMethods[modelIdx][collidedWithModelIdx];
-			delete[] proximityHandlingMethods[modelIdx];			
+			delete[] proximityHandlingMethods[modelIdx];
+			delete[] onRayHitCallbacks[modelIdx];
 		}
 		delete[] modelsInstancesIdxPools;
+		delete[] onRayHitCallbacks;
+		delete[] proximityHandlingMethods;
+		delete[] modelsInstancesNrsMaxima;
 		delete[] gameLmnts;
-		delete[] proximityHandlingMethods;	
-		delete[] modelsPrimalCollisionVolumesPtrs;
-		delete[] modelsPrimalCollisionPerimetersPtrs;
+					
+		delete[] modelsPrimalBoundingSpheres;
 		delete[] modelsPrimalAABB3Ds;
+		delete[] modelsPrimalCollisionVolumesPtrs;				
 		delete[] modelsPrimalAABB2Ds;
+		delete[] modelsPrimalCollisionPerimetersPtrs;
 
 		renderer->unloadScene();
 	}
@@ -954,15 +839,23 @@ namespace Corium3D {
 	bool Corium3DEngine::Corium3DEngineImpl::loopThreadStarter() {
 		return loop();
 	}
-	*/
+	*/	
 
-	Corium3DEngine::GameLmnt::GameLmnt(InitData const& initData) {
-		gameLmntImpl = new GameLmntImpl(*this, initData);		
-	}
+	Corium3DEngine::GameLmnt::GameLmnt(Corium3DEngine& corium3DEngine,
+									   unsigned int components, 
+									   StateUpdater stateUpdater,
+									   OnMovementMadeCallback onMovementMadeCallback,
+									   unsigned int modelIdx,
+									   Transform3D* initTransform,
+									   float initCollisionPerimeterRot,
+									   ProximityHandlingMethods* proximityHandlingMethods,
+									   OnRayHit onRayHitCallback) :
+		gameLmntImpl(new GameLmntImpl(*this, *corium3DEngine.corium3DEngineImpl, components, stateUpdater, onMovementMadeCallback, modelIdx, initTransform, initCollisionPerimeterRot, proximityHandlingMethods, onRayHitCallback)) {}
 
-	Corium3DEngine::GameLmnt::~GameLmnt() {	
+	Corium3DEngine::GameLmnt::~GameLmnt() 
+	{	
 		delete gameLmntImpl;
-	}
+	}	
 
 	Corium3DEngine::GameLmnt::GraphicsAPI* Corium3DEngine::GameLmnt::accessGraphicsAPI() {
 		return gameLmntImpl->accessGraphicsAPI();
@@ -972,79 +865,85 @@ namespace Corium3D {
 		return gameLmntImpl->accessMobilityAPI();
 	}
 
+
 	//TODO: Add input correctness test under an #if DEBUG 
-	Corium3DEngine::GameLmnt::GameLmntImpl::GameLmntImpl(GameLmnt& _owningGameLmnt, InitData const& initData) :
-			owningGameLmnt(_owningGameLmnt), corium3DEngineImpl(*(initData.corium3DEngine.corium3DEngineImpl)) {
-		if (initData.initTransform)
-			initData.initTransform->rot = normalize(initData.initTransform->rot);
-		std::complex<float> initCollisionPrimitiveRot;
+	Corium3DEngine::GameLmnt::GameLmntImpl::GameLmntImpl(GameLmnt& _owningGameLmnt, Corium3DEngineImpl& _corium3DEngineImpl,
+										 				 unsigned int components,
+									 					 StateUpdater stateUpdater,
+								 						 OnMovementMadeCallback onMovementMadeCallback,
+														 unsigned int modelIdx,
+														 Transform3D* initTransform,
+														 float initCollisionPerimeterRot,
+														 ProximityHandlingMethods* proximityHandlingMethods,
+														 OnRayHit onRayHitCallback) :
+			owningGameLmnt(_owningGameLmnt), corium3DEngineImpl(_corium3DEngineImpl) {
+		modelIdx = corium3DEngineImpl.modelSceneModelIdxsMap[modelIdx];
+		if (initTransform)
+			initTransform->rot = normalize(initTransform->rot);
+		std::complex<float> initCollisionPerimeterRotComplex;
 		if (corium3DEngineImpl.modelsPrimalCollisionPerimetersPtrs[modelIdx])
-			initCollisionPrimitiveRot = std::polar(1.0f, initData.initCollisionPrimitiveRot);
+			initCollisionPerimeterRotComplex = std::polar(1.0f, initCollisionPerimeterRot);
 
-		//if (initData.components & Component::State)
-		//	stateUpdater = corium3DEngineImpl.stateUpdatersPool->acquire(initData.stateUpdater);
+		//if (components & Component::State)
+		//	stateUpdater = corium3DEngineImpl.stateUpdatersPool->acquire(stateUpdater);
 
-		if (initData.components & Component::Mobility) {
-			if (initData.onMovementMadeCallback == NULL) {
+		if (components & Component::Mobility) {
+			if (onMovementMadeCallback == NULL) {
 				PhysicsEngine::OnMovementMadeCallback3D listener3D[1] = { std::bind(&GameLmntImpl::updateBvhNodeBVs, this, std::placeholders::_1) };
 				if (corium3DEngineImpl.modelsPrimalCollisionPerimetersPtrs[modelIdx]) {								
 					PhysicsEngine::OnMovementMadeCallback2D listener2D[1] = { std::bind(&GameLmntImpl::updateBvhNodeBPs, this, std::placeholders::_1) };
-					mobilityInterface = corium3DEngineImpl.physicsEngine->addMobileGameLmnt(*(initData.initTransform), listener3D, 1, initCollisionPrimitiveRot, listener2D, 1);
+					mobilityInterface = corium3DEngineImpl.physicsEngine->addMobileGameLmnt(*(initTransform), listener3D, 1, initCollisionPerimeterRotComplex, listener2D, 1);
 				}
 				else 				
-					mobilityInterface = corium3DEngineImpl.physicsEngine->addMobileGameLmnt(*(initData.initTransform), listener3D, 1);			
+					mobilityInterface = corium3DEngineImpl.physicsEngine->addMobileGameLmnt(*(initTransform), listener3D, 1);			
 			}
 			else {
-				PhysicsEngine::OnMovementMadeCallback3D listeners3D[2] = { initData.onMovementMadeCallback , std::bind(&GameLmntImpl::updateBvhNodeBVs, this, std::placeholders::_1) };
+				PhysicsEngine::OnMovementMadeCallback3D listeners3D[2] = { onMovementMadeCallback , std::bind(&GameLmntImpl::updateBvhNodeBVs, this, std::placeholders::_1) };
 				if (corium3DEngineImpl.modelsPrimalCollisionPerimetersPtrs[modelIdx]) {				
 					PhysicsEngine::OnMovementMadeCallback2D listener2D[1] = { std::bind(&GameLmntImpl::updateBvhNodeBPs, this, std::placeholders::_1) };
-					mobilityInterface = corium3DEngineImpl.physicsEngine->addMobileGameLmnt(*(initData.initTransform), listeners3D, 2, initCollisionPrimitiveRot, listener2D, 1);
+					mobilityInterface = corium3DEngineImpl.physicsEngine->addMobileGameLmnt(*(initTransform), listeners3D, 2, initCollisionPerimeterRotComplex, listener2D, 1);
 				}
-				else {
-					mobilityInterface = corium3DEngineImpl.physicsEngine->addMobileGameLmnt(*(initData.initTransform), listeners3D, 2);
-				}
+				else
+					mobilityInterface = corium3DEngineImpl.physicsEngine->addMobileGameLmnt(*(initTransform), listeners3D, 2);				
 			}
 			mobilityAPI = new MobilityAPI(*this);
 		}			
 
-		if (initData.components & Component::Graphics) {
-			instanceIdx = corium3DEngineImpl.modelsInstancesIdxPools[initData.modelIdx]->acquire();
-			if (initData.components & Component::Mobility)
-				modelIdx = initData.modelIdx + corium3DEngineImpl.staticModelsNr;
-			else
-				modelIdx = initData.modelIdx;
+		if (components & Component::Graphics) {			
+			instanceIdx = corium3DEngineImpl.modelsInstancesIdxPools[modelIdx]->acquire();
 
 			collisionVolume = static_cast<CollisionVolume*>(corium3DEngineImpl.collisionPrimitivesFactory->genCollisionPrimitive<glm::vec3>(*(corium3DEngineImpl.modelsPrimalCollisionVolumesPtrs[modelIdx])));
-			collisionVolume->transform(*(initData.initTransform));
+			collisionVolume->transform(*(initTransform));
 			if (corium3DEngineImpl.modelsPrimalCollisionPerimetersPtrs[modelIdx]) {
 				collisionPerimeter = static_cast<CollisionPerimeter*>(corium3DEngineImpl.collisionPrimitivesFactory->genCollisionPrimitive<glm::vec2>(*(corium3DEngineImpl.modelsPrimalCollisionPerimetersPtrs[modelIdx])));
-				collisionPerimeter->transform(Transform2D({ initData.initTransform->translate, initData.initTransform->scale, initCollisionPrimitiveRot }));
+				collisionPerimeter->transform(Transform2D({ initTransform->translate, initTransform->scale, initCollisionPerimeterRotComplex }));
 			}
 
-			if (initData.components & Component::Mobility) {						
-				mobileGameLmntBvhDataNode3D = corium3DEngineImpl.bvh->insert(AABB3DRotatable::calcTransformedAABB(corium3DEngineImpl.modelsPrimalAABB3Ds[modelIdx], *(initData.initTransform)),				
-					BoundingSphere::calcTransformedBoundingSphere(corium3DEngineImpl.modelsPrimalBoundingSpheres[modelIdx], initData.initTransform->translate, initData.initTransform->scale),
+			if (components & Component::Mobility) {						
+				mobileGameLmntBvhDataNode3D = corium3DEngineImpl.bvh->insert(AABB3DRotatable::calcTransformedAABB(corium3DEngineImpl.modelsPrimalAABB3Ds[modelIdx], *(initTransform)),				
+					BoundingSphere::calcTransformedBoundingSphere(corium3DEngineImpl.modelsPrimalBoundingSpheres[modelIdx], initTransform->translate, initTransform->scale),
 					modelIdx, instanceIdx, *collisionVolume, *mobilityInterface);
 				if (corium3DEngineImpl.modelsPrimalCollisionPerimetersPtrs[modelIdx])
-					mobileGameLmntBvhDataNode2D = corium3DEngineImpl.bvh->insert(AABB2DRotatable::calcTransformedAABB(corium3DEngineImpl.modelsPrimalAABB2Ds[modelIdx], Transform2D({ initData.initTransform->translate, initData.initTransform->scale, initCollisionPrimitiveRot })), modelIdx, instanceIdx, *collisionPerimeter, *mobilityInterface);
+					mobileGameLmntBvhDataNode2D = corium3DEngineImpl.bvh->insert(AABB2DRotatable::calcTransformedAABB(corium3DEngineImpl.modelsPrimalAABB2Ds[modelIdx], Transform2D({ initTransform->translate, initTransform->scale, initCollisionPerimeterRotComplex })), modelIdx, instanceIdx, *collisionPerimeter, *mobilityInterface);
 			}
 			else {						
-				staticGameLmntBvhDataNode3D = corium3DEngineImpl.bvh->insert(AABB3DRotatable::calcTransformedAABB(corium3DEngineImpl.modelsPrimalAABB3Ds[modelIdx], *(initData.initTransform)),
-					BoundingSphere::calcTransformedBoundingSphere(corium3DEngineImpl.modelsPrimalBoundingSpheres[modelIdx], initData.initTransform->translate, initData.initTransform->scale),
+				staticGameLmntBvhDataNode3D = corium3DEngineImpl.bvh->insert(AABB3DRotatable::calcTransformedAABB(corium3DEngineImpl.modelsPrimalAABB3Ds[modelIdx], *(initTransform)),
+					BoundingSphere::calcTransformedBoundingSphere(corium3DEngineImpl.modelsPrimalBoundingSpheres[modelIdx], initTransform->translate, initTransform->scale),
 					modelIdx, instanceIdx, *collisionVolume);
 				if (corium3DEngineImpl.modelsPrimalCollisionPerimetersPtrs[modelIdx])
-					staticGameLmntBvhDataNode2D = corium3DEngineImpl.bvh->insert(AABB2DRotatable::calcTransformedAABB(corium3DEngineImpl.modelsPrimalAABB2Ds[modelIdx], Transform2D({ initData.initTransform->translate, initData.initTransform->scale, initCollisionPrimitiveRot })), modelIdx, instanceIdx, *collisionPerimeter);
+					staticGameLmntBvhDataNode2D = corium3DEngineImpl.bvh->insert(AABB2DRotatable::calcTransformedAABB(corium3DEngineImpl.modelsPrimalAABB2Ds[modelIdx], Transform2D({ initTransform->translate, initTransform->scale, initCollisionPerimeterRotComplex })), modelIdx, instanceIdx, *collisionPerimeter);
 		
-				corium3DEngineImpl.renderer->setStaticModelInstanceTransform(modelIdx, instanceIdx, glm::translate(initData.initTransform->translate) * glm::mat4_cast(initData.initTransform->rot) * glm::scale(initData.initTransform->scale));
+				corium3DEngineImpl.renderer->setStaticModelInstanceTransform(modelIdx, instanceIdx, glm::translate(initTransform->translate) * glm::mat4_cast(initTransform->rot) * glm::scale(initTransform->scale));
 			}		
-			for (unsigned int otherModelIdx = 0; otherModelIdx < corium3DEngineImpl.modelsNr; otherModelIdx++)
-				corium3DEngineImpl.proximityHandlingMethods[modelIdx][instanceIdx][otherModelIdx] = initData.proximityHandlingMethods[otherModelIdx];
+			for (unsigned int otherModelIdx = 0; otherModelIdx < corium3DEngineImpl.sceneModelsNr; otherModelIdx++)
+				corium3DEngineImpl.proximityHandlingMethods[modelIdx][instanceIdx][otherModelIdx] = proximityHandlingMethods[otherModelIdx];
+			corium3DEngineImpl.onRayHitCallbacks[modelIdx][instanceIdx] = onRayHitCallback;
 			corium3DEngineImpl.gameLmnts[modelIdx][instanceIdx] = &owningGameLmnt;
 			//instanceAnimationInterface = corium3DEngineImpl.renderer->activateAnimation(modelIdx, instanceIdx);
 			graphicsAPI = new GraphicsAPI(*this);
 		}	
-	
-		componentsFlag = initData.components;
+		
+		componentsFlag = components;
 	}
 
 	Corium3DEngine::GameLmnt::GameLmntImpl::~GameLmntImpl() {		
@@ -1072,7 +971,7 @@ namespace Corium3D {
 			corium3DEngineImpl.collisionPrimitivesFactory->destroyCollisionPrimitive(collisionVolume);
 			corium3DEngineImpl.collisionPrimitivesFactory->destroyCollisionPrimitive(collisionPerimeter);
 
-			for (unsigned int otherModelIdx = 0; otherModelIdx < corium3DEngineImpl.modelsNr; otherModelIdx++)
+			for (unsigned int otherModelIdx = 0; otherModelIdx < corium3DEngineImpl.sceneModelsNr; otherModelIdx++)
 				corium3DEngineImpl.proximityHandlingMethods[modelIdx][instanceIdx][otherModelIdx] = { NULL, NULL };				
 			corium3DEngineImpl.gameLmnts[modelIdx][instanceIdx] = NULL;		
 			corium3DEngineImpl.modelsInstancesIdxPools[modelIdx]->release(instanceIdx);
@@ -1292,7 +1191,7 @@ namespace Corium3D {
 		glm::vec2 cursorPosVirtualScreenCoords = (cursorPos/glm::vec2(renderer.getWinWidth(), renderer.getWinHeight()) - 0.5f) * glm::vec2(renderer.getVirtualScreenWidth(), renderer.getVirtualScreenHeight());
 		const BVH::RayCollisionData rayCollisionData = corium3DEngineImpl.bvh->getRayCollisionData(renderer.getCameraPos(), cursorPosVirtualScreenCoords.x*cameraRight + cursorPosVirtualScreenCoords.y*cameraUp + renderer.getFrustumNear()*cameraLookDirection);
 		if (rayCollisionData.hasCollided) {
-			corium3DEngineImpl.gameLmnts[rayCollisionData.modelIdx][rayCollisionData.instanceIdx]->receiveRay();
+			corium3DEngineImpl.onRayHitCallbacks[rayCollisionData.modelIdx][rayCollisionData.instanceIdx]();
 			ServiceLocator::getLogger().logd("shoot ray", "ray hit.");
 			return true;
 		}

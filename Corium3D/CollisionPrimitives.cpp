@@ -1,6 +1,6 @@
 #include "ServiceLocator.h"
 #include "CollisionPrimitives.h"
-#include "FilesStructs.h"
+#include "AssetsOps.h"
 #include <string>
 #include <sstream>
 

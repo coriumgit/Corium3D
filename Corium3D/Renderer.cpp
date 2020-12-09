@@ -5,7 +5,7 @@
 #include "Renderer.h"
 
 #include "ServiceLocator.h"
-#include "FilesOps.h"
+#include "AssetsOps.h"
 #include "Timer.h"
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/gtx/norm.hpp>
@@ -272,9 +272,9 @@ namespace Corium3D {
 			strsArr[strIdx] = cStrsArr[strIdx];
 	}
 
-	Renderer::Renderer(const char* modelDescsFullPath, const char** _vertexShadersFullPaths, const char** _fragShadersFullPaths, unsigned int _shadersNr,
+	Renderer::Renderer(const char** _vertexShadersFullPaths, const char** _fragShadersFullPaths, unsigned int _shadersNr,
 					   GUI& _gui, GUI::TxtControl& _fpsDisplay, GUI::TxtControl& _visiblesDisplay) :
-			modelDescsFullPath(modelDescsFullPath), vertexShadersFullPaths(new string[shadersNr]), fragShadersFullPaths(new string[shadersNr]), shadersNr(_shadersNr),
+			vertexShadersFullPaths(new string[_shadersNr]), fragShadersFullPaths(new string[_shadersNr]), shadersNr(_shadersNr),
 			gui(_gui), fpsDisplay(_fpsDisplay), visiblesDisplay(_visiblesDisplay) {	
 		cpyCStrsToStrs(vertexShadersFullPaths, _vertexShadersFullPaths, shadersNr);
 		cpyCStrsToStrs(fragShadersFullPaths, _fragShadersFullPaths, shadersNr);	
@@ -339,23 +339,15 @@ namespace Corium3D {
 		return true;
 	}
 
-	void Renderer::loadScene(unsigned int* modelDescsIdxs, unsigned int staticModelDescsNr, unsigned int mobileModelDescsNr, unsigned int* _modelsInstancesNrsMaxima, BVH& _bvh) {
-		std::ifstream modelDescsFile(modelDescsFullPath, std::ios::in | std::ios::binary);
-	#if DEBUG
-		if (!modelDescsFile.is_open())
-			throw std::ios_base::failure("The models descriptors file failed to open.");
-	#endif
+	void Renderer::loadScene(std::vector<ModelDesc>&& modelDescs, unsigned int staticModelDescsNr, unsigned int mobileModelDescsNr, unsigned int* _modelsInstancesNrsMaxima, BVH& _bvh) {		
 		unloadScene();
+
+		modelDescsBuffer = modelDescs;
 		staticModelsNr = staticModelDescsNr;
 		mobileModelsNr = mobileModelDescsNr;
 		modelsNrTotal = staticModelsNr + mobileModelsNr;
 		this->modelsInstancesNrsMaxima = new unsigned int[modelsNrTotal];
-		memcpy(modelsInstancesNrsMaxima, _modelsInstancesNrsMaxima, modelsNrTotal);
-		modelDescsBuffer = new ModelDesc[modelsNrTotal];
-		for (unsigned int modelIdx = 0; modelIdx < modelsNrTotal; modelIdx++) {
-			
-			modelDescsFile.read((char*)& modelDescsBuffer[modelIdx], sizeof(ModelDesc));
-		}		
+		memcpy(modelsInstancesNrsMaxima, _modelsInstancesNrsMaxima, modelsNrTotal * sizeof(unsigned int));		
 
 		instancesBaseIdxsPerModel = new unsigned int[modelsNrTotal];
 		verticesColorsBaseIdxs = new unsigned int**[modelsNrTotal];
@@ -1105,6 +1097,8 @@ namespace Corium3D {
 		glBindVertexArray(0);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		return true;
 	}
 
 	bool Renderer::loadOpenGlBuffers() {			
@@ -1254,12 +1248,14 @@ namespace Corium3D {
 
 					glBindBuffer(GL_SHADER_STORAGE_BUFFER, verticesColorsBuffer);
 					CHECK_GL_ERROR("glBindBuffer");
-					glBufferSubData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * 4 * processedVerticesColorsNr,
-						sizeof(float) * 4 * mesh->mNumVertices, mesh->mColors[0]);
-					CHECK_GL_ERROR("glBufferSubData");
+					if (mesh->mColors[0]) {
+						glBufferSubData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * 4 * processedVerticesColorsNr,
+							sizeof(float) * 4 * mesh->mNumVertices, mesh->mColors[0]);
+						CHECK_GL_ERROR("glBufferSubData");
+					}
 					for (unsigned int colorsArrIdx = 0; colorsArrIdx < modelDescsBuffer[modelIdx].extraColorsNrsPerMesh[meshIdx]; colorsArrIdx++) {
 						glBufferSubData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * 4 * (processedVerticesColorsNr + (colorsArrIdx + 1)*mesh->mNumVertices),
-							sizeof(float) * 4 * mesh->mNumVertices, modelDescsBuffer[modelIdx].extraColors[meshIdx][colorsArrIdx]);
+							sizeof(float) * 4 * mesh->mNumVertices, &modelDescsBuffer[modelIdx].extraColors[meshIdx][colorsArrIdx][0]);
 						CHECK_GL_ERROR("glBufferSubData");
 					}
 					for (unsigned int verticesColorIdx = 0; verticesColorIdx < modelDescsBuffer[modelIdx].extraColorsNrsPerMesh[meshIdx] + 1; verticesColorIdx++)

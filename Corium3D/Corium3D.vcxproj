@@ -24,8 +24,7 @@
     <ClInclude Include="BVH.h" />
     <ClInclude Include="CollisionPrimitives.h" />
     <ClInclude Include="Corium3D.h" />
-    <ClInclude Include="FilesOps.h" />
-    <ClInclude Include="FilesStructs.h" />
+    <ClInclude Include="AssetsOps.h" />
     <ClInclude Include="OpenGL.h" />
     <ClInclude Include="TransformsStructs.h" />
     <ClInclude Include="SystemDefs.h" />
@@ -55,7 +54,7 @@
     <ClCompile Include="BVH.cpp" />
     <ClCompile Include="CollisionPrimitives.cpp" />
     <ClCompile Include="Corium3D.cpp" />
-    <ClCompile Include="FilesOps.cpp" />
+    <ClCompile Include="AssetsOps.cpp" />
     <ClCompile Include="InputsIDs.h" />
     <ClCompile Include="OpenGL.cpp" />
     <ClCompile Include="GameMaster.cpp" />
@@ -148,6 +147,7 @@
       <ConformanceMode>false</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)externals\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEBUG;_USE_MATH_DEFINES;UNICODE;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

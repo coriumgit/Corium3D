@@ -1,4 +1,5 @@
 ﻿using CoriumDirectX;
+using Corium3D;
 using System;
 using System.Collections.ObjectModel;
 using System.Windows.Controls;
@@ -7,13 +8,14 @@ using System.Windows.Media.Media3D;
 
 namespace Corium3DGI
 {
-    public class SceneM : ObservableObject
+    public class SceneM : ObservableObject, IDisposable
     {
         private class SceneModelMShell : SceneModelM
         {
             public SceneModelMShell(SceneM sceneM, ModelM modelM) : base(sceneM, modelM) { }
         }
 
+        public AssetsGen.ISceneAssetGen SceneAssetGen { get; private set; }
 
         public DxVisualizer.IScene IDxScene { get; private set; }
 
@@ -44,15 +46,22 @@ namespace Corium3DGI
 
         public ObservableCollection<SceneModelM> SceneModelMs { get; } = new ObservableCollection<SceneModelM>();
 
-        public SceneM(DxVisualizer dxVisualizer, string name, DxVisualizer.IScene.TransformCallbackHandlers transformCallbackHandlers) 
+        public SceneM(string name, DxVisualizer dxVisualizer, DxVisualizer.IScene.TransformCallbackHandlers transformCallbackHandlers) 
         {
             this.name = name;
+
+            SceneAssetGen = AssetsGen.createSceneAssetGen();
+            
             IDxScene = dxVisualizer.createScene(transformCallbackHandlers, out dxVisualizerMouseNotifiers);
         }
 
-        public void releaseDxLmnts()
+        public void Dispose()
         {
-            IDxScene.release();
+            IDxScene.Dispose();
+
+            foreach (SceneModelM sceneModel in SceneModelMs)                                            
+                sceneModel.Dispose();            
+            SceneAssetGen.Dispose();
         }
 
         public SceneModelM addSceneModel(ModelM model)
@@ -75,16 +84,10 @@ namespace Corium3DGI
             {
                 if (sceneModel.ModelMRef == modelMRef)
                 {
-                    removeSceneModel(sceneModel);                    
+                    sceneModel.Dispose();
                     return;
                 }
             }            
-        }
-
-        public void removeSceneModel(SceneModelM sceneModel)
-        {
-            SceneModelMs.Remove(sceneModel);
-            sceneModel.releaseDxLmnts();
         }
 
         public bool cursorSelect(float x, float y)

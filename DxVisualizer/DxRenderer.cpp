@@ -1624,11 +1624,13 @@ namespace CoriumDirectX {
     }
     
     void DxRenderer::Scene::loadViewMatToBuffer() {
-        renderer.devcon->UpdateSubresource(renderer.cbViewMat, 0, NULL, &XMMatrixTranspose(camera.getViewMat()), 0, 0);
+        XMMATRIX viewMatTransposed = XMMatrixTranspose(camera.getViewMat());
+        renderer.devcon->UpdateSubresource(renderer.cbViewMat, 0, NULL, &viewMatTransposed, 0, 0);
     }
 
     void DxRenderer::Scene::loadProjMatToBuffer() {
-        renderer.devcon->UpdateSubresource(renderer.cbProjMat, 0, NULL, &XMMatrixTranspose(camera.getProjMat()), 0, 0);
+        XMMATRIX projMatTransposed = XMMatrixTranspose(camera.getProjMat());
+        renderer.devcon->UpdateSubresource(renderer.cbProjMat, 0, NULL, &projMatTransposed, 0, 0);
     }            
 
     void DxRenderer::Scene::loadVisibleInstancesDataToBuffers() {        

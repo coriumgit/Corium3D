@@ -1,9 +1,10 @@
-#include "ModelAssetGen.h"
+#include "AssetsGen.h"
 
 #include "../Corium3D/AssetsOps.h"
 #include "../Corium3D/BoundingSphere.h"
 #include "../Corium3D/AABB.h"
 #include "../Corium3D/ServiceLocator.h"
+#include "Marshalers.h"
 
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -15,32 +16,11 @@
 
 using namespace System::Runtime::InteropServices;
 using namespace System::Windows::Media::Media3D;
-using namespace System::Windows::Media;
 using namespace System::Windows;
 
 //extern "C" __declspec(dllexport) bool PerformTest()
 
-namespace Corium3D {	
-	
-	inline glm::vec3 marshalPoint3D(Point3D^ src) {
-		return glm::vec3{ src->X, src->Y ,src->Z };			
-	}
-
-	inline glm::vec3 marshalVector3D(Vector3D^ src) {
-		return glm::vec3{ src->X, src->Y ,src->Z };
-	}
-
-	inline glm::vec2 marshalPoint(Point^ src) {
-		return glm::vec2{ src->X, src->Y };
-	}
-
-	inline glm::vec2 marshalVector(Vector^ src) {
-		return glm::vec2{ src->X, src->Y };
-	}
-
-	inline char* systemStringToAnsiString(System::String^ str) {
-		return static_cast<char*>(Marshal::StringToHGlobalAnsi(str).ToPointer());
-	}
+namespace Corium3D {
 
 	void genNodesCountRecurse(aiNode* node, unsigned int depth, unsigned int& treeDepthMaxOut, unsigned int& nodesNrOut) {
 		treeDepthMaxOut = depth > treeDepthMaxOut ? depth : treeDepthMaxOut;
@@ -51,16 +31,18 @@ namespace Corium3D {
 		}
 	}
 
-	ModelAssetGen::ModelAssetGen(System::String^ modelPath)
-	{	
+	AssetsGen::ModelAssetGen::ModelAssetGen(System::String^ modelPath)
+	{
+		this->modelPath = modelPath;
+
 		modelDesc = new ModelDesc;
 		modelDesc->colladaPath = systemStringToAnsiString(modelPath);
 		modelDesc->verticesNr = 0;
 		modelDesc->verticesColorsNrTotal = 0;
 		modelDesc->texesNr = 0;
 		modelDesc->bonesNr = 0;
-		modelDesc->facesNr = 0;		
-		modelDesc->progIdx = 0;		
+		modelDesc->facesNr = 0;
+		modelDesc->progIdx = 0;
 
 #if IMPORTER_FBX_SDK
 		FbxManager* fbxManager = FbxManager::Create();
@@ -146,9 +128,9 @@ namespace Corium3D {
 				}
 			}
 		}
-//#elif
+		//#elif
 
-		importer = new Assimp::Importer();	
+		importer = new Assimp::Importer();
 		//importer->SetPropertyFloat("PP_GSN_MAX_SMOOTHING_ANGLE", 120);
 		aiScene const* scene = importer->ReadFile(modelDesc->colladaPath, aiProcessPreset_TargetRealtime_Fast);
 		if (!scene) {
@@ -166,13 +148,13 @@ namespace Corium3D {
 		}
 
 		modelDesc->meshesNr = scene->mNumMeshes;
-		modelDesc->verticesNrsPerMesh = new unsigned int[scene->mNumMeshes]();
-		modelDesc->texesNrsPerMesh = new unsigned int[scene->mNumMeshes];
-		modelDesc->bonesNrsPerMesh = new unsigned int[scene->mNumMeshes];
-		modelDesc->facesNrsPerMesh = new unsigned int[scene->mNumMeshes];
-		modelDesc->extraColorsNrsPerMesh = new unsigned int[scene->mNumMeshes]();
-		modelDesc->extraColors = new float** [scene->mNumMeshes]();
-		
+		modelDesc->verticesNrsPerMesh = std::vector<unsigned int>(scene->mNumMeshes);
+		modelDesc->texesNrsPerMesh = std::vector<unsigned int>(scene->mNumMeshes);
+		modelDesc->bonesNrsPerMesh = std::vector<unsigned int>(scene->mNumMeshes);
+		modelDesc->facesNrsPerMesh = std::vector<unsigned int>(scene->mNumMeshes);
+		modelDesc->extraColorsNrsPerMesh = std::vector<unsigned int>(scene->mNumMeshes);
+		modelDesc->extraColors = std::vector<std::vector<std::array<float,4>>>(scene->mNumMeshes);
+
 		unsigned int vertexIdxOverall = 0;
 		managedImportedData = gcnew ManagedImportedData;
 		managedImportedData->meshesGeometries = gcnew array<MeshGeometry3D^>(scene->mNumMeshes);
@@ -193,44 +175,44 @@ namespace Corium3D {
 			modelDesc->verticesNrsPerMesh[meshIdx] += mesh->mNumVertices;
 			modelDesc->verticesNr += mesh->mNumVertices;
 			managedImportedData->meshesGeometries[meshIdx] = gcnew MeshGeometry3D();
-			managedImportedData->meshesVertices[meshIdx] = gcnew array<Point3D>(mesh->mNumVertices);			
+			managedImportedData->meshesVertices[meshIdx] = gcnew array<Point3D>(mesh->mNumVertices);
 			for (unsigned int vertexIdx = 0; vertexIdx < mesh->mNumVertices; vertexIdx++) {
-				aiVector3D vertex = mesh->mVertices[vertexIdx];				
+				aiVector3D vertex = mesh->mVertices[vertexIdx];
 				managedImportedData->meshesVertices[meshIdx][vertexIdx] = Point3D(vertex.x, vertex.y, vertex.z);
 				managedImportedData->meshesGeometries[meshIdx]->Positions->Add(Point3D(vertex.x, vertex.y, vertex.z));
-			}			
+			}
 
-			
+
 			if (mesh->HasNormals()) {
 				managedImportedData->meshesGeometries[meshIdx]->Normals = gcnew Vector3DCollection(modelDesc->verticesNr);
 				for (unsigned int vertexIdx = 0; vertexIdx < mesh->mNumVertices; vertexIdx++) {
 					aiVector3D normal = mesh->mNormals[vertexIdx];
 					managedImportedData->meshesGeometries[meshIdx]->Normals->Add(Vector3D(normal.x, normal.y, normal.z));
 				}
-			}		
+			}
 
 			modelDesc->facesNrsPerMesh[meshIdx] = mesh->mNumFaces;
-			modelDesc->facesNr += mesh->mNumFaces;									
-			managedImportedData->meshesVertexIndices[meshIdx] = gcnew array<unsigned short>(modelDesc->facesNr * 3);							
+			modelDesc->facesNr += mesh->mNumFaces;
+			managedImportedData->meshesVertexIndices[meshIdx] = gcnew array<unsigned short>(modelDesc->facesNr * 3);
 			for (unsigned int faceIdx = 0; faceIdx < mesh->mNumFaces; faceIdx++) {
 				unsigned int* indices = mesh->mFaces[faceIdx].mIndices;
 				managedImportedData->meshesGeometries[meshIdx]->TriangleIndices->Add(indices[0]);
 				managedImportedData->meshesGeometries[meshIdx]->TriangleIndices->Add(indices[1]);
 				managedImportedData->meshesGeometries[meshIdx]->TriangleIndices->Add(indices[2]);
-				managedImportedData->meshesVertexIndices[meshIdx][faceIdx*3	  ] = indices[0];
-				managedImportedData->meshesVertexIndices[meshIdx][faceIdx*3 + 1] = indices[1];
-				managedImportedData->meshesVertexIndices[meshIdx][faceIdx*3 + 2] = indices[2];				
+				managedImportedData->meshesVertexIndices[meshIdx][faceIdx * 3] = indices[0];
+				managedImportedData->meshesVertexIndices[meshIdx][faceIdx * 3 + 1] = indices[1];
+				managedImportedData->meshesVertexIndices[meshIdx][faceIdx * 3 + 2] = indices[2];
 			}
-			
+
 			modelDesc->progIdx = 0;
 
 			modelDesc->bonesNrsPerMesh[meshIdx] = mesh->mNumBones;
 			modelDesc->bonesNr += mesh->mNumBones;
 		}
 
-		modelDesc->animationsNr = 0; // scene->mNumAnimations;
-		if (modelDesc->animationsNr > 0) {
-			modelDesc->animationsDescs = new ModelDesc::AnimationDesc[modelDesc->animationsNr];
+		unsigned int animationsNr = 0;
+		modelDesc->animationsDescs = std::vector<ModelDesc::AnimationDesc>(animationsNr);
+		if (modelDesc->animationsDescs.size() > 0) {			
 			/*
 			for (unsigned int animationIdx = 0; animationIdx < modelDesc->animationsNr; animationIdx++) {
 				aiAnimation const* animation = scene->mAnimations[animationIdx];
@@ -418,7 +400,8 @@ namespace Corium3D {
 			*/
 		}
 		else
-			modelDesc->animationsDescs = nullptr;																
+			modelDesc->animationsDescs.resize(0);
+			// modelDesc->animationsDescs.shrink_to_fit();
 
 		glm::vec3* vec3Arr = new glm::vec3[modelDesc->verticesNr];
 		for (unsigned int meshIdx = 0; meshIdx < scene->mNumMeshes; meshIdx++) {
@@ -428,7 +411,7 @@ namespace Corium3D {
 				vec3Arr[vertexIdxOverall++] = { vertex.x, vertex.y, vertex.z };
 			}
 		}
-		
+
 		BoundingSphere bs = BoundingSphere::calcBoundingSphereEfficient(vec3Arr, modelDesc->verticesNr);
 		modelDesc->colliderData.boundingSphereCenter = bs.getCenter();
 		managedImportedData->boundingSphereCenter = Point3D(modelDesc->colliderData.boundingSphereCenter.x, modelDesc->colliderData.boundingSphereCenter.y, modelDesc->colliderData.boundingSphereCenter.z);
@@ -445,10 +428,10 @@ namespace Corium3D {
 		float verticesSpreadZ = modelDesc->colliderData.aabb3DMaxVertex.z - modelDesc->colliderData.aabb3DMinVertex.z;
 		managedImportedData->boundingCapsuleAxisVec = Vector3D(0, 0, 0);
 		if (verticesSpreadX > verticesSpreadY) {
-			if (verticesSpreadX > verticesSpreadZ) {				
+			if (verticesSpreadX > verticesSpreadZ) {
 				if (verticesSpreadZ > verticesSpreadY) {
 					// largest: X, 2nd: Z						
-					managedImportedData->boundingCapsuleAxisVec.X = 1;					
+					managedImportedData->boundingCapsuleAxisVec.X = 1;
 					managedImportedData->boundingCapsuleHeight = verticesSpreadX;
 					managedImportedData->boundingCapsuleRadius = 0.5 * verticesSpreadZ;
 				}
@@ -464,7 +447,7 @@ namespace Corium3D {
 				managedImportedData->boundingCapsuleAxisVec.Z = 1;
 				managedImportedData->boundingCapsuleHeight = verticesSpreadZ;
 				managedImportedData->boundingCapsuleRadius = 0.5 * verticesSpreadX;
-			}			
+			}
 		}
 		else if (verticesSpreadY > verticesSpreadZ) {
 			if (verticesSpreadX > verticesSpreadZ) {
@@ -484,105 +467,285 @@ namespace Corium3D {
 			managedImportedData->boundingCapsuleAxisVec.Z = 1;
 			managedImportedData->boundingCapsuleHeight = verticesSpreadZ;
 			managedImportedData->boundingCapsuleRadius = 0.5 * verticesSpreadY;
-		}		
+		}
 		managedImportedData->boundingCapsuleCenter = Point3D(0.5 * (modelDesc->colliderData.aabb3DMinVertex.x + modelDesc->colliderData.aabb3DMaxVertex.x),
-															 0.5 * (modelDesc->colliderData.aabb3DMinVertex.y + modelDesc->colliderData.aabb3DMaxVertex.y),
-															 0.5 * (modelDesc->colliderData.aabb3DMinVertex.z + modelDesc->colliderData.aabb3DMaxVertex.z));
+			0.5 * (modelDesc->colliderData.aabb3DMinVertex.y + modelDesc->colliderData.aabb3DMaxVertex.y),
+			0.5 * (modelDesc->colliderData.aabb3DMinVertex.z + modelDesc->colliderData.aabb3DMaxVertex.z));
 
 		modelDesc->colliderData.collisionPrimitive3DType = CollisionPrimitive3DType::NO_3D_COLLIDER;
 		modelDesc->colliderData.collisionPrimitive2DType = CollisionPrimitive2DType::NO_2D_COLLIDER;
-		AABB2D aabb2D = AABB2D::calcAABB(vec3Arr, modelDesc->verticesNr);		
+		AABB2D aabb2D = AABB2D::calcAABB(vec3Arr, modelDesc->verticesNr);
 		modelDesc->colliderData.aabb2DMinVertex = aabb2D.getMinVertex();
-		modelDesc->colliderData.aabb2DMaxVertex = aabb2D.getMaxVertex();		
+		modelDesc->colliderData.aabb2DMaxVertex = aabb2D.getMaxVertex();
 
-		delete[] vec3Arr;					
+		delete[] vec3Arr;
 #endif
-	}	
-
-	ModelAssetGen::~ModelAssetGen()
-	{
-		delete importer;		
-		delete modelDesc;		
 	}
 
-	void ModelAssetGen::assignExtraColors(array<array<array<float>^>^>^ extraColors)
+	AssetsGen::ModelAssetGen::~ModelAssetGen()
+	{		
+		if (isDisposed)	
+			return;
+
+		//delete modelPath;
+		for each (SceneAssetGen^ sceneAssetGen in AssetsGen::sceneAssetGens)
+			sceneAssetGen->removeSceneModelData(this);
+		
+		AssetsGen::modelAssetGens->Remove(this);
+		this->!ModelAssetGen();
+		isDisposed = true;
+	}
+
+	AssetsGen::ModelAssetGen::!ModelAssetGen()
+	{		
+		delete importer;
+		delete modelDesc;
+	}
+
+	// TODO: check that extraColors is of meshesNr size
+	void AssetsGen::ModelAssetGen::assignExtraColors(array<array<array<float>^>^>^ extraColors)
 	{
 		modelDesc->verticesColorsNrTotal = 0;
 		for (unsigned int meshIdx = 0; meshIdx < extraColors->Length; meshIdx++) {
-			if (modelDesc->extraColorsNrsPerMesh[meshIdx] > 0) {
-				for (unsigned int extraColorIdx = 0; extraColorIdx < modelDesc->extraColorsNrsPerMesh[meshIdx]; extraColorIdx++)
-					delete[] modelDesc->extraColors[meshIdx][extraColorIdx];
-				delete[] modelDesc->extraColors[meshIdx];
-			}
-
 			modelDesc->extraColorsNrsPerMesh[meshIdx] = extraColors[meshIdx]->GetLength(0);
+			modelDesc->extraColors[meshIdx].resize(modelDesc->extraColorsNrsPerMesh[meshIdx]);
 			if (modelDesc->extraColorsNrsPerMesh[meshIdx] > 0) {				
-				modelDesc->extraColors[meshIdx] = new float* [modelDesc->extraColorsNrsPerMesh[meshIdx]];
-				for (unsigned int extraColorIdx = 0; extraColorIdx < modelDesc->extraColorsNrsPerMesh[meshIdx]; extraColorIdx++) {
-					modelDesc->extraColors[meshIdx][extraColorIdx] = new float[4];
-					Marshal::Copy(extraColors[meshIdx][extraColorIdx], 0, System::IntPtr((void*)modelDesc->extraColors[meshIdx][extraColorIdx]), 4);
-				}				
+				for (unsigned int extraColorIdx = 0; extraColorIdx < modelDesc->extraColorsNrsPerMesh[meshIdx]; extraColorIdx++) {					
+					Marshal::Copy(extraColors[meshIdx][extraColorIdx], 0, System::IntPtr((void*)&modelDesc->extraColors[meshIdx][extraColorIdx][0]), 4);
+				}
 			}
 
 			modelDesc->verticesColorsNrTotal += (modelDesc->extraColorsNrsPerMesh[meshIdx] + 1) * importer->GetScene()->mMeshes[meshIdx]->mNumVertices;
 		}
 	}
 
-	void ModelAssetGen::assignProgIdx(unsigned int progIdx)
+	void AssetsGen::ModelAssetGen::assignProgIdx(unsigned int progIdx)
 	{
 		modelDesc->progIdx = progIdx;
 	}
 
-	void ModelAssetGen::clearCollisionPrimitive3D()
+	void AssetsGen::ModelAssetGen::clearCollisionPrimitive3D()
 	{
 		modelDesc->colliderData.collisionPrimitive3DType = CollisionPrimitive3DType::NO_3D_COLLIDER;
 	}
 
-	void ModelAssetGen::assignCollisionBox(Point3D^ center, Point3D^ scale)
+	void AssetsGen::ModelAssetGen::assignCollisionBox(Point3D^ center, Point3D^ scale)
 	{
 		modelDesc->colliderData.collisionPrimitive3DType = CollisionPrimitive3DType::BOX;
 		modelDesc->colliderData.collisionPrimitive3dData.collisionBoxData = { marshalPoint3D(center), marshalPoint3D(scale) };
 	}
 
-	void ModelAssetGen::assignCollisionSphere(Point3D^ center, float radius)
+	void AssetsGen::ModelAssetGen::assignCollisionSphere(Point3D^ center, float radius)
 	{
 		modelDesc->colliderData.collisionPrimitive3DType = CollisionPrimitive3DType::SPHERE;
 		modelDesc->colliderData.collisionPrimitive3dData.collisionSphereData = { marshalPoint3D(center), radius };
 	}
 
-	void ModelAssetGen::assignCollisionCapsule(Point3D^ center1, Vector3D^ axisVec, float radius)
+	void AssetsGen::ModelAssetGen::assignCollisionCapsule(Point3D^ center1, Vector3D^ axisVec, float radius)
 	{
 		modelDesc->colliderData.collisionPrimitive3DType = CollisionPrimitive3DType::CAPSULE;
 		modelDesc->colliderData.collisionPrimitive3dData.collisionCapsuleData = { marshalPoint3D(center1), marshalVector3D(axisVec), radius };
 	}
 
-	void ModelAssetGen::clearCollisionPrimitive2D()
+	void AssetsGen::ModelAssetGen::clearCollisionPrimitive2D()
 	{
 		modelDesc->colliderData.collisionPrimitive2DType = CollisionPrimitive2DType::NO_2D_COLLIDER;
 	}
 
-	void ModelAssetGen::assignCollisionRect(Point^ center, Point^ scale)
+	void AssetsGen::ModelAssetGen::assignCollisionRect(Point^ center, Point^ scale)
 	{
 		modelDesc->colliderData.collisionPrimitive2DType = CollisionPrimitive2DType::RECT;
 		modelDesc->colliderData.collisionPrimitive2dData.collisionRectData = { marshalPoint(center), marshalPoint(scale) };
 	}
 
-	void ModelAssetGen::assignCollisionCircle(Point^ center, float radius)
+	void AssetsGen::ModelAssetGen::assignCollisionCircle(Point^ center, float radius)
 	{
 		modelDesc->colliderData.collisionPrimitive2DType = CollisionPrimitive2DType::CIRCLE;
 		modelDesc->colliderData.collisionPrimitive2dData.collisionCircleData = { marshalPoint(center), radius };
 	}
 
-	void ModelAssetGen::assignCollisionStadium(Point^ center1, Vector^ axisVec, float radius)
+	void AssetsGen::ModelAssetGen::assignCollisionStadium(Point^ center1, Vector^ axisVec, float radius)
 	{
 		modelDesc->colliderData.collisionPrimitive2DType = CollisionPrimitive2DType::STADIUM;
 		modelDesc->colliderData.collisionPrimitive2dData.collisionStadiumData = { marshalPoint(center1), marshalVector(axisVec), radius };
 	}
 
-	void ModelAssetGen::genCorium3dAsset(System::String^ path)
+	ModelDesc const* AssetsGen::ModelAssetGen::getAssetsFileReadyModelDesc(unsigned int modelIdx)
 	{
-		std::filesystem::path savePath(systemStringToAnsiString(path));
-		writeModelDesc((savePath / std::filesystem::path(modelDesc->colladaPath).stem()).string() + ".moddesc", *modelDesc);		
+		this->modelIdx = modelIdx;
+		return modelDesc;
+	}
+
+	AssetsGen::IModelAssetGen^ AssetsGen::createModelAssetGen(System::String^ modelPath)
+	{					
+		ModelAssetGen^ modelAssetGen = gcnew ModelAssetGen(modelPath);
+		modelAssetGens->Add(modelAssetGen);
+		return modelAssetGen;
+	}
+
+	AssetsGen::ISceneAssetGen^ AssetsGen::createSceneAssetGen()
+	{
+		sceneAssetGens->Add(gcnew SceneAssetGen());
+		return sceneAssetGens[sceneAssetGens->Count - 1];
+	}
+
+	void AssetsGen::generateAssets(System::String^ fullFilePath)
+	{
+		std::vector<ModelDesc const*> modelDescs(AssetsGen::modelAssetGens->Count);			
+		for (unsigned int modelIdx = 0; modelIdx < AssetsGen::modelAssetGens->Count; ++modelIdx)
+			modelDescs[modelIdx] = AssetsGen::modelAssetGens[modelIdx]->getAssetsFileReadyModelDesc(modelIdx);
+		
+		std::vector<SceneData const*> scenesData(AssetsGen::sceneAssetGens->Count);
+		for (unsigned int sceneIdx = 0; sceneIdx < AssetsGen::sceneAssetGens->Count; ++sceneIdx)
+			scenesData[sceneIdx] = sceneAssetGens[sceneIdx]->getAssetsFileReadySceneData();
+		
+		writeAssetsFile(std::string(systemStringToAnsiString(fullFilePath)), modelDescs, scenesData);
+	}
+
+	AssetsGen::SceneAssetGen::SceneModelData::SceneModelInstanceData::SceneModelInstanceData(SceneModelData^ _sceneModelData, Media3D::Vector3D^ translationInit, Media3D::Vector3D^ scaleInit, Media3D::Quaternion^ rotInit) :
+		sceneModelData(_sceneModelData)
+	{
+		setTranslationInit(translationInit);
+		setScaleInit(scaleInit);
+		setRotInit(rotInit);
+	}
+
+	AssetsGen::SceneAssetGen::SceneModelData::SceneModelInstanceData::~SceneModelInstanceData()
+	{
+		if (isDisposed)
+			return;
+		
+		sceneModelData->sceneModelInstancesData->Remove(this);		
+		isDisposed = true;
+	}
+
+	void AssetsGen::SceneAssetGen::SceneModelData::SceneModelInstanceData::setTranslationInit(Media3D::Vector3D^ translationInit)
+	{
+		this->translationInit = translationInit;
+	}
+
+	void AssetsGen::SceneAssetGen::SceneModelData::SceneModelInstanceData::setScaleInit(Media3D::Vector3D^ scaleInit)
+	{
+		this->scaleInit = scaleInit;
+	}
+
+	void AssetsGen::SceneAssetGen::SceneModelData::SceneModelInstanceData::setRotInit(Media3D::Quaternion^ rotInit)
+	{
+		this->rotInit = rotInit;
+	}
+
+	void AssetsGen::SceneAssetGen::SceneModelData::SceneModelInstanceData::updateSceneModelDataInstanceStruct(std::vector<Transform3D>::iterator& sceneModelInstancesDataIt)
+	{
+		sceneModelInstancesDataIt->translate = marshalVector3D(translationInit);
+		sceneModelInstancesDataIt->scale = marshalVector3D(scaleInit);
+		sceneModelInstancesDataIt->rot = marshalQuat(rotInit);
+	}
+	
+	AssetsGen::SceneAssetGen::SceneModelData::SceneModelData(SceneAssetGen^ _sceneAssetGen, IModelAssetGen^ _modelAssetGen, unsigned int instancesNrMax, bool isStatic) :
+		sceneAssetGen(_sceneAssetGen), modelAssetGen((ModelAssetGen^)_modelAssetGen)
+	{						
+		this->instancesNrMax = instancesNrMax;
+		this->isStatic = isStatic;
+	}
+
+	AssetsGen::SceneAssetGen::SceneModelData::~SceneModelData()
+	{
+		if (isDisposed)
+			return;
+
+		sceneAssetGen->sceneModelsData->Remove(this);		
+		isDisposed = true;
 	}	
 
-} // namespace Corium3D
+	AssetsGen::ISceneAssetGen::ISceneModelData::ISceneModelInstanceData^ AssetsGen::SceneAssetGen::SceneModelData::addSceneModelInstanceData(Media3D::Vector3D^ translationInit, Media3D::Vector3D^ scaleInit, Media3D::Quaternion^ rotInit)
+	{
+		sceneModelInstancesData->Add(gcnew SceneModelInstanceData(this, translationInit, scaleInit, rotInit));		
+		return sceneModelInstancesData[sceneModelInstancesData->Count - 1];
+	}
+
+	void AssetsGen::SceneAssetGen::SceneModelData::setIsStatic(bool isStatic)
+	{		
+		this->isStatic = isStatic;
+	}
+
+	void AssetsGen::SceneAssetGen::SceneModelData::setInstancesNrMax(unsigned int instancesNrMax)
+	{
+		this->instancesNrMax = instancesNrMax;
+	}
+
+	void AssetsGen::SceneAssetGen::SceneModelData::updateSceneAndSceneModelDataStructs(std::vector<SceneData::SceneModelData>::iterator& sceneModelsDataIt)
+	{
+		sceneModelsDataIt->modelIdx = modelAssetGen->ModelIdx;
+
+		sceneModelsDataIt->isStatic = isStatic;
+		if (isStatic)					
+			sceneAssetGen->sceneData->staticModelsNr++;
+		
+		sceneModelsDataIt->instancesNrMax = instancesNrMax;		
+		if (modelAssetGen->CollisionPromitive3DTypeRef != CollisionPrimitive3DType::NO_3D_COLLIDER)
+			sceneAssetGen->sceneData->collisionPrimitives3DInstancesNrsMaxima[modelAssetGen->CollisionPromitive3DTypeRef] += instancesNrMax;
+		if (modelAssetGen->CollisionPromitive2DTypeRef != CollisionPrimitive2DType::NO_2D_COLLIDER)
+			sceneAssetGen->sceneData->collisionPrimitives2DInstancesNrsMaxima[modelAssetGen->CollisionPromitive2DTypeRef] += instancesNrMax;
+
+		sceneModelsDataIt->instancesTransformsInit.resize(sceneModelInstancesData->Count);
+		std::vector<Transform3D>::iterator sceneModelDataStructsIt = sceneModelsDataIt->instancesTransformsInit.begin();
+		for each (SceneModelInstanceData ^ sceneModelInstanceData in sceneModelInstancesData)
+			sceneModelInstanceData->updateSceneModelDataInstanceStruct(sceneModelDataStructsIt++);		
+	}
+
+	AssetsGen::SceneAssetGen::SceneAssetGen()
+	{
+		sceneData = new SceneData{};
+	}
+
+	AssetsGen::SceneAssetGen::~SceneAssetGen()
+	{
+		if (isDisposed)
+			return;
+
+		AssetsGen::sceneAssetGens->Remove(this);
+		this->!SceneAssetGen();
+		isDisposed = true;
+	}
+
+	AssetsGen::SceneAssetGen::!SceneAssetGen()
+	{
+		delete sceneData;
+	}
+
+	//TODO: check that modelAssetGen is ModelAssetGen^ and doesnt exist in scene
+	AssetsGen::ISceneAssetGen::ISceneModelData^ AssetsGen::SceneAssetGen::addSceneModelData(IModelAssetGen^ modelAssetGen, unsigned int instancesNrMax, bool isStatic)
+	{
+		sceneModelsData->Add(gcnew SceneModelData(this, modelAssetGen, instancesNrMax, isStatic));
+		return sceneModelsData[sceneModelsData->Count - 1];
+	}
+	
+	//TODO: check that modelAssetGen is ModelAssetGen^ and exists in the scene
+	void AssetsGen::SceneAssetGen::removeSceneModelData(ModelAssetGen^ modelRepresentedByModelData)
+	{
+		for (int sceneModelDataIdx = sceneModelsData->Count - 1; sceneModelDataIdx >= 0; --sceneModelDataIdx) {
+			SceneModelData^ sceneModelData = sceneModelsData[sceneModelDataIdx];
+			if (sceneModelData->ModelAssetGenRef == modelRepresentedByModelData) {
+				sceneModelsData->RemoveAt(sceneModelDataIdx);
+				delete sceneModelData;
+				return;
+			}				
+		}
+	}
+
+	SceneData const* AssetsGen::SceneAssetGen::getAssetsFileReadySceneData()
+	{
+		sceneData->staticModelsNr = 0;
+		for (unsigned int collisionPrimitive3dIdx = 0; collisionPrimitive3dIdx < CollisionPrimitive3DType::__PRIMITIVE3D_TYPES_NR__; ++collisionPrimitive3dIdx)
+			sceneData->collisionPrimitives3DInstancesNrsMaxima[collisionPrimitive3dIdx] = 0;
+		for (unsigned int collisionPrimitive2dIdx = 0; collisionPrimitive2dIdx < CollisionPrimitive2DType::__PRIMITIVE2D_TYPES_NR__; ++collisionPrimitive2dIdx)
+			sceneData->collisionPrimitives2DInstancesNrsMaxima[collisionPrimitive2dIdx] = 0;
+
+		sceneData->sceneModelsData.resize(sceneModelsData->Count);
+		std::vector<SceneData::SceneModelData>::iterator sceneModelDataStructsIt = sceneData->sceneModelsData.begin();
+		for each (SceneModelData ^ sceneModelData in sceneModelsData)
+			sceneModelData->updateSceneAndSceneModelDataStructs(sceneModelDataStructsIt++);
+
+		return sceneData;
+	}
+}

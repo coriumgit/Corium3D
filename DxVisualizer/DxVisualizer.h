@@ -16,8 +16,8 @@ namespace CoriumDirectX {
 
 	public ref class DxVisualizer {
 	public:	
-		interface class IScene {
-			interface class ISceneModelInstance {								
+		interface class IScene : System::IDisposable {
+			interface class ISceneModelInstance : System::IDisposable {
 				// SelectionHandler in:
 				//	x -> cursor x coord on selection
 				//	y -> cursor y coord on selection			
@@ -29,8 +29,7 @@ namespace CoriumDirectX {
 				void highlight();
 				void dim();
 				void show();
-				void hide();
-				void release();				
+				void hide();		
 			};								
 
 			delegate void TranslationHandler(float x, float y, float z);
@@ -59,7 +58,6 @@ namespace CoriumDirectX {
 			bool cursorSelect(float x, float y);
 			Media3D::Vector3D^ screenVecToWorldVec(float x, float y);
 			Media3D::Vector3D^ cursorPosToRayDirection(float x, float y);
-			void release();
 		};
 
 		delegate void OnMouseMoveCallback(float cursorX, float cursorY);
@@ -86,20 +84,24 @@ namespace CoriumDirectX {
 			ref class SceneModelInstance : public IScene::ISceneModelInstance {
 			public:
 				SceneModelInstance(DxRenderer::Scene::SceneModelInstance* sceneModelInstanceRef);
+				~SceneModelInstance();
+				!SceneModelInstance();
 				virtual Media3D::Vector3D^ getTranslation() = ISceneModelInstance::getTranslation;
 				virtual void highlight() = ISceneModelInstance::highlight;
 				virtual void dim() = ISceneModelInstance::dim;
 				virtual void show() = ISceneModelInstance::show;
-				virtual void hide() = ISceneModelInstance::hide;
-				virtual void release() = ISceneModelInstance::release;
+				virtual void hide() = ISceneModelInstance::hide;				
 				virtual void addToTransformGrp() = ISceneModelInstance::addToTransformGrp;
-				virtual void removeFromTransformGrp() = ISceneModelInstance::removeFromTransformGrp;
+				virtual void removeFromTransformGrp() = ISceneModelInstance::removeFromTransformGrp;				
 
 			private:								
-				DxRenderer::Scene::SceneModelInstance* sceneModelInstanceRef;								
+				DxRenderer::Scene::SceneModelInstance* sceneModelInstanceRef;	
+				bool isDisposed = false;
 			};
 			
 			Scene(DxRenderer* renderer, DxRenderer::Scene::TransformCallbackHandlers const& transformCallbackHandlers, [System::Runtime::InteropServices::Out] DxVisualizer::MouseCallbacks^% mouseCallbacks);
+			~Scene();
+			!Scene();
 			virtual void activate() = IScene::activate;
 			virtual IScene::ISceneModelInstance^ createModelInstance(unsigned int modelID, Media::Color instanceColorMask, Media3D::Vector3D^ translationInit, Media3D::Vector3D^ scaleFactorInit, Media3D::Vector3D^ rotAxInit, float rotAngInit, IScene::ISceneModelInstance::SelectionHandler^ selectionHandler) = IScene::createModelInstance;
 			virtual void transformGrpTranslate(Media3D::Vector3D^ translation) = IScene::transformGrpTranslate;
@@ -116,11 +118,11 @@ namespace CoriumDirectX {
 			virtual bool cursorSelect(float x, float y) = IScene::cursorSelect;
 			virtual Media3D::Vector3D^ screenVecToWorldVec(float x, float y) = IScene::screenVecToWorldVec;
 			virtual Media3D::Vector3D^ cursorPosToRayDirection(float x, float y) = IScene::cursorPosToRayDirection;
-			virtual void release() = IScene::release;
 
 		private:						
 			DxRenderer::Scene* sceneRef;
 			DxRenderer::MouseCallbacks* mouseCallbacksNative;
+			bool isDisposed = false;
 
 			void onMouseMove(float cursorPosX, float cursorPosY);
 			void onMouseUp();

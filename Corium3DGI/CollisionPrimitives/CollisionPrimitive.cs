@@ -66,9 +66,10 @@ namespace Corium3DGI
             avatars3D = new Model3DCollection();
             foreach (XElement modelPathLmnt in avatarsPathsNode.Descendants().Where(e => e.Name == "Model"))
             {
-                ModelAssetGen modelAssetGen = new ModelAssetGen(modelPathLmnt.Value);                                               
+                AssetsGen.IModelAssetGen modelAssetGen = AssetsGen.createModelAssetGen(modelPathLmnt.Value);                                               
                 avatars3D.Add(new GeometryModel3D(modelAssetGen.ManagedImportedDataRef.meshesGeometries[0],
                                                   new DiffuseMaterial(new SolidColorBrush(primitiveColor))));
+                modelAssetGen.Dispose();
             }
         }
     }

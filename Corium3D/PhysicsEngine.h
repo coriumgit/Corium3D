@@ -41,6 +41,7 @@ namespace Corium3D {
 	public:
 		friend class PhysicsEngine;
 		friend class Corium3DUtils::ObjPoolIteratable<MobilityInterface>;
+
 		void translate(glm::vec3 const& translate) { transform.translate += translate; }
 		void scale(glm::vec3 const& scale) { transform.scale *= scale; }
 		void rot(float rot, glm::vec3 const& rotAx) { transform.rot = glm::angleAxis(rot * (float)M_PI / 180.0f, glm::normalize(rotAx)) * transform.rot; }

@@ -48,10 +48,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 
 	//const char* modelsPaths[3] = { "../assets/cube.dae", "../assets/sphere.dae", "../assets/capsule.dae" }; // "../assets/simple_armature.dae"
 	Corium3DEngine::CallbackPtrs callbackPtrs = { corium3DOnlineCallback , systemKeyboardInputStartCallback, systemKeyboardInputEndCallback, systemCursorInputCallback };
-	const char* shadersFullPaths[2] = {"../bonelessVertexShader.vs", "../fragShader.fs"};
-	Corium3DEngine::AssetsFilesFullPaths assetsFilesFullPaths = { "../assets/modelsDescsPath.dat",
+	const char* shadersFullPaths[2] = {"../assets/bonelessVertexShader.vs", "../assets/fragShader.fs"};
+	Corium3DEngine::AssetsFilesFullPaths assetsFilesFullPaths = { "../assets/Corium3dAssets/test.assets",
 																  "../assets/txtTexAtlas.png",
-																  "../assets/scenesDescsPath.dat",
+																  "../assets/Corium3dAssets/Scene00.scenedesc",
 															  	  &shadersFullPaths[0], &shadersFullPaths[1], 1};	
 	corium3DEngine = new Corium3DEngine(callbackPtrs, assetsFilesFullPaths);
 	

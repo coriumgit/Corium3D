@@ -18,7 +18,8 @@ layout (std430, binding = 8) buffer ColorsBuffer {
 out vec4 passColor; 
 
 void main(void) { 
-	passColor = uColors[uSelectedColorsIdxs[aInstanceDataIdx] + gl_VertexID - uBaseVertex]; //	passColor = uColors[gl_VertexID]; 
-//   passColor = vec4(aInstanceDataIdx/2.0f, aInstanceDataIdx/2.0f, aInstanceDataIdx/2.0f, 1.0f);
+//	passColor = uColors[uSelectedColorsIdxs[aInstanceDataIdx] + gl_VertexID - uBaseVertex]; //	passColor = uColors[gl_VertexID]; 
+//  passColor = vec4(aInstanceDataIdx/2.0f, aInstanceDataIdx/2.0f, aInstanceDataIdx/2.0f, 1.0f);
+	passColor = vec4(0.5f, 0.5f, 0.5f, 1.0f);
    gl_Position = uMVPs[aInstanceDataIdx]*aPos;  //*** uVpMat 
 };

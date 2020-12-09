@@ -37,6 +37,18 @@ namespace CoriumDirectX {
 	DxVisualizer::Scene::SceneModelInstance::SceneModelInstance(DxRenderer::Scene::SceneModelInstance* _sceneModelInstanceRef) : 
 		sceneModelInstanceRef(_sceneModelInstanceRef) {}
 
+	DxVisualizer::Scene::SceneModelInstance::~SceneModelInstance() {
+		if (isDisposed)
+			return;
+
+		this->!SceneModelInstance();
+		isDisposed = true;
+	}
+
+	DxVisualizer::Scene::SceneModelInstance::!SceneModelInstance() {
+		sceneModelInstanceRef->release();
+	}
+
 	Media3D::Vector3D^ DxVisualizer::Scene::SceneModelInstance::getTranslation()
 	{
 		XMFLOAT3 ret = sceneModelInstanceRef->getTranslation();
@@ -58,11 +70,7 @@ namespace CoriumDirectX {
 
 	void DxVisualizer::Scene::SceneModelInstance::hide() {
 		sceneModelInstanceRef->hide();
-	}
-
-	void DxVisualizer::Scene::SceneModelInstance::release() {		
-		sceneModelInstanceRef->release();
-	}
+	}	
 
 	void DxVisualizer::Scene::SceneModelInstance::addToTransformGrp()
 	{
@@ -79,6 +87,19 @@ namespace CoriumDirectX {
 		mouseCallbacksManaged = gcnew DxVisualizer::MouseCallbacks();
 		mouseCallbacksManaged->onMouseMoveCallback = gcnew DxVisualizer::OnMouseMoveCallback(this, &DxVisualizer::Scene::onMouseMove);
 		mouseCallbacksManaged->onMouseUpCallback = gcnew DxVisualizer::OnMouseUpCallback(this, &DxVisualizer::Scene::onMouseUp);
+	}
+
+	DxVisualizer::Scene::~Scene() {
+		if (isDisposed)
+			return;
+
+		this->!Scene();
+		isDisposed = true;
+	}
+
+	DxVisualizer::Scene::!Scene() {
+		delete mouseCallbacksNative;
+		//sceneRef->release();
 	}
 
 	void DxVisualizer::Scene::activate() {
@@ -161,10 +182,6 @@ namespace CoriumDirectX {
 		return gcnew Vector3D(rayDirection.x, rayDirection.y, rayDirection.z);
 	}
 
-	void DxVisualizer::Scene::release() {
-		delete mouseCallbacksNative;
-		sceneRef->release();
-	}
 	void DxVisualizer::Scene::onMouseMove(float cursorPosX, float cursorPosY)
 	{
 		mouseCallbacksNative->onMouseMoveCallback(cursorPosX, cursorPosY);

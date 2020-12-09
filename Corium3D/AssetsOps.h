@@ -3,27 +3,28 @@
 #include "../Corium3D/TransformsStructs.h"
 
 #include <string>
+#include <vector>
+#include <array>
 #include <glm/glm.hpp>
 
 namespace Corium3D {
-
+	
+	enum CollisionPrimitive3DType { BOX, SPHERE, CAPSULE, __PRIMITIVE3D_TYPES_NR__, NO_3D_COLLIDER };
+	enum CollisionPrimitive2DType { RECT, CIRCLE, STADIUM, __PRIMITIVE2D_TYPES_NR__, NO_2D_COLLIDER };
+	
 	struct SceneData {
 		struct SceneModelData {
 			unsigned int modelIdx;
-			unsigned int instancesNrMax;
-			unsigned int instancesNrInit;
-			Transform3D* instancesTransformsInit;
+			bool isStatic;
+			unsigned int instancesNrMax;			
+			std::vector<Transform3D> instancesTransformsInit;
 		};
 
-		unsigned int staticModelsNr;
-		unsigned int mobileModelsNr;
-		SceneModelData* sceneModelsData;
-		unsigned int* collisionPrimitives3DInstancesNrsMaxima;
-		unsigned int* collisionPrimitives2DInstancesNrsMaxima;
+		unsigned int staticModelsNr;		
+		std::vector<SceneModelData> sceneModelsData;
+		std::array<unsigned int, CollisionPrimitive3DType::__PRIMITIVE3D_TYPES_NR__> collisionPrimitives3DInstancesNrsMaxima{};
+		std::array<unsigned int, CollisionPrimitive2DType::__PRIMITIVE2D_TYPES_NR__> collisionPrimitives2DInstancesNrsMaxima{};
 	};
-
-	enum CollisionPrimitive3DType { BOX, SPHERE, CAPSULE, __PRIMITIVE3D_TYPES_NR__, NO_3D_COLLIDER };
-	enum CollisionPrimitive2DType { RECT, CIRCLE, STADIUM, __PRIMITIVE2D_TYPES_NR__, NO_2D_COLLIDER };
 
 	struct ColliderData {
 		struct CollisionBoxData {
@@ -94,29 +95,24 @@ namespace Corium3D {
 		std::string colladaPath;
 		unsigned int verticesNr;
 		unsigned int meshesNr;
-		unsigned int* verticesNrsPerMesh;
+		std::vector<unsigned int> verticesNrsPerMesh;
 		unsigned int verticesColorsNrTotal;
-		unsigned int* extraColorsNrsPerMesh; // TODO: incorporate this -data- to the collada
-		float*** extraColors; // TODO: incorporate this -data- to the collada
+		std::vector<unsigned int> extraColorsNrsPerMesh; // TODO: incorporate this -data- to the collada
+		std::vector<std::vector<std::array<float, 4>>> extraColors; // TODO: incorporate this -data- to the collada
 		unsigned int texesNr;
-		unsigned int* texesNrsPerMesh;
+		std::vector<unsigned int> texesNrsPerMesh;
 		unsigned int facesNr;
-		unsigned int* facesNrsPerMesh;
+		std::vector<unsigned int> facesNrsPerMesh;
 		unsigned int progIdx; // TODO: incorporate this -data- to the collada
 		unsigned int bonesNr;
-		unsigned int* bonesNrsPerMesh;
-		unsigned int animationsNr;
-		AnimationDesc* animationsDescs;
+		std::vector<unsigned int> bonesNrsPerMesh;		
+		std::vector<AnimationDesc> animationsDescs;
 		ColliderData colliderData; // TODO: incorporate this -data- to the collada and convert ColliderData to ColliderDesc
 	};
 
-	void readSceneData(std::string const& sceneDescFileName, SceneData& sceneDescOut);
+	void readSceneAssets(std::string const& assetsFileFullPath, unsigned int sceneIdx, SceneData& outSceneData, std::vector<ModelDesc>& outModelDescs, std::vector<unsigned int>& outModelSceneModelIdxsMap);
 
-	void readModelDesc(std::string const& modelDescFileName, ModelDesc& modelDescOut);	
-
-	void writeSceneData(std::string const& sceneDescFileName, SceneData const& sceneDesc);
-
-	void writeModelDesc(std::string const& modelDescFileName, ModelDesc const& modelDesc);		
+	void writeAssetsFile(std::string const& fullPath, std::vector<ModelDesc const*> const& modelDescs, std::vector<SceneData const*> const& scenesData);
 
 	void readFileToStr(std::string const& fileName, std::string& strOut);
 
