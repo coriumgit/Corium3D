@@ -823,7 +823,7 @@ namespace Corium3D {
 				CHECK_GL_ERROR("glMapBufferRange");
 				for (unsigned int visibleInstanceIdxIdx = 0; visibleInstanceIdxIdx < visibleInstancesNr; visibleInstanceIdxIdx++) {	
 					unsigned int modelInstanceIdx = visibleMobileModelsInstancesIdxs[mobileModelIdx][visibleInstanceIdxIdx];
-					instanceDataIdxsBufferPtr[visibleInstanceIdxIdx] = modelInstanceIdx + instancesBaseIdxsPerModel[modelIdxOverall];
+					instanceDataIdxsBufferPtr[visibleInstanceIdxIdx] = modelInstanceIdx;// +instancesBaseIdxsPerModel[modelIdxOverall];
 					mvpMatsBufferPtr[modelInstanceIdx] = mobileModelsTransformatsBuffers[mobileModelIdx][visibleInstanceIdxIdx];
 				}
 				glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
@@ -917,8 +917,8 @@ namespace Corium3D {
 
 	struct VertexData {
 		aiVector3D pos;	
-		unsigned int bonesIDs[BONES_NR_PER_VERTEX_MAX];
-		float bonesWeights[BONES_NR_PER_VERTEX_MAX] = { 0 };
+		unsigned int bonesIDs[BONES_NR_PER_VERTEX_MAX]; 
+		float bonesWeights[BONES_NR_PER_VERTEX_MAX] = { 0 }; 
 		//aiVector3D normal;
 		//aiVector2D uvs;
 	};

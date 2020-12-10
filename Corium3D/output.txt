@@ -5,7 +5,6 @@
 [DEBUG]Renderer>> surfaceChanged called.
 [DEBUG]Renderer>> initializing gl components.
 [DEBUG]Renderer>> Scene import succeeded.
-[DEBUG]shoot ray>> ray missed.
+[DEBUG]Renderer>> Scene import succeeded.
+[DEBUG]Renderer>> Scene import succeeded.
 [DEBUG]Corium3DEngine>> onWindowFocusChanged called.
-[DEBUG]Corium3DEngine>> signalSurfaceDestroyed called.
-[DEBUG]Corium3DEngine>> onDitachedFromWindow called.

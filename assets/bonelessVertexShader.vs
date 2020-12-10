@@ -21,5 +21,5 @@ void main(void) {
 //	passColor = uColors[uSelectedColorsIdxs[aInstanceDataIdx] + gl_VertexID - uBaseVertex]; //	passColor = uColors[gl_VertexID]; 
 //  passColor = vec4(aInstanceDataIdx/2.0f, aInstanceDataIdx/2.0f, aInstanceDataIdx/2.0f, 1.0f);
 	passColor = vec4(0.5f, 0.5f, 0.5f, 1.0f);
-   gl_Position = uMVPs[aInstanceDataIdx]*aPos;  //*** uVpMat 
+	gl_Position = uMVPs[aInstanceDataIdx]*aPos;  //*** uVpMat 
 };
