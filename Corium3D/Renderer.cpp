@@ -175,11 +175,6 @@ namespace Corium3D {
 		void updateRendererBuffer();
 
 	private:
-		struct InitData {
-			ModelAnimator& modelAnimator;
-			unsigned int instanceIdx;
-		};
-
 		ModelAnimator const& modelAnimator;
 		unsigned int bonesTransformatsBufferInstanceBaseIdx;
 
@@ -190,7 +185,7 @@ namespace Corium3D {
 		glm::mat4* transformatsStack;
 		unsigned int instanceIdx;
 
-		InstanceAnimator(InitData const& initData);
+		InstanceAnimator(ModelAnimator& modelAnimator, unsigned int instanceIdx);
 		~InstanceAnimator();
 	};
 
@@ -1885,22 +1880,22 @@ namespace Corium3D {
 	}
 
 	Renderer::InstanceAnimator* Renderer::ModelAnimator::acquireInstance(unsigned int instanceIdx) {
-		return instanceAnimatorsPool->acquire<InstanceAnimator::InitData>(InstanceAnimator::InitData({*this, instanceIdx}));
+		return instanceAnimatorsPool->acquire(*this, instanceIdx);
 	}
 
 	void Renderer::ModelAnimator::releaseInstance(InstanceAnimator* instanceAnimator) {
 		instanceAnimatorsPool->release(instanceAnimator);
 	}
 
-	Renderer::InstanceAnimator::InstanceAnimator(InitData const& initData) : 
-			modelAnimator(initData.modelAnimator), 
-			bonesTransformatsBufferInstanceBaseIdx(modelAnimator.bonesTransformatsBufferModelBaseIdx + initData.instanceIdx*modelAnimator.bonesNr),
+	Renderer::InstanceAnimator::InstanceAnimator(ModelAnimator& modelAnimator, unsigned int _instanceIdx) :
+			modelAnimator(modelAnimator), 
+			bonesTransformatsBufferInstanceBaseIdx(modelAnimator.bonesTransformatsBufferModelBaseIdx + _instanceIdx *modelAnimator.bonesNr),
 			animation(modelAnimator.animations[0]), 
 			activeAnimationStartTime(ServiceLocator::getTimer().getCurrentTime()),
 			endKeyFrameIdxCache(1),
 			childrenIdxsStack(new unsigned int[animation.treeDepthMax]()),
 			transformatsStack(new glm::mat4[animation.treeDepthMax + 2]()),
-			instanceIdx(initData.instanceIdx) {}
+			instanceIdx(_instanceIdx) {}
 
 	Renderer::InstanceAnimator::~InstanceAnimator() {
 		delete[] childrenIdxsStack;

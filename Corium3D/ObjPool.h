@@ -12,13 +12,7 @@ namespace Corium3DUtils {
 		ObjPool(ObjPool const& objPool) = delete;
 		~ObjPool();
 		T* acquire();
-		template <class ...Args>
-		T* acquire(Args&&... args);
-		template <class S>
-		T* acquire(S const& initObj);
-		template <class S>
-		T* acquire(S& initObj);
-		T* acquire(T const& initObj);
+		template <class ...Args> T* acquire(Args&&... args);		
 		void release(T* obj);
 		unsigned int getMaxSz() const { return maxSz; }
 		unsigned int getAcquiredObjsNr() const { return idxPool->getAcquiredIdxsNr(); }
@@ -59,39 +53,7 @@ namespace Corium3DUtils {
 		catch (std::underflow_error) {
 			throw std::underflow_error("No more objects.");
 		}
-	}
-
-	template <class T>
-	template <class S>
-	T* ObjPool<T>::acquire(S const& initObj) {
-		try {
-			return new((T*)memPtr + idxPool->acquire()) T(initObj);
-		}
-		catch (std::underflow_error) {
-			throw std::underflow_error("No more objects.");
-		}
-	}
-
-	template <class T>
-	template <class S>
-	T* ObjPool<T>::acquire(S& initObj) {
-		try {
-			return new((T*)memPtr + idxPool->acquire()) T(initObj);
-		}
-		catch (std::underflow_error) {
-			throw std::underflow_error("No more objects.");
-		}
-	}
-
-	template <class T>
-	T* ObjPool<T>::acquire(T const& initObj) { 
-		try {
-			return new((T*)memPtr + idxPool->acquire()) T(initObj);
-		}
-		catch (std::underflow_error) {
-			throw std::underflow_error("No more objects.");
-		}
-	}
+	}	
 	
 	template <class T>
 	void ObjPool<T>::release(T* obj) {
@@ -131,13 +93,7 @@ namespace Corium3DUtils {
 		ObjPoolIteratable(ObjPoolIteratable const& objPool) = delete;
 		~ObjPoolIteratable();
 		T* acquire();		
-		T* acquire(T const& initObj);
-		template <class ...Args>
-		T* acquire(Args... args);
-		template <class S>
-		T* acquire(S const& initObj);
-		template <class S>
-		T* acquire(S& initObj);		
+		template <class ...Args> T* acquire(Args&&... args);	
 		void release(T* obj);
 		unsigned int getObjIdxInPool(T const* obj);
 		unsigned int getMaxSz() const { return maxSz; }
@@ -197,9 +153,9 @@ namespace Corium3DUtils {
 
 	template <class T>
 	template <class ...Args>
-	T* ObjPoolIteratable<T>::acquire(Args... args) {
+	T* ObjPoolIteratable<T>::acquire(Args&&... args) {
 		try {			
-			DataRec* dataPtr = new((DataRec*)memPtr + idxPool->acquire()) DataRec(args...);
+			DataRec* dataPtr = new((DataRec*)memPtr + idxPool->acquire()) DataRec(std::forward<Args>(args)...);
 			if (listTail != NULL) {
 				dataPtr->prev = listTail;
 				listTail->next = dataPtr;
@@ -213,66 +169,7 @@ namespace Corium3DUtils {
 		catch (std::underflow_error) {
 			throw std::underflow_error("No more objects.");
 		}
-	}
-
-	template <class T>
-	template <class S>
-	T* ObjPoolIteratable<T>::acquire(S const& initObj) {
-		try {
-			DataRec* dataPtr = new((DataRec*)memPtr + idxPool->acquire()) DataRec(initObj);
-			if (listTail != NULL) {
-				dataPtr->prev = listTail;
-				listTail->next = dataPtr;
-				listTail = dataPtr;
-			}
-			else
-				listHead = listTail = dataPtr;
-
-			return &(dataPtr->data);
-		}
-		catch (std::underflow_error) {
-			throw std::underflow_error("No more objects.");
-		}
-	}
-
-	template <class T>
-	template <class S>
-	T* ObjPoolIteratable<T>::acquire(S& initObj) {
-		try {
-			DataRec* dataPtr = new((DataRec*)memPtr + idxPool->acquire()) DataRec(initObj);
-			if (listTail != NULL) {
-				dataPtr->prev = listTail;
-				listTail->next = dataPtr;
-				listTail = dataPtr;
-			}
-			else
-				listHead = listTail = dataPtr;
-
-			return &(dataPtr->data);
-		}
-		catch (std::underflow_error) {
-			throw std::underflow_error("No more objects.");
-		}
-	}
-
-	template <class T>
-	T* ObjPoolIteratable<T>::acquire(T const& initObj) {
-		try {
-			DataRec* dataPtr = new((DataRec*)memPtr + idxPool->acquire()) DataRec(initObj);
-			if (listTail != NULL) {
-				dataPtr->prev = listTail;
-				listTail->next = dataPtr;
-				listTail = dataPtr;
-			}
-			else
-				listHead = listTail = dataPtr;
-
-			return &(dataPtr->data);
-		}
-		catch (std::underflow_error) {
-			throw std::underflow_error("No more objects.");
-		}
-	}
+	}	
 
 	template <class T>
 	void ObjPoolIteratable<T>::release(T* obj) {

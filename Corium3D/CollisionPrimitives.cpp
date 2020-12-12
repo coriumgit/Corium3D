@@ -290,27 +290,27 @@ namespace Corium3D {
 	//}
 
 	CollisionBox* CollisionPrimitivesFactory::genCollisionBox(glm::vec3 const& center, glm::vec3 scale) {
-		return collisionBoxesPool->acquire(CollisionBox(center, scale));
+		return collisionBoxesPool->acquire(center, scale);
 	}
 
 	CollisionSphere* CollisionPrimitivesFactory::genCollisionSphere(glm::vec3 const& center, float radius) {
-		return collisionSpheresPool->acquire(CollisionSphere(center, radius));
+		return collisionSpheresPool->acquire(center, radius);
 	}
 
 	CollisionCapsule* CollisionPrimitivesFactory::genCollisionCapsule(glm::vec3 const& center1, glm::vec3 const & axisVec, float radius) {
-		return collisionCapsulesPool->acquire(CollisionCapsule(center1, axisVec, radius));
+		return collisionCapsulesPool->acquire(center1, axisVec, radius);
 	}
 
 	CollisionRect* CollisionPrimitivesFactory::genCollisionRect(glm::vec2 const& center, glm::vec2 scale) {
-		return collisionRectsPool->acquire(CollisionRect(center, scale));
+		return collisionRectsPool->acquire(center, scale);
 	}
 
 	CollisionCircle* CollisionPrimitivesFactory::genCollisionCircle(glm::vec2 const& center, float radius) {
-		return collisionCirclesPool->acquire(CollisionCircle(center, radius));
+		return collisionCirclesPool->acquire(center, radius);
 	}
 
 	CollisionStadium* CollisionPrimitivesFactory::genCollisionStadium(glm::vec2 const& center1, glm::vec2 const& axisVec, float radius) {
-		return collisionStadiumsPool->acquire(CollisionStadium(center1, axisVec, radius));
+		return collisionStadiumsPool->acquire(center1, axisVec, radius);
 	}
 
 	//template <class V>

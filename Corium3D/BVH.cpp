@@ -69,7 +69,7 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 	}
 
 	BVH::DataNode3D* BVH::insert(AABB3DRotatable const& aabb, BoundingSphere const& boundingSphere, unsigned int modelIdx, unsigned int instanceIdx, CollisionVolume& collisionVolume) {	
-		DataNode3D* newNode = staticNodes3DPool->acquire(DataNode3D(aabb, boundingSphere, modelIdx, instanceIdx, collisionVolume));
+		DataNode3D* newNode = staticNodes3DPool->acquire(aabb, boundingSphere, modelIdx, instanceIdx, collisionVolume);
 		doInsert<AABB3DRotatable, Node3D>(&staticNodes3DRoot, newNode, branchNodes3DPool, staticNodes3DNr);
 	
 		return newNode;
@@ -77,7 +77,7 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 
 	BVH::MobileGameLmntDataNode3D* BVH::insert(AABB3DRotatable const& aabb, BoundingSphere const& boundingSphere, unsigned int modelIdx, unsigned int instanceIdx, CollisionVolume& collisionVolume, PhysicsEngine::MobilityInterface const& mobilityInterface) {
 		// T const& data
-		MobileGameLmntDataNode3D* newNode = mobileNodes3DPool->acquire(MobileGameLmntDataNode3D(aabb, boundingSphere, modelIdx, instanceIdx, collisionVolume, mobilityInterface));
+		MobileGameLmntDataNode3D* newNode = mobileNodes3DPool->acquire(aabb, boundingSphere, modelIdx, instanceIdx, collisionVolume, mobilityInterface);
 		doInsert<AABB3DRotatable, Node3D>(&mobileNodes3DRoot, newNode, branchNodes3DPool, mobileNodes3DNr);
 
 		return newNode;
@@ -121,12 +121,12 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 
 	BVH::DataNode3D* BVH::insert(AABB3DRotatable const& aabb, BoundingSphere const& boundingSphere, unsigned int modelIdx, unsigned int instanceIdx, CollisionVolume& collisionVolume) {
 		// T const& data
-		DataNode3D* newNode = staticNodes3DPool->acquire(DataNode3D(aabb, boundingSphere, modelIdx, instanceIdx, collisionVolume));
+		DataNode3D* newNode = staticNodes3DPool->acquire(aabb, boundingSphere, modelIdx, instanceIdx, collisionVolume);
 		if (staticNodes3DRoot != NULL) {
 			if (!staticNodes3DRoot->isLeaf()) {
 				Node3D* newNodeSibling = findNewNodeSibling<AABB3DRotatable>(staticNodes3DRoot, newNode);
 				Node3D* newNodeSiblingParent = newNodeSibling->parent;
-				Node3D* newBranch = branchNodes3DPool->acquire(Node3D(newNodeSibling, newNode));
+				Node3D* newBranch = branchNodes3DPool->acquire(newNodeSibling, newNode);
 				if (newNodeSiblingParent != NULL) {
 					if (newNodeSiblingParent->children[0] == newNodeSibling)
 						newNodeSiblingParent->replaceChild(newBranch, 0);
@@ -141,7 +141,7 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 				//balanceTreeUpwards(foundSiblingParent);
 			}
 			else
-				staticNodes3DRoot = branchNodes3DPool->acquire(Node3D(staticNodes3DRoot, newNode));
+				staticNodes3DRoot = branchNodes3DPool->acquire(staticNodes3DRoot, newNode);
 
 			staticNodes3DNr += 2;
 		}
@@ -155,12 +155,12 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 
 	BVH::MobileGameLmntDataNode3D* BVH::insert(AABB3DRotatable const& aabb, BoundingSphere const& boundingSphere, unsigned int modelIdx, unsigned int instanceIdx, CollisionVolume& collisionVolume, PhysicsEngine::MobilityInterface const& mobilityInterface) {
 		// T const& data
-		MobileGameLmntDataNode3D* newNode = mobileNodes3DPool->acquire(MobileGameLmntDataNode3D(aabb, boundingSphere, modelIdx, instanceIdx, collisionVolume, mobilityInterface));
+		MobileGameLmntDataNode3D* newNode = mobileNodes3DPool->acquire(aabb, boundingSphere, modelIdx, instanceIdx, collisionVolume, mobilityInterface);
 		if (mobileNodes3DRoot != NULL) {
 			if (!mobileNodes3DRoot->isLeaf()) {
 				Node3D* newNodeSibling = findNewNodeSibling<AABB3DRotatable>(mobileNodes3DRoot, newNode);
 				Node3D* newNodeSiblingParent = newNodeSibling->parent;
-				Node3D* newBranch = branchNodes3DPool->acquire(Node3D(newNodeSibling, newNode));
+				Node3D* newBranch = branchNodes3DPool->acquire(newNodeSibling, newNode);
 				if (newNodeSiblingParent != NULL) {
 					if (newNodeSiblingParent->children[0] == newNodeSibling)
 						newNodeSiblingParent->replaceChild(newBranch, 0);
@@ -175,7 +175,7 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 				//balanceTreeUpwards(foundSiblingParent);
 			}
 			else
-				mobileNodes3DRoot = branchNodes3DPool->acquire(Node3D(mobileNodes3DRoot, newNode));
+				mobileNodes3DRoot = branchNodes3DPool->acquire(mobileNodes3DRoot, newNode);
 
 			mobileNodes3DNr += 2;
 		}
@@ -491,14 +491,14 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 	////////////////////////////////////////////////////////////////////////////////////////////////
 
 	BVH::DataNode2D* BVH::insert(AABB2DRotatable const& aabb, unsigned int modelIdx, unsigned int instanceIdx, CollisionPerimeter& collisionPerimeter) {
-		DataNode2D* newNode = staticNodes2DPool->acquire(DataNode2D(aabb, modelIdx, instanceIdx, collisionPerimeter));
+		DataNode2D* newNode = staticNodes2DPool->acquire(aabb, modelIdx, instanceIdx, collisionPerimeter);
 		doInsert<AABB2DRotatable, Node2D>(&staticNodes2DRoot, newNode, branchNodes2DPool, staticNodes2DNr);
 
 		return newNode;
 	}
 
 	BVH::MobileGameLmntDataNode2D* BVH::insert(AABB2DRotatable const& aabb, unsigned int modelIdx, unsigned int instanceIdx, CollisionPerimeter& collisionPerimeter, PhysicsEngine::MobilityInterface const& mobilityInterface) {
-		MobileGameLmntDataNode2D* newNode = mobileNodes2DPool->acquire(MobileGameLmntDataNode2D(aabb, modelIdx, instanceIdx, collisionPerimeter, mobilityInterface));
+		MobileGameLmntDataNode2D* newNode = mobileNodes2DPool->acquire(aabb, modelIdx, instanceIdx, collisionPerimeter, mobilityInterface);
 		doInsert<AABB2DRotatable, Node2D>(&mobileNodes2DRoot, newNode, branchNodes2DPool, mobileNodes2DNr);
 
 		return newNode;
@@ -549,9 +549,8 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 		if (*nodesRoot != NULL) {
 			if (!(*nodesRoot)->isLeaf()) {
 				Node<TAABB>* newNodeSibling = findNewNodeSibling<TAABB>(*nodesRoot, newNode);
-				Node<TAABB>* newNodeSiblingParent = newNodeSibling->parent;
-				TNode initNode(static_cast<TNode*>(newNodeSibling), newNode);
-				TNode* newBranch = nodesPool->acquire(initNode);
+				Node<TAABB>* newNodeSiblingParent = newNodeSibling->parent;				
+				TNode* newBranch = nodesPool->acquire(static_cast<TNode*>(newNodeSibling), newNode);
 				if (newNodeSiblingParent != NULL) {
 					if (newNodeSiblingParent->children[0] == newNodeSibling)
 						newNodeSiblingParent->replaceChild(newBranch, 0);
@@ -565,10 +564,8 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 
 				//balanceTreeUpwards(foundSiblingParent);
 			}
-			else {
-				TNode initNode(*nodesRoot, newNode);
-				*nodesRoot = nodesPool->acquire(initNode);
-			}
+			else 				
+				*nodesRoot = nodesPool->acquire(*nodesRoot, newNode);			
 
 			nodesCounter += 2;
 		}

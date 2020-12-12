@@ -11,12 +11,12 @@ namespace Corium3D {
 		OnMovementMadeCallback3D* listeners3D, unsigned int listeners3DNr,
 		std::complex<float> initTransform2DRot,
 		OnMovementMadeCallback2D* listeners2D, unsigned int listeners2DNr) {
-		MobilityInterface* newMobilityInterface = mobilityInterfacesPool.acquire(MobilityInterface(initTransform, listeners3D, listeners3DNr, initTransform2DRot, listeners2D, listeners2DNr, secsPerUpdate));
+		MobilityInterface* newMobilityInterface = mobilityInterfacesPool.acquire(initTransform, listeners3D, listeners3DNr, initTransform2DRot, listeners2D, listeners2DNr, secsPerUpdate);
 		return newMobilityInterface;
 	}
 
 	PhysicsEngine::MobilityInterface* PhysicsEngine::addMobileGameLmnt(Transform3D const& initTransform, OnMovementMadeCallback3D* listeners3D, unsigned int listeners3DNr) {
-		MobilityInterface* newMobilityInterface = mobilityInterfacesPool.acquire(MobilityInterface(initTransform, listeners3D, listeners3DNr, secsPerUpdate));
+		MobilityInterface* newMobilityInterface = mobilityInterfacesPool.acquire(initTransform, listeners3D, listeners3DNr, secsPerUpdate);
 		return newMobilityInterface;
 	}
 
