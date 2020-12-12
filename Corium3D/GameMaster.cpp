@@ -96,7 +96,7 @@ glm::vec3  linVels[TEST_LMNTS_NR] = { glm::vec3(0.0f, 0.0f, 0.0f),
 									  glm::vec3(0.0f, 0.0f, 0.0f) }; 
 #endif
 
-GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium3Dengine), cubesPool(TEST_LMNTS_NR_MAX), spheresPool(TEST_LMNTS_NR_MAX), capsulesPool(TEST_LMNTS_NR_MAX)
+GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium3Dengine), cubesPool(TEST_LMNTS_NR_MAX), spheresPool(TEST_LMNTS_NR_MAX), capsulesPool(TEST_LMNTS_NR_MAX), conesPool(TEST_LMNTS_NR_MAX)
 {							
 	std::vector<std::vector<Transform3D>> transformsInit = corium3DEngine.loadScene(0);
 
@@ -112,11 +112,14 @@ GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium
 	for (unsigned int lmntIdx = 0; lmntIdx < transformsInit[0].size(); lmntIdx++)
 		cubes[lmntIdx] = cubesPool.acquire(corium3DEngine, transformsInit[0][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);	
 
-	for (unsigned int lmntIdx = 0; lmntIdx < transformsInit[3].size(); lmntIdx++)
-		spheres[lmntIdx] = spheresPool.acquire(corium3DEngine, transformsInit[3][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);
-
 	for (unsigned int lmntIdx = 0; lmntIdx < transformsInit[1].size(); lmntIdx++)
-		capsules[lmntIdx] = capsulesPool.acquire(corium3DEngine, transformsInit[1][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);
+		spheres[lmntIdx] = spheresPool.acquire(corium3DEngine, transformsInit[1][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);
+
+	for (unsigned int lmntIdx = 0; lmntIdx < transformsInit[3].size(); lmntIdx++)
+		capsules[lmntIdx] = capsulesPool.acquire(corium3DEngine, transformsInit[3][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);
+
+	for (unsigned int lmntIdx = 0; lmntIdx < transformsInit[2].size(); lmntIdx++)
+		cones[lmntIdx] = conesPool.acquire(corium3DEngine, transformsInit[2][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);
 
 	// PLAYER INSTANTIATION
 	Transform3D playerTransform({ glm::vec3(5.0f, 0.0f, 0.0), glm::vec3(1.0f, 1.0f, 1.0f), glm::quat(cos(0 / 6), sin(0 / 4), sin(0 / 4), sin(0 / 6)) });		
@@ -157,15 +160,14 @@ GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium
 }
 
 GameMaster::~GameMaster() {
+	/*
 	delete player;
-	for (unsigned int testLmntIdx = 0; testLmntIdx < cubesPool.getAcquiredObjsNr(); testLmntIdx++)
-#if TEST_PRIMITIVES == 0
+	for (unsigned int testLmntIdx = 0; testLmntIdx < cubesPool.getAcquiredObjsNr(); testLmntIdx++) {
 		delete cubes[testLmntIdx];
-#elif TEST_PRIMITIVES == 1
 		delete spheres[testLmntIdx];
-#elif TEST_PRIMITIVES == 2
 		delete capsules[testLmntIdx];
-#endif
+	}
+	*/
 }
 
 void GameMaster::primitiveColoringCollisionCallback(Corium3DEngine::GameLmnt* primitive1, Corium3DEngine::GameLmnt* primitive2) {

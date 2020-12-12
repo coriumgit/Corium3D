@@ -19,9 +19,11 @@ private:
 	Corium3DUtils::ObjPool<TheCube> cubesPool;
 	Corium3DUtils::ObjPool<TheSphere> spheresPool;
 	Corium3DUtils::ObjPool<TheCapsule> capsulesPool;
+	Corium3DUtils::ObjPool<TheCone> conesPool;
 	TheCube* cubes[TEST_LMNTS_NR_MAX];
 	TheSphere* spheres[TEST_LMNTS_NR_MAX];
 	TheCapsule* capsules[TEST_LMNTS_NR_MAX];
+	TheCone* cones[TEST_LMNTS_NR_MAX];
 	TheCube* player;
 	Corium3DEngine::GameLmnt::MobilityAPI* playerMobilityAPI;
 	TheCube* other;

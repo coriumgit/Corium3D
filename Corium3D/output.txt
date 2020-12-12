@@ -7,6 +7,5 @@
 [DEBUG]Renderer>> Scene import succeeded.
 [DEBUG]Renderer>> Scene import succeeded.
 [DEBUG]Renderer>> Scene import succeeded.
-[DEBUG]Corium3DEngine>> onWindowFocusChanged called.
-[DEBUG]Corium3DEngine>> onWindowFocusChanged called.
+[DEBUG]Renderer>> Scene import succeeded.
 [DEBUG]Corium3DEngine>> onWindowFocusChanged called.

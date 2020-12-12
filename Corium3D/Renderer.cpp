@@ -1260,6 +1260,7 @@ namespace Corium3D {
 					CHECK_GL_ERROR("glBufferSubData");
 					delete[] initVerticesColorsIdx;
 					*/
+					/*
 					glBindBuffer(GL_SHADER_STORAGE_BUFFER, verticesColorsBuffer);
 					CHECK_GL_ERROR("glBindBuffer");
 					if (mesh->mColors[0]) {
@@ -1267,11 +1268,13 @@ namespace Corium3D {
 							sizeof(float) * 4 * mesh->mNumVertices, mesh->mColors[0]);
 						CHECK_GL_ERROR("glBufferSubData");
 					}
+					*/
 					for (unsigned int colorsArrIdx = 0; colorsArrIdx < modelDescsBuffer[modelIdx].extraColorsNrsPerMesh[meshIdx]; colorsArrIdx++) {
 						glBufferSubData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * 4 * (processedVerticesColorsNr + (colorsArrIdx + 1)*mesh->mNumVertices),
 							sizeof(float) * 4 * mesh->mNumVertices, &modelDescsBuffer[modelIdx].extraColors[meshIdx][colorsArrIdx][0]);
 						CHECK_GL_ERROR("glBufferSubData");
 					}
+					
 					for (unsigned int verticesColorIdx = 0; verticesColorIdx < modelDescsBuffer[modelIdx].extraColorsNrsPerMesh[meshIdx] + 1; verticesColorIdx++)
 						verticesColorsBaseIdxs[modelIdx][meshIdx][verticesColorIdx] = processedVerticesColorsNr + verticesColorIdx*mesh->mNumVertices;
 					processedVerticesColorsNr += (modelDescsBuffer[modelIdx].extraColorsNrsPerMesh[meshIdx] + 1) * mesh->mNumVertices;

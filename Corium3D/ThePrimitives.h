@@ -25,3 +25,10 @@ public:
 	TheCapsule(Corium3DEngine& corium3D, Transform3D& initTransform, float initCollisionPrimitiveRot, glm::vec3& linVel, float angVelMag, glm::vec3& angVelAx, ProximityHandlingMethods* proximityHandlingMethods);
 	bool receiveRay();
 };
+
+class TheCone : public  Corium3DEngine::GameLmnt {
+public:
+	TheCone(Corium3DEngine& corium3D, Transform3D& initTransform, float initCollisionPrimitiveRot, glm::vec3& linVel, float angVelMag, glm::vec3& angVelAx, ProximityHandlingMethods* proximityHandlingMethods);
+	bool receiveRay();
+};
+
