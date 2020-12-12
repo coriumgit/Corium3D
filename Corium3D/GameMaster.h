@@ -4,7 +4,7 @@
 #include "ThePrimitives.h"
 #include "ObjPool.h"
 
-#define TEST_LMNTS_NR_MAX 3
+#define TEST_LMNTS_NR_MAX 5
 	
 using namespace Corium3D;
 
@@ -17,11 +17,11 @@ private:
 	Corium3DEngine& corium3DEngine;
 
 	Corium3DUtils::ObjPool<TheCube> cubesPool;
-	//Corium3DUtils::ObjPoolIteratable<TheSphere> spheresPool;
-	//Corium3DUtils::ObjPoolIteratable<TheCapsule> capsulesPool;
+	Corium3DUtils::ObjPool<TheSphere> spheresPool;
+	Corium3DUtils::ObjPool<TheCapsule> capsulesPool;
 	TheCube* cubes[TEST_LMNTS_NR_MAX];
-	//TheSphere* spheres[TEST_LMNTS_NR_MAX];
-	//TheCapsule* capsules[TEST_LMNTS_NR_MAX];
+	TheSphere* spheres[TEST_LMNTS_NR_MAX];
+	TheCapsule* capsules[TEST_LMNTS_NR_MAX];
 	TheCube* player;
 	Corium3DEngine::GameLmnt::MobilityAPI* playerMobilityAPI;
 	TheCube* other;

@@ -124,14 +124,11 @@ namespace Corium3D {
 		std::vector<ModelDesc> modelDescsBuffer;
 		unsigned int staticModelsNr;
 		unsigned int mobileModelsNr;
-		unsigned int modelsNrTotal;
-		unsigned int staticModelsNrActive;
-		unsigned int mobileModelsNrActive;
-		unsigned int* modelsInstancesNrsMaxima;
-		// instancesNrsMaximaMax[i] = number of maximum possible number of models instances of models indexed 0:i-1	
+		unsigned int modelsNrTotal;		
+		unsigned int* modelsInstancesNrsMaxima;		
 		unsigned int verticesNrTotal;
 		unsigned int instancesNrsMaximaMax;
-		unsigned int instancesNrMax;
+		unsigned int staticInstancesNrMax;
 		unsigned int bonesInstancedNrMax;
 		unsigned int facesNrTotal;
 		unsigned int verticesColorsNrTotal;
@@ -159,7 +156,7 @@ namespace Corium3D {
 		GLuint baseVertexUniformLoc;
 		//GLuint* uvsAttribLocs;
 		//GLuint* texSamplerUnifLocs;
-		//GLuint* mvpMatAttribLocs;
+		GLuint vpMatAttribLoc;
 		GLuint meshTransformUniformLoc;
 		glm::mat4* meshesTransformsBuffer;
 
@@ -220,11 +217,11 @@ namespace Corium3D {
 		GLuint debugVertexShader;
 		GLuint debugFragShader;
 		GLuint debugVpMatUniformLoc;
-		GLuint blahBuffer;
-		GLuint blahUniformLoc;
+		GLuint blahBuffer;		
 		////////////////////////////
 
 		void refreshProjMat();
+		void refreshViewMat();
 		void updateDueFovOrWinSzChange();
 		void updateFrustumDs();
 		void updateFrustumSidePlanesNormals();

@@ -876,8 +876,9 @@ namespace Corium3D {
 														 float initCollisionPerimeterRot,
 														 ProximityHandlingMethods* proximityHandlingMethods,
 														 OnRayHit onRayHitCallback) :
-			owningGameLmnt(_owningGameLmnt), corium3DEngineImpl(_corium3DEngineImpl) {
+			owningGameLmnt(_owningGameLmnt), corium3DEngineImpl(_corium3DEngineImpl) {		
 		modelIdx = corium3DEngineImpl.modelSceneModelIdxsMap[modelIdx];
+		components |= corium3DEngineImpl.staticModelsNr <= modelIdx ? Component::Mobility : 0;
 		if (initTransform)
 			initTransform->rot = normalize(initTransform->rot);
 		std::complex<float> initCollisionPerimeterRotComplex;

@@ -32,6 +32,7 @@ namespace Corium3D {
 
 	const GLchar* INSTANCE_DATA_IDX_ATTRIB_NAME = "aInstanceDataIdx";
 	const GLchar* VERTEX_POS_ATTRIB_NAME = "aPos";
+	const GLchar* VIEW_PROJECTION_MAT_UNIFORM_NAME = "uVpMat";
 	const GLchar* VERTEX_BONES_IDS_ATTRIB_NAME = "aBonesIDs";
 	const GLchar* VERTEX_BONES_WEIGHTS_ATTRIB_NAME = "aBonesWeights";
 	const GLuint MVPS_UNIF_BUFFER_BINDING = 4;
@@ -319,10 +320,9 @@ namespace Corium3D {
 		ServiceLocator::getLogger().logd("Renderer", "surfaceChanged called.");
 		winWidth = _winWidth;
 		winHeight= _winHeight;
-		glViewport(0, 0, winWidth, winHeight);    	
-		refreshProjMat();
+		glViewport(0, 0, winWidth, winHeight);    			
 		updateDueFovOrWinSzChange();
-
+		
 		if (needReinitGlLmnts) {
 			if (!initOpenGlLmnts()) {
 				openGlContext->destroy();
@@ -330,6 +330,8 @@ namespace Corium3D {
 			}
 			needReinitGlLmnts = false;
 		}
+
+		refreshProjMat();
 
 		if (needReloadGlBuffers) {
 			loadOpenGlBuffers();
@@ -355,7 +357,7 @@ namespace Corium3D {
 		instancesAnimators = new InstanceAnimator**[modelsNrTotal];
 		verticesNrTotal = 0;
 		instancesNrsMaximaMax = 0;
-		instancesNrMax = 0;
+		staticInstancesNrMax = 0;
 		bonesInstancedNrMax = 0;
 		facesNrTotal = 0;
 		verticesColorsNrTotal = 0;
@@ -364,7 +366,8 @@ namespace Corium3D {
 			unsigned int modelInstancesNrMax = modelsInstancesNrsMaxima[modelIdx];
 			if (modelInstancesNrMax > instancesNrsMaximaMax)
 				instancesNrsMaximaMax = modelInstancesNrMax;
-			instancesNrMax += modelInstancesNrMax;
+			if (modelIdx < staticModelsNr)
+				staticInstancesNrMax += modelInstancesNrMax;
 			bonesInstancedNrMax += modelDescsBuffer[modelIdx].bonesNr * modelInstancesNrMax;
 			facesNrTotal += modelDescsBuffer[modelIdx].facesNr;
 			modelsAnimators[modelIdx] = NULL;
@@ -393,7 +396,8 @@ namespace Corium3D {
 			visibleMobileModelsInstancesIdxs[modelIdx] = new unsigned int[mobileModelInstancesNrMax]();
 		}
 
-		viewMat = glm::lookAt(cameraPos, cameraPos + cameraLookDirection, cameraUp);
+		refreshViewMat();
+		
 		if (!needReinitGlLmnts)
 			loadOpenGlBuffers();	
 		else
@@ -443,8 +447,7 @@ namespace Corium3D {
 	void Renderer::translateCamera(glm::vec3 const& translation) {	
 		cameraPivot += translation;
 		cameraPos += translation;	
-		viewMat = glm::lookAt(cameraPos, cameraPos + cameraLookDirection, cameraUp);
-		vpMat = projMat * viewMat;
+		refreshViewMat();
 	
 		updateFrustumDs();
 	}
@@ -484,8 +487,7 @@ namespace Corium3D {
 		if (cameraPivotShiftAmount > EPSILON)
 			cameraPos = cameraPivot - cameraPivotShiftAmount*cameraLookDirection;
 
-		viewMat = glm::lookAt(cameraPos, cameraPos + cameraLookDirection, cameraUp);    
-		vpMat = projMat * viewMat;
+		refreshViewMat();		
 
 		updateFrustumSidePlanesNormals();
 		frustumNearPlane.normal = -cameraLookDirection;
@@ -541,6 +543,7 @@ namespace Corium3D {
 	bool Renderer::render(double lag) {	
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
+		//DEBUG RENDERING
 		glUseProgram(debugProg);
 		glBindVertexArray(debugVAO);
 		glBindBuffer(GL_ARRAY_BUFFER, debugVertexBuffer);	
@@ -659,7 +662,7 @@ namespace Corium3D {
 				CHECK_GL_ERROR("updateRendererBuffer");
 			}
 			visibleMobileModelsInstancesIdxs[mobileModelIdx][visibleMobileModelsInstancesNrs[mobileModelIdx]] = node->getInstanceIdx();	
-			mobileModelsTransformatsBuffers[mobileModelIdx][visibleMobileModelsInstancesNrs[mobileModelIdx]] = vpMat * node->getMobilityInterface().getTransformat();
+			mobileModelsTransformatsBuffers[mobileModelIdx][visibleMobileModelsInstancesNrs[mobileModelIdx]] = node->getMobilityInterface().getTransformat();
 			visibleMobileModelsInstancesNrs[mobileModelIdx]++;
 		
 			const AABB3D aabb = node->getAABB();
@@ -774,11 +777,15 @@ namespace Corium3D {
 			}
 		}
 			
+		//STATIC MODELS RENDERING
 		unsigned int processedVerticesNr = 0;
 		unsigned int processedIndicesNr = 0;
 		for (unsigned int modelIdx = 0; modelIdx < staticModelsNr; modelIdx++) {		
 			glBindVertexArray(vaos[modelDescsBuffer[modelIdx].progIdx]);
 			glUseProgram(progs[modelDescsBuffer[modelIdx].progIdx]);				
+			//TODO: upload to relevent shaders only on vpMat updates (will involve getting a vpMatAttribLoc for each shader)
+			glUniformMatrix4fv(vpMatAttribLoc, 1, GL_FALSE, (float*)&(vpMat));
+			CHECK_GL_ERROR("glUniformMatrix4fv");
 
 			unsigned int visibleInstancesNr = visibleStaticModelsInstancesNrs[modelIdx];
 			visibleStaticModelsInstancesNrs[modelIdx] = 0;
@@ -791,11 +798,11 @@ namespace Corium3D {
 				glUnmapBuffer(GL_ARRAY_BUFFER);
 				
 				// REMINDER: doesnt work in opengl es 3
-				for (unsigned int meshIdx = 0; meshIdx < modelDescsBuffer[modelIdx].meshesNr; meshIdx++) {
-					//glUniformMatrix4fv(meshTransformUniformLoc, 1, GL_FALSE, (float*)&(meshesTransformsBuffer[meshIdx]));					
-					CHECK_GL_ERROR("glUniformMatrix4fv");
+				for (unsigned int meshIdx = 0; meshIdx < modelDescsBuffer[modelIdx].meshesNr; meshIdx++) {										
+					glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer);
 					glDrawElementsInstancedBaseVertex(GL_TRIANGLES, 3 * modelDescsBuffer[modelIdx].facesNrsPerMesh[meshIdx], GL_UNSIGNED_INT,
 						(GLvoid*)(processedIndicesNr * sizeof(unsigned int)), visibleInstancesNr, processedVerticesNr);
+					
 					CHECK_GL_ERROR("glDrawElementsInstancedBaseVertex");
 					processedVerticesNr += modelDescsBuffer[modelIdx].verticesNrsPerMesh[meshIdx];
 					processedIndicesNr += 3 * modelDescsBuffer[modelIdx].facesNrsPerMesh[meshIdx];
@@ -807,11 +814,15 @@ namespace Corium3D {
 			}	
 		}
 	
+		//MOBILE MODELS RENDERING
 		unsigned int modelIdxOverall = staticModelsNr;
 		for (unsigned int mobileModelIdx = 0; mobileModelIdx < mobileModelsNr; mobileModelIdx++) {		
 			glBindVertexArray(vaos[modelDescsBuffer[modelIdxOverall].progIdx]);
 			glUseProgram(progs[modelDescsBuffer[modelIdxOverall].progIdx]);		
-		
+			//TODO: upload to relevent shaders only on vpMat updates (will involve getting a vpMatAttribLoc for each shader)
+			glUniformMatrix4fv(vpMatAttribLoc, 1, GL_FALSE, (float*)&(vpMat));
+			CHECK_GL_ERROR("glUniformMatrix4fv");
+
 			unsigned int visibleInstancesNr = visibleMobileModelsInstancesNrs[mobileModelIdx];
 			visibleMobileModelsInstancesNrs[mobileModelIdx] = 0;
 			if (visibleInstancesNr) {							
@@ -819,19 +830,17 @@ namespace Corium3D {
 				unsigned int* instanceDataIdxsBufferPtr = (unsigned int*)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(unsigned int) * visibleInstancesNr, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT);
 				CHECK_GL_ERROR("glMapBufferRange");
 				glBindBuffer(GL_SHADER_STORAGE_BUFFER, mvpMatsBuffer);
-				glm::mat4* mvpMatsBufferPtr = (glm::mat4*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(glm::mat4) * modelsInstancesNrsMaxima[modelIdxOverall], GL_MAP_WRITE_BIT);
+				glm::mat4* mvpMatsBufferPtr = (glm::mat4*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, sizeof(glm::mat4) * staticInstancesNrMax, sizeof(glm::mat4) * modelsInstancesNrsMaxima[modelIdxOverall], GL_MAP_WRITE_BIT);
 				CHECK_GL_ERROR("glMapBufferRange");
 				for (unsigned int visibleInstanceIdxIdx = 0; visibleInstanceIdxIdx < visibleInstancesNr; visibleInstanceIdxIdx++) {	
 					unsigned int modelInstanceIdx = visibleMobileModelsInstancesIdxs[mobileModelIdx][visibleInstanceIdxIdx];
-					instanceDataIdxsBufferPtr[visibleInstanceIdxIdx] = modelInstanceIdx;// +instancesBaseIdxsPerModel[modelIdxOverall];
+					instanceDataIdxsBufferPtr[visibleInstanceIdxIdx] = staticInstancesNrMax + modelInstanceIdx;
 					mvpMatsBufferPtr[modelInstanceIdx] = mobileModelsTransformatsBuffers[mobileModelIdx][visibleInstanceIdxIdx];
 				}
 				glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 				CHECK_GL_ERROR("glUnmapBuffer");
 				glUnmapBuffer(GL_ARRAY_BUFFER);
-				CHECK_GL_ERROR("glUnmapBuffer");
-				//glUniformMatrix4fv(blahUniformLoc, 1, GL_FALSE, (float*)mobileModelsTransformatsBuffers[0]);
-				//CHECK_GL_ERROR("glUniformMatrix4fv");
+				CHECK_GL_ERROR("glUnmapBuffer");				
 
 				//glBindBuffer(GL_SHADER_STORAGE_BUFFER, bonesTransformsBuffers[descIdx]);
 				//glm::mat4* bonesTransformsPtr = (glm::mat4*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, sizeof(glm::mat4) * instancesBaseIdxsPerDescPerModel[descIdx][modelIdx], sizeof(glm::mat4) * modelsDescsBuffer[descIdx].bonesNrs[modelIdx] * modelsDescsBuffer[descIdx].instancesNrsMaxima[modelIdx], GL_MAP_WRITE_BIT);
@@ -880,7 +889,13 @@ namespace Corium3D {
 	inline void Renderer::refreshProjMat() {	
 		projMat = glm::perspectiveFov(fov, (float)winWidth, (float)winHeight, frustumNear, frustumFar);
 		//projMat = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, frustumNear, frustumFar);
-		vpMat = projMat * viewMat;			
+		vpMat = projMat * viewMat;							
+	}
+
+	void Renderer::refreshViewMat()
+	{
+		viewMat = glm::lookAt(cameraPos, cameraPos + cameraLookDirection, cameraUp);		
+		vpMat = projMat * viewMat;		
 	}
 
 	inline void Renderer::updateDueFovOrWinSzChange() {
@@ -999,7 +1014,7 @@ namespace Corium3D {
 
 			GLuint instanceDataIdxAttribLoc = glGetAttribLocation(progs[shaderIdx], INSTANCE_DATA_IDX_ATTRIB_NAME);
 			GLuint vertexPosAttribLoc = glGetAttribLocation(progs[shaderIdx], VERTEX_POS_ATTRIB_NAME);
-			//blahUniformLoc = glGetUniformLocation(progs[shaderIdx], "uVpMat");
+			vpMatAttribLoc = glGetUniformLocation(progs[shaderIdx], VIEW_PROJECTION_MAT_UNIFORM_NAME);
 			//GLuint vertexBonesIdxsAttribLoc = glGetAttribLocation(progs[descIdx], VERTEX_BONES_IDS_ATTRIB_NAME);
 			//GLuint vertexBonesWeightsAttribLoc = glGetAttribLocation(progs[descIdx], VERTEX_BONES_WEIGHTS_ATTRIB_NAME);	
 			CHECK_GL_ERROR("glGetAttribLocation");
@@ -1109,7 +1124,7 @@ namespace Corium3D {
 		glBufferData(GL_ARRAY_BUFFER, verticesNrTotal * sizeof(VertexData), NULL, GL_STATIC_DRAW);
 		CHECK_GL_ERROR("glBufferData");			
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, mvpMatsBuffer);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, instancesNrsMaximaMax * sizeof(glm::mat4), NULL, GL_DYNAMIC_DRAW);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, (staticInstancesNrMax + instancesNrsMaximaMax) * sizeof(glm::mat4), NULL, GL_DYNAMIC_DRAW);
 		CHECK_GL_ERROR("glBufferData");
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bonesTransformsBaseIdxsBuffer);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, instancesNrsMaximaMax * sizeof(unsigned int), NULL, GL_STATIC_DRAW);
@@ -1117,8 +1132,11 @@ namespace Corium3D {
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, bonesTransformsBuffer);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, bonesInstancedNrMax * sizeof(glm::mat4), NULL, GL_DYNAMIC_DRAW);
 		CHECK_GL_ERROR("glBufferData");
+		//glBindBuffer(GL_SHADER_STORAGE_BUFFER, selectedVerticesColorsIdxsBuffer);
+		//glBufferData(GL_SHADER_STORAGE_BUFFER, instancesNrMax * sizeof(unsigned int), NULL, GL_DYNAMIC_DRAW);
+		// TODO: Fix the damn vertices colors handling
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, selectedVerticesColorsIdxsBuffer);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, instancesNrMax * sizeof(unsigned int), NULL, GL_DYNAMIC_DRAW);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, staticInstancesNrMax * sizeof(unsigned int), NULL, GL_DYNAMIC_DRAW);
 		CHECK_GL_ERROR("glBufferData");
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, verticesColorsBuffer);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, verticesColorsNrTotal * 4 * sizeof(float), NULL, GL_DYNAMIC_DRAW);
@@ -1236,6 +1254,7 @@ namespace Corium3D {
 					delete[] vertexIndicesArr;
 					processedIndicesNr += facesNr * 3;
 
+					/*
 					unsigned int* initVerticesColorsIdx = new unsigned int[modelsInstancesNrsMaxima[modelIdx]];
 					for (unsigned int instanceIdx = 0; instanceIdx < modelsInstancesNrsMaxima[modelIdx]; instanceIdx++)
 						initVerticesColorsIdx[instanceIdx] = processedVerticesColorsNr;
@@ -1245,7 +1264,7 @@ namespace Corium3D {
 						sizeof(unsigned int) * modelsInstancesNrsMaxima[modelIdx], initVerticesColorsIdx);
 					CHECK_GL_ERROR("glBufferSubData");
 					delete[] initVerticesColorsIdx;
-
+					*/
 					glBindBuffer(GL_SHADER_STORAGE_BUFFER, verticesColorsBuffer);
 					CHECK_GL_ERROR("glBindBuffer");
 					if (mesh->mColors[0]) {

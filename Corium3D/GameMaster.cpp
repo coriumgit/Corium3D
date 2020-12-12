@@ -96,7 +96,7 @@ glm::vec3  linVels[TEST_LMNTS_NR] = { glm::vec3(0.0f, 0.0f, 0.0f),
 									  glm::vec3(0.0f, 0.0f, 0.0f) }; 
 #endif
 
-GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium3Dengine), cubesPool(TEST_LMNTS_NR_MAX)//, spheresPool(TEST_LMNTS_NR), capsulesPool(TEST_LMNTS_NR) 
+GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium3Dengine), cubesPool(TEST_LMNTS_NR_MAX), spheresPool(TEST_LMNTS_NR_MAX), capsulesPool(TEST_LMNTS_NR_MAX)
 {							
 	std::vector<std::vector<Transform3D>> transformsInit = corium3DEngine.loadScene(0);
 
@@ -106,22 +106,17 @@ GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium
 		std::bind(&GameMaster::primitiveColoringDetachmentCallback, this, std::placeholders::_1, std::placeholders::_2)
 	};
 	Corium3DEngine::GameLmnt::ProximityHandlingMethods coloringCallbacksBuffer[] =
-	{ coloringCallbacks, coloringCallbacks, coloringCallbacks, coloringCallbacks };
+		{ coloringCallbacks, coloringCallbacks, coloringCallbacks, coloringCallbacks };
 
-#if TEST_PRIMITIVES == 0	
+
 	for (unsigned int lmntIdx = 0; lmntIdx < transformsInit[0].size(); lmntIdx++)
 		cubes[lmntIdx] = cubesPool.acquire(corium3DEngine, transformsInit[0][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);	
-#elif TEST_PRIMITIVES == 1
-	for (unsigned int lmntIdx = 0; lmntIdx < TEST_LMNTS_NR / 2; lmntIdx++)
-		spheres[lmntIdx] = spheresPool.acquire<TheSphere::InitStruct>(TheSphere::InitStruct({ corium3D, transforms + lmntIdx, 2 * asinf(transforms[lmntIdx].rot.z), linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer }));
-	for (unsigned int lmntIdx = TEST_LMNTS_NR / 2; lmntIdx < TEST_LMNTS_NR; lmntIdx++)
-		spheres[lmntIdx] = spheresPool.acquire<TheSphere::InitStruct>(TheSphere::InitStruct({ corium3D, transforms + lmntIdx, 2 * asinf(transforms[lmntIdx].rot.z), linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer }));
-#elif TEST_PRIMITIVES == 2
-	for (unsigned int lmntIdx = 0; lmntIdx < TEST_LMNTS_NR / 2; lmntIdx++)
-		capsules[lmntIdx] = capsulesPool.acquire<TheCapsule::InitStruct>(TheCapsule::InitStruct({ corium3D, transforms + lmntIdx, M_PI / 4.0f , linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer }));
-	for (unsigned int lmntIdx = TEST_LMNTS_NR / 2; lmntIdx < TEST_LMNTS_NR; lmntIdx++)
-		capsules[lmntIdx] = capsulesPool.acquire<TheCapsule::InitStruct>(TheCapsule::InitStruct({ corium3D, transforms + lmntIdx, 2 * asinf(transforms[lmntIdx].rot.z), linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer }));
-#endif	
+
+	for (unsigned int lmntIdx = 0; lmntIdx < transformsInit[3].size(); lmntIdx++)
+		spheres[lmntIdx] = spheresPool.acquire(corium3DEngine, transformsInit[3][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);
+
+	for (unsigned int lmntIdx = 0; lmntIdx < transformsInit[1].size(); lmntIdx++)
+		capsules[lmntIdx] = capsulesPool.acquire(corium3DEngine, transformsInit[1][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);
 
 	// PLAYER INSTANTIATION
 	Transform3D playerTransform({ glm::vec3(5.0f, 0.0f, 0.0), glm::vec3(1.0f, 1.0f, 1.0f), glm::quat(cos(0 / 6), sin(0 / 4), sin(0 / 4), sin(0 / 6)) });		
@@ -130,7 +125,8 @@ GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium
 		std::bind(&GameMaster::playerDetachmentCallback, this, std::placeholders::_1, std::placeholders::_2)
 	};
 	Corium3DEngine::GameLmnt::ProximityHandlingMethods playerProximityHandlingMethods[] =
-	{ playerProximityCallbacks, playerProximityCallbacks, playerProximityCallbacks, playerProximityCallbacks };
+		{ playerProximityCallbacks, playerProximityCallbacks, playerProximityCallbacks, playerProximityCallbacks };
+	
 	player = new TheCube(corium3DEngine, playerTransform, 0, glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, glm::vec3(1.0f, 0.0f, 1.0f), playerProximityHandlingMethods);
 	playerMobilityAPI = player->accessMobilityAPI();
 	corium3DEngine.registerKeyboardInputStartCallback(KeyboardInputID::LEFT_ARROW, std::bind(&GameMaster::movePlayerLeft, this, std::placeholders::_1));
@@ -145,6 +141,7 @@ GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium
 	corium3DEngine.registerKeyboardInputEndCallback(KeyboardInputID::DOWN_ARROW, std::bind(&GameMaster::stopPlayerDown, this, std::placeholders::_1));
 	corium3DEngine.registerKeyboardInputEndCallback(KeyboardInputID::Q, std::bind(&GameMaster::stopPlayerFar, this, std::placeholders::_1));
 	corium3DEngine.registerKeyboardInputEndCallback(KeyboardInputID::A, std::bind(&GameMaster::stopPlayerClose, this, std::placeholders::_1));
+	
 	corium3DEngine.registerCursorInputCallback(CursorInputID::LEFT_DOWN, std::bind(&GameMaster::activatePanning, this, std::placeholders::_1, std::placeholders::_2));
 	corium3DEngine.registerCursorInputCallback(CursorInputID::LEFT_UP, std::bind(&GameMaster::deactivatePanning, this, std::placeholders::_1, std::placeholders::_2));
 	corium3DEngine.registerCursorInputCallback(CursorInputID::RIGHT_DOWN, std::bind(&GameMaster::activateRotation, this, std::placeholders::_1, std::placeholders::_2));
@@ -154,7 +151,7 @@ GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium
 	corium3DEngine.registerCursorInputCallback(CursorInputID::MOVE, std::bind(&GameMaster::transformCamera, this, std::placeholders::_1, std::placeholders::_2));
 	corium3DEngine.registerCursorInputCallback(CursorInputID::MIDDLE_DOWN, std::bind(&GameMaster::shootRay, this, std::placeholders::_1, std::placeholders::_2));
 	corium3DEngine.accessGuiAPI(0).show();
-
+	
 	corium3DEngine.accessCameraAPI().translate(glm::vec3(0.0f, 5.0, 5.0f));
 	corium3DEngine.accessCameraAPI().rotate(M_PI_4, glm::vec3(-1.0f, 0.0f, 0.0f));
 }
@@ -302,8 +299,8 @@ void GameMaster::shootRay(double timeStamp, glm::vec2 const& cursorPos) {
 		capsules[testLmntIdx]->accessGraphicsAPI()->changeVerticesColors(0, 0);
 #endif
 
-	player->accessGraphicsAPI()->changeVerticesColors(0, 0);
-	corium3DEngine.accessCameraAPI().shootRay(cursorPos);
+//	player->accessGraphicsAPI()->changeVerticesColors(0, 0);
+//	corium3DEngine.accessCameraAPI().shootRay(cursorPos);
 }
 
 void GameMaster::doNothing(double unused) {}
