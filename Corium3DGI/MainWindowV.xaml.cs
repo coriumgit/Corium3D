@@ -6,6 +6,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using CoriumDirectX;
 using System.Windows.Media.Imaging;
+using System.Windows.Controls;
 
 namespace Corium3DGI
 {
@@ -98,7 +99,19 @@ namespace Corium3DGI
 
         private void SetScenesComboBoxEditable(object sender, RoutedEventArgs e)
         {
-            sceneComboBox.IsEditable = true;
+            sceneComboBox.IsEditable = true;            
+        }
+
+        private void OnSceneModelIsStaticGotFocus(object sender, RoutedEventArgs e)
+        {/*
+            DataGridCell cell = sender as DataGridCell;
+            if (cell != null)
+            {
+                CheckBox checkBox = cell.Content as CheckBox;
+                if (checkBox != null)
+                    checkBox.IsChecked = !checkBox.IsChecked;
+            }
+            */
         }
 
         private void ExposeModelViewport(object sender, MouseButtonEventArgs e)
@@ -112,8 +125,13 @@ namespace Corium3DGI
             modelViewportContainer.Visibility = Visibility.Hidden;
             sceneViewportContainer.Visibility = Visibility.Visible;
         }
-    } 
-    
+
+        public void ModelsDataTable_DeleteModel(object sender, RoutedEventArgs e)
+        {            
+            ModelsTable.Items.Refresh();
+        }
+    }
+
     public class IsShownToVisibilityBtnImageSource : IValueConverter
     {
         public object Convert(object value, Type targetType, object param, System.Globalization.CultureInfo culture)

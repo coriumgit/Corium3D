@@ -9,19 +9,15 @@ using System.Windows.Media;
 namespace Corium3DGI
 {
     public class SceneModelInstanceM : ObservableObject, IDisposable
-    {
-        private int instanceIdx;
-        private IdxPool sceneModelIdxPool;
+    {                
         private EventHandlers eventHandlers;
         private DxVisualizer.IScene.ISceneModelInstance.SelectionHandler selectionHandler;
+        private AssetsGen.ISceneAssetGen.ISceneModelData.ISceneModelInstanceData sceneModelInstanceAssetData;
+        private DxVisualizer.IScene.ISceneModelInstance iDxSceneModelInstance;         
 
-        public AssetsGen.ISceneAssetGen.ISceneModelData.ISceneModelInstanceData SceneModelInstanceAssetData { get; private set; }
-
-        public DxVisualizer.IScene.ISceneModelInstance IDxSceneModelInstance { get; private set; }
-        
         public SceneModelM SceneModelMRef { get; }
 
-        public ModelVisual3D ModelVisual3DRef { get; }
+        public int InstanceIdx { get; }        
 
         private string name;
         public string Name
@@ -71,13 +67,12 @@ namespace Corium3DGI
             public PropertyChangedEventHandler transformPanelRotEditHander;
         }
 
-        protected SceneModelInstanceM(SceneModelM sceneModel, IdxPool sceneModelIdxPool, Vector3D translate, Vector3D scale, Vector3D rotAx, float rotAng, EventHandlers eventHandlers)
-        {                        
-            instanceIdx = sceneModelIdxPool.acquireIdx();
-            this.sceneModelIdxPool = sceneModelIdxPool;
-            this.eventHandlers = eventHandlers;
+        protected SceneModelInstanceM(SceneModelM sceneModel, int instanceIdx, Vector3D translate, Vector3D scale, Vector3D rotAx, float rotAng, EventHandlers eventHandlers)
+        {
             SceneModelMRef = sceneModel;
-            name = sceneModel.Name + instanceIdx.ToString();
+            name = sceneModel.Name + instanceIdx.ToString();            
+            InstanceIdx = instanceIdx;            
+            this.eventHandlers = eventHandlers;                        
             Translate = new ObservableVector3D(translate);
             Translate.PropertyChanged += this.eventHandlers.transformPanelTranslationEditHander;
             Translate.PropertyChanged += updateAssetDataTranslation;
@@ -89,10 +84,10 @@ namespace Corium3DGI
             RotEueler.PropertyChanged += onInstanceRotated;
             RotEueler.PropertyChanged += updateAssetDataRot;
 
-            SceneModelInstanceAssetData = sceneModel.SceneModelAssetData.addSceneModelInstanceData(translate, scale, RotQuat);
+            sceneModelInstanceAssetData = sceneModel.SceneModelAssetData.addSceneModelInstanceData(translate, scale, RotQuat);
 
             selectionHandler = new DxVisualizer.IScene.ISceneModelInstance.SelectionHandler(onInstanceSelected);
-            IDxSceneModelInstance = sceneModel.IDxScene.createModelInstance(sceneModel.ModelMRef.DxModelID, Color.FromArgb(0, 0, 0, 0), translate, scale, rotAx, rotAng, selectionHandler);
+            iDxSceneModelInstance = sceneModel.IDxScene.createModelInstance(sceneModel.ModelMRef.DxModelID, Color.FromArgb(0, 0, 0, 0), translate, scale, rotAx, rotAng, selectionHandler);
         }        
 
         public void setDisplayedTranslation(Vector3D translation)
@@ -104,7 +99,7 @@ namespace Corium3DGI
             Translate.PropertyChanged += eventHandlers.transformPanelTranslationEditHander;
             //onTranslatePropertyChanged(null, null);
             /*
-            IDxSceneModelInstance.setTranslation(translation);
+            iDxSceneModelInstance.setTranslation(translation);
             if (TranslationSet != null)
             {
                 foreach (OnTranslationSet handler in TranslationSet.GetInvocationList())
@@ -127,7 +122,7 @@ namespace Corium3DGI
             Scale.PropertyChanged += eventHandlers.transformPanelScaleEditHander;
             //onScalePropertyChanged(null, null);
             /*
-            IDxSceneModelInstance.setScale(scale);
+            iDxSceneModelInstance.setScale(scale);
             if (ScaleSet != null)
             {
                 foreach (OnScaleSet handler in ScaleSet.GetInvocationList())
@@ -153,11 +148,11 @@ namespace Corium3DGI
             RotEueler.PropertyChanged += updateAssetDataRot;
 
             RotQuat = rot;
-            SceneModelInstanceAssetData.setRotInit(rot);            
+            sceneModelInstanceAssetData.setRotInit(rot);            
 
             //onRotPropertyChanged(null, null);
             /*
-            IDxSceneModelInstance.setRotation(rot.Axis, (float)rot.Angle);
+            iDxSceneModelInstance.setRotation(rot.Axis, (float)rot.Angle);
             if (RotSet != null)
             {
                 foreach (OnRotSet handler in RotSet.GetInvocationList())
@@ -173,32 +168,28 @@ namespace Corium3DGI
             
         public void addToTransformGrp()
         {
-            IDxSceneModelInstance.addToTransformGrp();
+            iDxSceneModelInstance.addToTransformGrp();
         }
 
         public void removeFromTransformGrp()
         {
-            IDxSceneModelInstance.removeFromTransformGrp();
+            iDxSceneModelInstance.removeFromTransformGrp();
         }        
 
         public void Dispose()
-        {
-            sceneModelIdxPool.releaseIdx(instanceIdx);
-            SceneModelMRef.SceneModelInstanceMs.Remove(this);
-
-            SceneModelInstanceAssetData.Dispose();
-
-            IDxSceneModelInstance.Dispose();            
+        {                       
+            sceneModelInstanceAssetData.Dispose();
+            iDxSceneModelInstance.Dispose();            
         }
 
         public void highlight()
         {
-            IDxSceneModelInstance.highlight();
+            iDxSceneModelInstance.highlight();
         }
 
         public void dim()
         {
-            IDxSceneModelInstance.dim();
+            iDxSceneModelInstance.dim();
         }
 
         public void toggleVisibility()
@@ -206,9 +197,9 @@ namespace Corium3DGI
             IsShown = !IsShown;
 
             if (IsShown)
-                IDxSceneModelInstance.show();
+                iDxSceneModelInstance.show();
             else
-                IDxSceneModelInstance.hide();            
+                iDxSceneModelInstance.hide();            
         }       
         
         private void onInstanceSelected(float x, float y)
@@ -224,17 +215,17 @@ namespace Corium3DGI
 
         private void updateAssetDataTranslation(object sender, PropertyChangedEventArgs e)
         {
-            SceneModelInstanceAssetData.setTranslationInit(Translate.Vector3DCpy);
+            sceneModelInstanceAssetData.setTranslationInit(Translate.Vector3DCpy);
         }
 
         private void updateAssetDataScale(object sender, PropertyChangedEventArgs e)
         {
-            SceneModelInstanceAssetData.setScaleInit(Scale.Vector3DCpy);
+            sceneModelInstanceAssetData.setScaleInit(Scale.Vector3DCpy);
         }
 
         private void updateAssetDataRot(object sender, PropertyChangedEventArgs e)
         {
-            SceneModelInstanceAssetData.setRotInit(RotQuat);
+            sceneModelInstanceAssetData.setRotInit(RotQuat);
         }
     }
 }

@@ -957,16 +957,8 @@ namespace CoriumDirectX {
     }
 
     HRESULT DxRenderer::removeModel(UINT modelID) {
-        for (std::list<Scene*>::iterator scenesIt = scenes.begin(); scenesIt != scenes.end(); scenesIt++) {
-            std::list<Scene::SceneModelData*>& sceneModelsData = (*scenesIt)->sceneModelsData;
-            for (std::list<Scene::SceneModelData*>::iterator sceneModelsDataIt = sceneModelsData.begin(); sceneModelsDataIt != sceneModelsData.end(); sceneModelsDataIt++) {
-                if ((*sceneModelsDataIt)->modelID == modelID) {
-                    (*sceneModelsDataIt)->sceneModelInstances.clear(); // TODO: delete the scene models instances
-                    sceneModelsData.erase(sceneModelsDataIt);
-                    break;
-                }
-            }
-        }
+        for (std::list<Scene*>::iterator scenesIt = scenes.begin(); scenesIt != scenes.end(); scenesIt++)
+            (*scenesIt)->eraseSceneModelData(modelID);
 
         modelsRenderData[modelID].modelGeoData.vertexBuffer->Release();
         modelsRenderData[modelID].modelGeoData.indexBuffer->Release();
@@ -1382,8 +1374,9 @@ namespace CoriumDirectX {
         // visibleInstancesIdxsStaging
         // visibleHighlightedInstancesIdxsStaging
 
-        sceneModelData->sceneModelInstances[instanceIdx] = this;                           
-        updateBuffers();
+        sceneModelData->sceneModelInstances[instanceIdx] = this;  
+        if (scene.renderer.activeScene == &scene)
+            updateBuffers();
     }
 
     DxRenderer::Scene::SceneModelInstance::~SceneModelInstance() { delete &kdtreeDataNodeHolder; }
@@ -1483,7 +1476,9 @@ namespace CoriumDirectX {
         return false;
     }
 
-    void DxRenderer::Scene::activate() {        
+    void DxRenderer::Scene::activate() {  
+        if (renderer.activeScene)
+            renderer.activeScene->unloadVisibleInstancesDataToBuffers();
         loadViewMatToBuffer();
         loadProjMatToBuffer();
         loadVisibleInstancesDataToBuffers();
@@ -1634,15 +1629,7 @@ namespace CoriumDirectX {
     }            
 
     void DxRenderer::Scene::loadVisibleInstancesDataToBuffers() {        
-        for (std::list<SceneModelData*>::iterator it = sceneModelsData.begin(); it != sceneModelsData.end(); it++) {
-            ModelRenderData& modelRenderData = renderer.modelsRenderData[(*it)->modelID];
-            for (unsigned int instanceIdx = 0; instanceIdx < modelRenderData.visibleInstancesNr; instanceIdx++)
-                (*it)->sceneModelInstances[modelRenderData.visibleInstancesIdxs[instanceIdx]]->transformatsBufferOffset = (std::numeric_limits<UINT>::max)();
-            for (unsigned int instanceIdx = 0; instanceIdx < modelRenderData.visibleHighlightedInstancesNr; instanceIdx++)
-                (*it)->sceneModelInstances[modelRenderData.visibleHighlightedInstancesIdxs[instanceIdx]]->transformatsBufferOffset = (std::numeric_limits<UINT>::max)();
-
-            modelRenderData.visibleInstancesNr = modelRenderData.visibleHighlightedInstancesNr = 0;            
-        }
+        unloadVisibleInstancesDataToBuffers();
             
         kdtree->initVisibleNodesIt();     
         while (SceneModelInstance* visibleInstance = kdtree->getNextVisibleNodeData()) {
@@ -1679,7 +1666,31 @@ namespace CoriumDirectX {
                 renderer.devcon->UpdateSubresource(modelRenderData.visibleHighlightedInstancesDataBuffer, 0, &rangeBox, &visibleHighlightedInstancesDataStaging[0], 0, 0);                
             }            
         }
-    }    
+    }
+
+    void DxRenderer::Scene::unloadVisibleInstancesDataToBuffers() {
+        for (std::list<SceneModelData*>::iterator it = sceneModelsData.begin(); it != sceneModelsData.end(); it++) {
+            SceneModelData* sceneModelData = *it;
+            ModelRenderData& modelRenderData = renderer.modelsRenderData[sceneModelData->modelID];
+            for (unsigned int instanceIdx = 0; instanceIdx < modelRenderData.visibleInstancesNr; instanceIdx++)
+                sceneModelData->sceneModelInstances[modelRenderData.visibleInstancesIdxs[instanceIdx]]->transformatsBufferOffset = (std::numeric_limits<UINT>::max)();
+            for (unsigned int instanceIdx = 0; instanceIdx < modelRenderData.visibleHighlightedInstancesNr; instanceIdx++)
+                sceneModelData->sceneModelInstances[modelRenderData.visibleHighlightedInstancesIdxs[instanceIdx]]->transformatsBufferOffset = (std::numeric_limits<UINT>::max)();
+
+            modelRenderData.visibleInstancesNr = modelRenderData.visibleHighlightedInstancesNr = 0;
+        }
+    }
+
+    void DxRenderer::Scene::eraseSceneModelData(unsigned int modelID)
+    {        
+        for (std::list<Scene::SceneModelData*>::iterator sceneModelsDataIt = sceneModelsData.begin(); sceneModelsDataIt != sceneModelsData.end(); sceneModelsDataIt++) {
+            if ((*sceneModelsDataIt)->modelID == modelID) {
+                (*sceneModelsDataIt)->sceneModelInstances.clear(); // TODO: verify that the sceneModelInstances destructors are called
+                sceneModelsData.erase(sceneModelsDataIt);
+                return;
+            }
+        }
+    }
 
     void DxRenderer::Scene::transformGrpTranslateEXE(DirectX::CXMVECTOR translation, TransformSrc src) {
         for (std::list<SceneModelInstance*>::iterator it = transformGrp.begin(); it != transformGrp.end(); ++it)

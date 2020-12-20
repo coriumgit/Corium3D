@@ -11,12 +11,11 @@ namespace Corium3DGI
     {
         private class SceneModelInstanceMShell : SceneModelInstanceM
         {
-            public SceneModelInstanceMShell(SceneModelM sceneModel, IdxPool sceneModelIdxPool, Vector3D translate, Vector3D scale, Vector3D rotAx, float rotAng, EventHandlers eventHandlers) : 
-                base(sceneModel, sceneModelIdxPool, translate, scale, rotAx, rotAng, eventHandlers) { }
+            public SceneModelInstanceMShell(SceneModelM sceneModel, int instanceIdx, Vector3D translate, Vector3D scale, Vector3D rotAx, float rotAng, EventHandlers eventHandlers) : 
+                base(sceneModel, instanceIdx, translate, scale, rotAx, rotAng, eventHandlers) { }
         }
         
-        private IdxPool idxPool = new IdxPool();
-        private SceneM sceneM;
+        private IdxPool idxPool = new IdxPool();        
 
         public AssetsGen.ISceneAssetGen.ISceneModelData SceneModelAssetData { get; private set; }
 
@@ -75,7 +74,7 @@ namespace Corium3DGI
 
         protected SceneModelM(SceneM sceneM, ModelM modelM)
         {                        
-            ModelMRef = modelM;
+            ModelMRef = modelM;            
             name = modelM.Name;
 
             SceneModelAssetData = sceneM.SceneAssetGen.addSceneModelData(modelM.ModelAssetGen, InstancesNrMax, IsStatic);
@@ -84,21 +83,30 @@ namespace Corium3DGI
         }        
 
         public void Dispose()
-        {            
-            sceneM.SceneModelMs.Remove(this);
-
+        {                        
             foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-                instance.Dispose();
+            {
+                idxPool.releaseIdx(instance.InstanceIdx);
+                instance.Dispose();                
+            }
+            SceneModelInstanceMs.Clear();
+
             SceneModelAssetData.Dispose();
         }
 
         public SceneModelInstanceM addSceneModelInstance(Vector3D instanceTranslationInit, Vector3D instanceScaleFactorInit, Vector3D instanceRotAxInit, float instanceRotAngInit, SceneModelInstanceM.EventHandlers eventHandlers)
         {
-            SceneModelInstanceM sceneModelInstance = new SceneModelInstanceMShell(this, idxPool, instanceTranslationInit, instanceScaleFactorInit, instanceRotAxInit, instanceRotAngInit, eventHandlers);
+            SceneModelInstanceM sceneModelInstance = new SceneModelInstanceMShell(this, idxPool.acquireIdx(), instanceTranslationInit, instanceScaleFactorInit, instanceRotAxInit, instanceRotAngInit, eventHandlers);
             SceneModelInstanceMs.Add(sceneModelInstance);
 
             return sceneModelInstance;
-        } 
+        }
+
+        public void removeSceneModelInstance(SceneModelInstanceM sceneModelInstance)
+        {
+            SceneModelInstanceMs.Remove(sceneModelInstance);
+            sceneModelInstance.Dispose();                        
+        }
 
         public bool Equals(SceneModelM other)
         {

@@ -278,7 +278,8 @@ namespace CoriumDirectX {
             void loadViewMatToBuffer();
             void loadProjMatToBuffer();
             void loadVisibleInstancesDataToBuffers();
-
+            void unloadVisibleInstancesDataToBuffers();
+            void eraseSceneModelData(unsigned int modelID);
             void transformGrpTranslateEXE(DirectX::CXMVECTOR translation, TransformSrc src);
             void transformGrpSetTranslationEXE(DirectX::CXMVECTOR translation);
             void transformGrpScaleEXE(DirectX::CXMVECTOR scaleFactorQ, TransformSrc src);

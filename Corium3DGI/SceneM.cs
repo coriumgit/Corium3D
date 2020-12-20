@@ -4,6 +4,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media;
 using System.Windows.Media.Media3D;
 
 namespace Corium3DGI
@@ -14,6 +15,8 @@ namespace Corium3DGI
         {
             public SceneModelMShell(SceneM sceneM, ModelM modelM) : base(sceneM, modelM) { }
         }
+
+        private DxVisualizer.IScene.ISceneModelInstance gridDxInstance;
 
         public AssetsGen.ISceneAssetGen SceneAssetGen { get; private set; }
 
@@ -46,48 +49,62 @@ namespace Corium3DGI
 
         public ObservableCollection<SceneModelM> SceneModelMs { get; } = new ObservableCollection<SceneModelM>();
 
-        public SceneM(string name, DxVisualizer dxVisualizer, DxVisualizer.IScene.TransformCallbackHandlers transformCallbackHandlers) 
+        public SceneM(string name, DxVisualizer dxVisualizer, uint gridDxModelId, DxVisualizer.IScene.TransformCallbackHandlers transformCallbackHandlers) 
         {
             this.name = name;
-
-            SceneAssetGen = AssetsGen.createSceneAssetGen();
-            
+            SceneAssetGen = AssetsGen.createSceneAssetGen();            
             IDxScene = dxVisualizer.createScene(transformCallbackHandlers, out dxVisualizerMouseNotifiers);
+            gridDxInstance = IDxScene.createModelInstance(gridDxModelId, Color.FromArgb(0, 0, 0, 0), new Vector3D(0, 0, 0), new Vector3D(1, 1, 1), new Vector3D(1, 0, 0), 0, null);
         }
 
         public void Dispose()
         {
+            gridDxInstance.Dispose();
+            foreach (SceneModelM sceneModel in SceneModelMs)                                            
+                sceneModel.Dispose();
             IDxScene.Dispose();
 
-            foreach (SceneModelM sceneModel in SceneModelMs)                                            
-                sceneModel.Dispose();            
             SceneAssetGen.Dispose();
         }
 
-        public SceneModelM addSceneModel(ModelM model)
+        public SceneModelM addSceneModel(ModelM modelM)
         {            
             foreach (SceneModelM sceneModel in SceneModelMs)
             {
-                if (sceneModel.ModelMRef == model)
+                if (sceneModel.ModelMRef == modelM)
                     return null;
             }
 
-            SceneModelM sceneModelM = new SceneModelMShell(this, model);
+            SceneModelM sceneModelM = new SceneModelMShell(this, modelM);
             SceneModelMs.Add(sceneModelM);
 
             return sceneModelM;
         }
 
-        public void removeSceneModel(ModelM modelMRef)
+        public void removeSceneModel(ModelM modelM)
         {
             foreach (SceneModelM sceneModel in SceneModelMs)
             {
-                if (sceneModel.ModelMRef == modelMRef)
+                if (sceneModel.ModelMRef == modelM)
                 {
                     sceneModel.Dispose();
+                    SceneModelMs.Remove(sceneModel);
                     return;
                 }
             }            
+        }
+
+        public void removeSceneModel(SceneModelM sceneModelM)
+        {
+            foreach (SceneModelM sceneModel in SceneModelMs)
+            {
+                if (sceneModel == sceneModelM)
+                {
+                    sceneModel.Dispose();
+                    SceneModelMs.Remove(sceneModel);
+                    return;
+                }
+            }
         }
 
         public bool cursorSelect(float x, float y)

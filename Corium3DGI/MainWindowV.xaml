@@ -57,20 +57,70 @@
                                 <cc:ImageButton Grid.Column="2" 
                                                 Source="Resources\Imgs\RedX.png"
                                                 Width="30"
-                                                Height="30"
-                                                Command="{Binding Path=RemoveModelCmd}"/>
-                                
+                                                Height="30"                                                
+                                                Command="{Binding Path=RemoveModelCmd}"
+                                                Click="ModelsDataTable_DeleteModel"/>
+
                                 <cc:ImageButton Grid.Column="3" 
                                                 Source="Resources\Imgs\BlueArrow.png"
                                                 Width="30"
                                                 Height="30"
-                                                Rotation="90"
+                                                Rotation="90"                                                
                                                 Command="{Binding Path=AddSceneModelCmd}"/>
                             </UniformGrid>
                         </Border>
                         
                         <Label DockPanel.Dock="Top" Style="{StaticResource SectionHeader}">Models</Label>
+
+                                                         
+                                                                 
+                         <!--BorderThickness="0"-->
                         
+                        <DataGrid x:Name="ModelsTable"
+                                  DockPanel.Dock="Top" 
+                                  ItemsSource="{Binding Path=ModelMs}"
+                                  SelectedItem="{Binding Path=SelectedModel, Mode=TwoWay}"
+                                  HeadersVisibility="Column"
+                                  AutoGenerateColumns="False"                                                
+                                  SelectionMode="Extended"                                                 
+                                  CanUserSortColumns="False" CanUserReorderColumns="False"
+                                  CanUserResizeRows="False" CanUserAddRows="False">
+                            <DataGrid.Resources>
+                                <utils:ItemIdxConverter x:Key="rowIdxConverter"/>
+
+                                <Style TargetType="DataGridCell">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="CornflowerBlue"/>
+                                            <Setter Property="Foreground" Value="Black"/>
+                                            <Setter Property="BorderBrush" Value="CornflowerBlue"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="False">
+                                            <Setter Property="Background" Value="#F0F0F0"/>
+                                            <Setter Property="Foreground" Value="Black"/>
+                                            <Setter Property="BorderBrush" Value="#F0F0F0"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.Resources>
+
+                            <DataGrid.Columns>
+                                <DataGridTextColumn IsReadOnly="True" Width="*" Header="ID">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="TextAlignment" Value="Center"/>
+                                            <Setter Property="Background" Value="WhiteSmoke"/>
+                                            <Setter Property="Text" Value="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Converter={StaticResource rowIdxConverter}}">
+                                            </Setter>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn IsReadOnly="True" Width="10*" Header="Name" Binding="{Binding Path=Name}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        
+                        <!--
                         <ListBox DockPanel.Dock="Top"                                  
                                  ItemsSource="{Binding Path=ModelMs}"
                                  SelectedItem="{Binding Path=SelectedModel, Mode=TwoWay}"
@@ -80,7 +130,7 @@
                                     <Label Content="{Binding Path=Name}"/>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
-                        </ListBox>
+                        </ListBox>-->
                     </DockPanel>
                 </Border>
 
@@ -216,12 +266,70 @@
                                       SelectedItem="{Binding Path=SelectedSceneModel, Mode=TwoWay}"
                                       HeadersVisibility="Column"
                                       AutoGenerateColumns="False"                                                
-                                      SelectionMode="Single"                                                           
+                                      SelectionMode="Single"                                                         
                                       CanUserSortColumns="False" CanUserReorderColumns="False"
                                       CanUserResizeRows="False" CanUserAddRows="False">
                                 <DataGrid.Resources>
                                     <utils:BindingProxy x:Key="bindingProxy" Data="{Binding}"/>
+
+                                    <Style x:Key="ReadOnlyCellColors" TargetType="DataGridCell">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="CornflowerBlue"/>
+                                                <Setter Property="Foreground" Value="Black"/>
+                                                <Setter Property="BorderBrush" Value="CornflowerBlue"/>
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="False">
+                                                <Setter Property="Background" Value="#F0F0F0"/>
+                                                <Setter Property="Foreground" Value="Black"/>
+                                                <Setter Property="BorderBrush" Value="#F0F0F0"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+
+                                    <Style x:Key="EditableCellColors" TargetType="DataGridCell">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="LightBlue"/>
+                                                <Setter Property="Foreground" Value="Black"/>
+                                                <Setter Property="BorderBrush" Value="LightBlue"/>
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="False">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="Foreground" Value="Black"/>
+                                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+
+                                    <Style x:Key="CheckBoxStyle" TargetType="CheckBox">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="CheckBox">
+                                                    <Border x:Name="Border"
+                                                            HorizontalAlignment="Stretch"
+                                                            CornerRadius="0" 
+                                                            Background="Transparent"
+                                                            BorderThickness="0">
+
+                                                        <Image x:Name="CheckMark"
+                                                               HorizontalAlignment="Center"
+                                                               Width="14"
+                                                               Height="14"
+                                                               Source="Resources\Imgs\RedX.png"
+                                                               SnapsToDevicePixels="False"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsChecked" Value="false">
+                                                            <Setter TargetName="CheckMark" Property="Visibility" Value="Hidden"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
                                 </DataGrid.Resources>
+                                
                                 <DataGrid.Style>
                                     <Style TargetType="DataGrid">
                                         <Style.Triggers>
@@ -231,32 +339,22 @@
                                         </Style.Triggers>
                                     </Style>
                                 </DataGrid.Style>
+                                
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn IsReadOnly="True" Width="3*" Header="Scene" Binding="{Binding Path=Name}">
+                                    <DataGridTextColumn IsReadOnly="True" Width="16*" Header="Model" Binding="{Binding Path=Name}">
                                         <DataGridTextColumn.CellStyle>
-                                            <Style TargetType="DataGridCell">
+                                            <Style TargetType="DataGridCell" BasedOn="{StaticResource ReadOnlyCellColors}">
                                                 <Setter Property="behaviours:InputBehaviours.OnPreviewMouseMove" Value="{Binding Source={StaticResource bindingProxy}, Path=Data.TrySceneModelDragStartCmd}"/>
                                             </Style>
                                         </DataGridTextColumn.CellStyle>
                                     </DataGridTextColumn>
-                                    
-                                    <DataGridTextColumn IsReadOnly="True" Width="*" Header="Inst. Init" Binding="{Binding Path=SceneModelInstanceMs.Count}">
-                                        <DataGridTextColumn.CellStyle>
-                                            <Style TargetType="DataGridCell">
-                                                <Style.Triggers>
-                                                    <Trigger Property="IsSelected" Value="True">
-                                                        <Setter Property="Background" Value="Transparent"/>
-                                                        <Setter Property="Foreground" Value="Black"/>
-                                                        <Setter Property="BorderBrush" Value="Transparent"/>
-                                                    </Trigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </DataGridTextColumn.CellStyle>
-                                    </DataGridTextColumn>
-                                    
-                                    <DataGridTextColumn IsReadOnly="False" Width="*" Header="Inst. Max" Binding="{Binding Path=InstancesNrMax, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
 
-                                    <DataGridCheckBoxColumn IsReadOnly="False" Width="*" Header="Is Static" Binding="{Binding Path=IsStatic, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
+                                    <DataGridTextColumn IsReadOnly="True" Width="5*" Header="Inst. Init" Binding="{Binding Path=SceneModelInstanceMs.Count}" CellStyle="{StaticResource ReadOnlyCellColors}"/>
+
+                                    <DataGridTextColumn IsReadOnly="False" Width="5*" Header="Inst. Max" Binding="{Binding Path=InstancesNrMax, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" CellStyle="{StaticResource EditableCellColors}"/>
+
+                                    <DataGridCheckBoxColumn IsReadOnly="False" Width="4*" Header="Static" Binding="{Binding Path=IsStatic, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
+                                                            CellStyle="{StaticResource EditableCellColors}" ElementStyle="{StaticResource CheckBoxStyle}" EditingElementStyle="{StaticResource CheckBoxStyle}"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                             

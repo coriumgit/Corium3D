@@ -142,6 +142,7 @@
     <Compile Include="Utils\DoubleToBoolConverter.cs" />
     <Compile Include="Utils\Extensions.cs" />
     <Compile Include="Utils\IdxPool.cs" />
+    <Compile Include="Utils\ItemIdxConverter.cs" />
     <Compile Include="Utils\ObservableObject.cs" />
     <Compile Include="Utils\ObservablePoint.cs" />
     <Compile Include="Utils\ObservablePoint3D.cs" />

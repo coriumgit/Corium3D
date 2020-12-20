@@ -44,7 +44,7 @@ namespace Corium3DGI.CustomCtrls
             if (textBox != null)
             {                
                 textBox.PreviewKeyDown += OnKeyPressed;
-                Corium3DGI.Behaviours.InputBehaviours.SetOnLostFocus(textBox, OnTextBoxLostFocus);                
+                Behaviours.InputBehaviours.SetOnLostFocus(textBox, new RelayCommand(OnLostFocusRelayer));
                 textBox.Text = DefaultTextBoxText;
                 textBox.Focus();
             }
@@ -53,10 +53,13 @@ namespace Corium3DGI.CustomCtrls
         public void OnKeyPressed(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
-            {
-                IsEditable = false;
                 Keyboard.ClearFocus();
-            }
+        }
+
+        public void OnLostFocusRelayer(object p)
+        {
+            IsEditable = false;
+            OnTextBoxLostFocus.Execute(p);
         }
     }
 }

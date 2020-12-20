@@ -2,16 +2,13 @@
 using CoriumDirectX;
 
 using System;
-using System.IO;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using System.Windows.Controls;
-using System.Collections.Generic;
 using System.ComponentModel;
-using Microsoft.WindowsAPICodePack.Dialogs;
 
 //TODO: Change the framework: SceneModelM and SceneModelInstanceM are nested and private in SceneM, and SceneM exposes interfaces
 namespace Corium3DGI
@@ -30,8 +27,7 @@ namespace Corium3DGI
         private const uint GRID_HALF_HEIGHT = 500;
 
         private DxVisualizer dxVisualizer;
-        private uint gridDxModelId;
-        private DxVisualizer.IScene.ISceneModelInstance gridDxInstance;
+        private uint gridDxModelId;        
         private CameraAction cameraAction = CameraAction.REST;
         private bool isModelTransforming = false;
         private Point prevMousePos;
@@ -44,7 +40,6 @@ namespace Corium3DGI
         public double CameraFieldOfView { get; } = SCENE_CAMERA_FOV;
         public double CameraNearPlaneDist { get; } = 0.01; //0.125;
         public double CameraFarPlaneDist { get; } = 1000;
-
         
         private ModelM selectedModel;
         public ModelM SelectedModel
@@ -73,7 +68,8 @@ namespace Corium3DGI
                     selectedScene = value;
                     if (selectedScene != null)                    
                         selectedScene.IDxScene.activate();
-                                                                
+
+                    SelectedSceneModel = null;                    
                     OnPropertyChanged("SelectedScene");
                 }
             }
@@ -89,6 +85,7 @@ namespace Corium3DGI
                 if (selectedSceneModel != value)
                 {
                     selectedSceneModel = value;
+                    SelectedSceneModelInstance = null;
                     OnPropertyChanged("SelectedSceneModel");
                 }
             }
@@ -249,9 +246,9 @@ namespace Corium3DGI
         private void removeModel()
         {                        
             foreach (SceneM scene in SceneMs)
-                scene.removeSceneModel(SelectedModel);
-            ModelMs.Remove(SelectedModel);
+                scene.removeSceneModel(SelectedModel);            
             SelectedModel.Dispose();
+            ModelMs.Remove(SelectedModel);            
         }
 
         private void saveImportedModels()
@@ -267,8 +264,7 @@ namespace Corium3DGI
 
         private void addScene(KeyboardFocusChangedEventArgs e)
         {
-            SceneM addedSceneM = new SceneM(((TextBox)e.Source).Text, dxVisualizer, transformGrpCallbackHandlers);
-            gridDxInstance = addedSceneM.IDxScene.createModelInstance(gridDxModelId, Color.FromArgb(0, 0, 0, 0), new Vector3D(0, 0, 0), new Vector3D(1, 1, 1), new Vector3D(1, 0, 0), 0, null);
+            SceneM addedSceneM = new SceneM(((TextBox)e.Source).Text, dxVisualizer, gridDxModelId, transformGrpCallbackHandlers);            
             SceneMs.Add(addedSceneM);            
             SelectedScene = addedSceneM;                        
         }
@@ -286,7 +282,7 @@ namespace Corium3DGI
 
         private void removeSceneModel()
         {
-            SelectedSceneModel.Dispose();            
+            SelectedScene.removeSceneModel(SelectedSceneModel);            
         }
 
         private void onViewportLoaded()
@@ -387,7 +383,8 @@ namespace Corium3DGI
 
         private void onSceneModelInstanceSelected(SceneModelInstanceM selectedSceneModelInstanceM)
         {
-            SelectedSceneModelInstance = selectedSceneModelInstanceM;
+            SelectedSceneModel = selectedSceneModelInstanceM.SceneModelMRef;
+            SelectedSceneModelInstance = selectedSceneModelInstanceM;            
         }
 
         private void onTransformPanelTranslationEdited(object sender, PropertyChangedEventArgs e)
@@ -427,7 +424,7 @@ namespace Corium3DGI
 
         private void removeSceneModelInstance()
         {
-            SelectedSceneModelInstance.Dispose();            
+            SelectedSceneModel.removeSceneModelInstance(SelectedSceneModelInstance);
         }
 
         private void saveScene()
@@ -478,6 +475,9 @@ namespace Corium3DGI
 
         private void mouseMoveSceneViewport(MouseEventArgs e)
         {
+            if (SelectedScene == null)
+                return;
+
             Point currMousePos = e.GetPosition((FrameworkElement)e.Source);
             //Point currMousePos = e.GetPosition(Application.Current.MainWindow);
             Vector cursorMoveVec = currMousePos - prevMousePos;                
