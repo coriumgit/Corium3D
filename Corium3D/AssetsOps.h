@@ -58,13 +58,10 @@ namespace Corium3D {
 			glm::vec2 axisVec;
 			float radius;
 		};
-		
+						
+		CollisionPrimitive3DType collisionPrimitive3DType;
 		glm::vec3 aabb3DMinVertex;
 		glm::vec3 aabb3DMaxVertex;
-		glm::vec2 aabb2DMinVertex;
-		glm::vec2 aabb2DMaxVertex;
-
-		CollisionPrimitive3DType collisionPrimitive3DType;
 		union {
 			CollisionBoxData collisionBoxData;
 			CollisionSphereData collisionSphereData;
@@ -72,6 +69,8 @@ namespace Corium3D {
 		} collisionPrimitive3dData{ glm::vec3{}, glm::vec3{} };
 
 		CollisionPrimitive2DType collisionPrimitive2DType;
+		glm::vec2 aabb2DMinVertex;
+		glm::vec2 aabb2DMaxVertex;
 		union {
 			CollisionRectData collisionRectData;
 			CollisionCircleData collisionCircleData;

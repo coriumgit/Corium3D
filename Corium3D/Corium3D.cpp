@@ -604,9 +604,9 @@ namespace Corium3D {
 			
 			modelsPrimalBoundingSpheres[modelIdxMapped] = BoundingSphere(modelDescs[modelIdxMapped].boundingSphereCenter, modelDescs[modelIdxMapped].boundingSphereRadius);
 
-			ColliderData colliderData = modelDescs[modelIdxMapped].colliderData;
-			modelsPrimalAABB3Ds[modelIdxMapped] = AABB3DRotatable(colliderData.aabb3DMinVertex, colliderData.aabb3DMaxVertex);
+			ColliderData colliderData = modelDescs[modelIdxMapped].colliderData;			
 			if (colliderData.collisionPrimitive3DType != CollisionPrimitive3DType::NO_3D_COLLIDER) {
+				modelsPrimalAABB3Ds[modelIdxMapped] = AABB3DRotatable(colliderData.aabb3DMinVertex, colliderData.aabb3DMaxVertex);
 				switch (colliderData.collisionPrimitive3DType) {
 					case CollisionPrimitive3DType::BOX: {
 						ColliderData::CollisionBoxData& collisionBoxData = colliderData.collisionPrimitive3dData.collisionBoxData;
@@ -625,8 +625,12 @@ namespace Corium3D {
 					}
 				}
 			}
-			else
+			else {
+				// assigning aabb such that aabb.min = max_float && aabb.max == min_float, thus no intersection will be detected with this aabb
+				modelsPrimalAABB3Ds[modelIdxMapped] = AABB3DRotatable(glm::vec3(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()),
+																	  glm::vec3(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()));
 				modelsPrimalCollisionVolumesPtrs[modelIdxMapped] = NULL;
+			}
 
 			if (colliderData.collisionPrimitive2DType != CollisionPrimitive2DType::NO_2D_COLLIDER) {
 				modelsPrimalAABB2Ds[modelIdxMapped] = AABB2DRotatable(colliderData.aabb2DMinVertex, colliderData.aabb2DMaxVertex);
@@ -647,6 +651,12 @@ namespace Corium3D {
 						break;
 					}
 				}
+			}
+			else {
+				// assigning aabb such that aabb.min = max_float && aabb.max == min_float, thus no intersection will be detected with this aabb
+				modelsPrimalAABB2Ds[modelIdxMapped] = AABB2DRotatable(glm::vec2(std::numeric_limits<float>::max(), std::numeric_limits<float>::max()),
+																	  -glm::vec2(std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()));
+				modelsPrimalCollisionPerimetersPtrs[modelIdxMapped] = NULL;
 			}
 			
 			instancesTransformsInit[sceneModelData.modelIdx] = sceneModelData.instancesTransformsInit;

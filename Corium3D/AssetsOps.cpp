@@ -176,22 +176,25 @@ namespace Corium3D {
 
 		outModelDesc.boundingSphereCenter = readVal<glm::vec3>(modelDescFile);
 		outModelDesc.boundingSphereRadius = readVal<float>(modelDescFile);
-		outModelDesc.colliderData.aabb3DMinVertex = readVal<glm::vec3>(modelDescFile);
-		outModelDesc.colliderData.aabb3DMaxVertex = readVal<glm::vec3>(modelDescFile);
-		outModelDesc.colliderData.collisionPrimitive3DType = readVal<enum CollisionPrimitive3DType>(modelDescFile);
-		outModelDesc.colliderData.collisionPrimitive2DType = readVal<enum CollisionPrimitive2DType>(modelDescFile);
-		switch (outModelDesc.colliderData.collisionPrimitive3DType) {
-		case CollisionPrimitive3DType::BOX:
-			outModelDesc.colliderData.collisionPrimitive3dData.collisionBoxData = readVal<ColliderData::CollisionBoxData>(modelDescFile);
-			break;
-		case CollisionPrimitive3DType::SPHERE:
-			outModelDesc.colliderData.collisionPrimitive3dData.collisionSphereData = readVal<ColliderData::CollisionSphereData>(modelDescFile);
-			break;
-		case CollisionPrimitive3DType::CAPSULE:
-			outModelDesc.colliderData.collisionPrimitive3dData.collisionCapsuleData = readVal<ColliderData::CollisionCapsuleData>(modelDescFile);
-			break;
+		
+		outModelDesc.colliderData.collisionPrimitive3DType = readVal<enum CollisionPrimitive3DType>(modelDescFile);		
+		if (outModelDesc.colliderData.collisionPrimitive3DType != CollisionPrimitive3DType::NO_3D_COLLIDER) {
+			outModelDesc.colliderData.aabb3DMinVertex = readVal<glm::vec3>(modelDescFile);
+			outModelDesc.colliderData.aabb3DMaxVertex = readVal<glm::vec3>(modelDescFile);
+			switch (outModelDesc.colliderData.collisionPrimitive3DType) {
+			case CollisionPrimitive3DType::BOX:
+				outModelDesc.colliderData.collisionPrimitive3dData.collisionBoxData = readVal<ColliderData::CollisionBoxData>(modelDescFile);
+				break;
+			case CollisionPrimitive3DType::SPHERE:
+				outModelDesc.colliderData.collisionPrimitive3dData.collisionSphereData = readVal<ColliderData::CollisionSphereData>(modelDescFile);
+				break;
+			case CollisionPrimitive3DType::CAPSULE:
+				outModelDesc.colliderData.collisionPrimitive3dData.collisionCapsuleData = readVal<ColliderData::CollisionCapsuleData>(modelDescFile);
+				break;
+			}
 		}
 
+		outModelDesc.colliderData.collisionPrimitive2DType = readVal<enum CollisionPrimitive2DType>(modelDescFile);
 		if (outModelDesc.colliderData.collisionPrimitive2DType != CollisionPrimitive2DType::NO_2D_COLLIDER) {
 			outModelDesc.colliderData.aabb2DMinVertex = readVal<glm::vec2>(modelDescFile);
 			outModelDesc.colliderData.aabb2DMaxVertex = readVal<glm::vec2>(modelDescFile);
@@ -233,22 +236,25 @@ namespace Corium3D {
 
 		writeVal<glm::vec3>(modelDescFile, modelDesc.boundingSphereCenter);
 		writeVal<float>(modelDescFile, modelDesc.boundingSphereRadius);
-		writeVal<glm::vec3>(modelDescFile, modelDesc.colliderData.aabb3DMinVertex);
-		writeVal<glm::vec3>(modelDescFile, modelDesc.colliderData.aabb3DMaxVertex);
-		writeVal<CollisionPrimitive3DType>(modelDescFile, modelDesc.colliderData.collisionPrimitive3DType);
-		writeVal<CollisionPrimitive2DType>(modelDescFile, modelDesc.colliderData.collisionPrimitive2DType);
-		switch (modelDesc.colliderData.collisionPrimitive3DType) {
-		case CollisionPrimitive3DType::BOX:
-			writeVal<ColliderData::CollisionBoxData>(modelDescFile, modelDesc.colliderData.collisionPrimitive3dData.collisionBoxData);
-			break;
-		case CollisionPrimitive3DType::SPHERE:
-			writeVal<ColliderData::CollisionSphereData>(modelDescFile, modelDesc.colliderData.collisionPrimitive3dData.collisionSphereData);
-			break;
-		case CollisionPrimitive3DType::CAPSULE:
-			writeVal<ColliderData::CollisionCapsuleData>(modelDescFile, modelDesc.colliderData.collisionPrimitive3dData.collisionCapsuleData);
-			break;
+		
+		writeVal<CollisionPrimitive3DType>(modelDescFile, modelDesc.colliderData.collisionPrimitive3DType);		
+		if (modelDesc.colliderData.collisionPrimitive3DType != CollisionPrimitive3DType::NO_3D_COLLIDER) {
+			writeVal<glm::vec3>(modelDescFile, modelDesc.colliderData.aabb3DMinVertex);
+			writeVal<glm::vec3>(modelDescFile, modelDesc.colliderData.aabb3DMaxVertex);
+			switch (modelDesc.colliderData.collisionPrimitive3DType) {
+			case CollisionPrimitive3DType::BOX:
+				writeVal<ColliderData::CollisionBoxData>(modelDescFile, modelDesc.colliderData.collisionPrimitive3dData.collisionBoxData);
+				break;
+			case CollisionPrimitive3DType::SPHERE:
+				writeVal<ColliderData::CollisionSphereData>(modelDescFile, modelDesc.colliderData.collisionPrimitive3dData.collisionSphereData);
+				break;
+			case CollisionPrimitive3DType::CAPSULE:
+				writeVal<ColliderData::CollisionCapsuleData>(modelDescFile, modelDesc.colliderData.collisionPrimitive3dData.collisionCapsuleData);
+				break;
+			}
 		}
 
+		writeVal<CollisionPrimitive2DType>(modelDescFile, modelDesc.colliderData.collisionPrimitive2DType);
 		if (modelDesc.colliderData.collisionPrimitive2DType != CollisionPrimitive2DType::NO_2D_COLLIDER) {
 			writeVal<glm::vec2>(modelDescFile, modelDesc.colliderData.aabb2DMinVertex);
 			writeVal<glm::vec2>(modelDescFile, modelDesc.colliderData.aabb2DMaxVertex);
