@@ -151,29 +151,31 @@ namespace Corium3D {
 
 	void readModelDesc(std::ifstream& modelDescFile, ModelDesc& outModelDesc) {
 		readStr(modelDescFile, outModelDesc.colladaPath);
-		outModelDesc.verticesNr = readVal<unsigned int>(modelDescFile);
-		outModelDesc.meshesNr = readVal<unsigned int>(modelDescFile);
-		readValsSeq<unsigned int>(modelDescFile, outModelDesc.meshesNr, outModelDesc.verticesNrsPerMesh);
-		outModelDesc.verticesColorsNrTotal = readVal<unsigned int>(modelDescFile);
-		readValsSeq<unsigned int>(modelDescFile, outModelDesc.meshesNr, outModelDesc.extraColorsNrsPerMesh);
-		outModelDesc.extraColors.resize(outModelDesc.meshesNr);
-		for (unsigned int meshIdx = 0; meshIdx < outModelDesc.meshesNr; meshIdx++) {
-			unsigned int extraColorsNr = outModelDesc.extraColorsNrsPerMesh[meshIdx];
-			outModelDesc.extraColors[meshIdx].resize(extraColorsNr);
-			for (unsigned int extraColorIdx = 0; extraColorIdx < extraColorsNr; extraColorIdx++)
-				readArr<float, 4>(modelDescFile, outModelDesc.extraColors[meshIdx][extraColorIdx]);
+		if (!outModelDesc.colladaPath.empty()) {
+			outModelDesc.verticesNr = readVal<unsigned int>(modelDescFile);
+			outModelDesc.meshesNr = readVal<unsigned int>(modelDescFile);
+			readValsSeq<unsigned int>(modelDescFile, outModelDesc.meshesNr, outModelDesc.verticesNrsPerMesh);
+			outModelDesc.verticesColorsNrTotal = readVal<unsigned int>(modelDescFile);
+			readValsSeq<unsigned int>(modelDescFile, outModelDesc.meshesNr, outModelDesc.extraColorsNrsPerMesh);
+			outModelDesc.extraColors.resize(outModelDesc.meshesNr);
+			for (unsigned int meshIdx = 0; meshIdx < outModelDesc.meshesNr; meshIdx++) {
+				unsigned int extraColorsNr = outModelDesc.extraColorsNrsPerMesh[meshIdx];
+				outModelDesc.extraColors[meshIdx].resize(extraColorsNr);
+				for (unsigned int extraColorIdx = 0; extraColorIdx < extraColorsNr; extraColorIdx++)
+					readArr<float, 4>(modelDescFile, outModelDesc.extraColors[meshIdx][extraColorIdx]);
+			}
+			outModelDesc.texesNr = readVal<unsigned int>(modelDescFile);
+			readValsSeq<unsigned int>(modelDescFile, outModelDesc.meshesNr, outModelDesc.texesNrsPerMesh);
+			outModelDesc.facesNr = readVal<unsigned int>(modelDescFile);
+			readValsSeq<unsigned int>(modelDescFile, outModelDesc.meshesNr, outModelDesc.facesNrsPerMesh);
+			outModelDesc.progIdx = readVal<unsigned int>(modelDescFile);
+			outModelDesc.bonesNr = readVal<unsigned int>(modelDescFile);
+			readValsSeq<unsigned int>(modelDescFile, outModelDesc.meshesNr, outModelDesc.bonesNrsPerMesh);
+			readVec<ModelDesc::AnimationDesc>(modelDescFile, outModelDesc.animationsDescs);
 		}
-		outModelDesc.texesNr = readVal<unsigned int>(modelDescFile);
-		readValsSeq<unsigned int>(modelDescFile, outModelDesc.meshesNr, outModelDesc.texesNrsPerMesh);
-		outModelDesc.facesNr = readVal<unsigned int>(modelDescFile);
-		readValsSeq<unsigned int>(modelDescFile, outModelDesc.meshesNr, outModelDesc.facesNrsPerMesh);
-		outModelDesc.progIdx = readVal<unsigned int>(modelDescFile);
-		outModelDesc.bonesNr = readVal<unsigned int>(modelDescFile);
-		readValsSeq<unsigned int>(modelDescFile, outModelDesc.meshesNr, outModelDesc.bonesNrsPerMesh);
-		readVec<ModelDesc::AnimationDesc>(modelDescFile, outModelDesc.animationsDescs);
 
-		outModelDesc.colliderData.boundingSphereCenter = readVal<glm::vec3>(modelDescFile);
-		outModelDesc.colliderData.boundingSphereRadius = readVal<float>(modelDescFile);
+		outModelDesc.boundingSphereCenter = readVal<glm::vec3>(modelDescFile);
+		outModelDesc.boundingSphereRadius = readVal<float>(modelDescFile);
 		outModelDesc.colliderData.aabb3DMinVertex = readVal<glm::vec3>(modelDescFile);
 		outModelDesc.colliderData.aabb3DMaxVertex = readVal<glm::vec3>(modelDescFile);
 		outModelDesc.colliderData.collisionPrimitive3DType = readVal<enum CollisionPrimitive3DType>(modelDescFile);
@@ -209,26 +211,28 @@ namespace Corium3D {
 		
 	void writeModelDesc(std::ofstream& modelDescFile, ModelDesc const& modelDesc) {		
 		writeStr(modelDescFile, modelDesc.colladaPath);
-		writeVal<unsigned int>(modelDescFile, modelDesc.verticesNr);
-		writeVal<unsigned int>(modelDescFile, modelDesc.meshesNr);
-		writeValsSeq<unsigned int>(modelDescFile, &modelDesc.verticesNrsPerMesh[0], modelDesc.meshesNr);
-		writeVal<unsigned int>(modelDescFile, modelDesc.verticesColorsNrTotal);
-		writeValsSeq<unsigned int>(modelDescFile, &modelDesc.extraColorsNrsPerMesh[0], modelDesc.meshesNr);
-		for (unsigned int meshIdx = 0; meshIdx < modelDesc.meshesNr; meshIdx++) {
-			for (unsigned int extraColorIdx = 0; extraColorIdx < modelDesc.extraColorsNrsPerMesh[meshIdx]; extraColorIdx++)
-				writeArr<float,4>(modelDescFile, modelDesc.extraColors[meshIdx][extraColorIdx]);
+		if (!modelDesc.colladaPath.empty()) {			
+			writeVal<unsigned int>(modelDescFile, modelDesc.verticesNr);
+			writeVal<unsigned int>(modelDescFile, modelDesc.meshesNr);
+			writeValsSeq<unsigned int>(modelDescFile, &modelDesc.verticesNrsPerMesh[0], modelDesc.meshesNr);
+			writeVal<unsigned int>(modelDescFile, modelDesc.verticesColorsNrTotal);
+			writeValsSeq<unsigned int>(modelDescFile, &modelDesc.extraColorsNrsPerMesh[0], modelDesc.meshesNr);
+			for (unsigned int meshIdx = 0; meshIdx < modelDesc.meshesNr; meshIdx++) {
+				for (unsigned int extraColorIdx = 0; extraColorIdx < modelDesc.extraColorsNrsPerMesh[meshIdx]; extraColorIdx++)
+					writeArr<float, 4>(modelDescFile, modelDesc.extraColors[meshIdx][extraColorIdx]);
+			}
+			writeVal<unsigned int>(modelDescFile, modelDesc.texesNr);
+			writeValsSeq<unsigned int>(modelDescFile, &modelDesc.texesNrsPerMesh[0], modelDesc.meshesNr);
+			writeVal<unsigned int>(modelDescFile, modelDesc.facesNr);
+			writeValsSeq<unsigned int>(modelDescFile, &modelDesc.facesNrsPerMesh[0], modelDesc.meshesNr);
+			writeVal<unsigned int>(modelDescFile, modelDesc.progIdx);
+			writeVal<unsigned int>(modelDescFile, modelDesc.bonesNr);
+			writeValsSeq<unsigned int>(modelDescFile, &modelDesc.bonesNrsPerMesh[0], modelDesc.meshesNr);
+			writeVec<ModelDesc::AnimationDesc>(modelDescFile, modelDesc.animationsDescs);
 		}
-		writeVal<unsigned int>(modelDescFile, modelDesc.texesNr);
-		writeValsSeq<unsigned int>(modelDescFile, &modelDesc.texesNrsPerMesh[0], modelDesc.meshesNr);
-		writeVal<unsigned int>(modelDescFile, modelDesc.facesNr);
-		writeValsSeq<unsigned int>(modelDescFile, &modelDesc.facesNrsPerMesh[0], modelDesc.meshesNr);
-		writeVal<unsigned int>(modelDescFile, modelDesc.progIdx);
-		writeVal<unsigned int>(modelDescFile, modelDesc.bonesNr);
-		writeValsSeq<unsigned int>(modelDescFile, &modelDesc.bonesNrsPerMesh[0], modelDesc.meshesNr);
-		writeVec<ModelDesc::AnimationDesc>(modelDescFile, modelDesc.animationsDescs);
 
-		writeVal<glm::vec3>(modelDescFile, modelDesc.colliderData.boundingSphereCenter);
-		writeVal<float>(modelDescFile, modelDesc.colliderData.boundingSphereRadius);
+		writeVal<glm::vec3>(modelDescFile, modelDesc.boundingSphereCenter);
+		writeVal<float>(modelDescFile, modelDesc.boundingSphereRadius);
 		writeVal<glm::vec3>(modelDescFile, modelDesc.colliderData.aabb3DMinVertex);
 		writeVal<glm::vec3>(modelDescFile, modelDesc.colliderData.aabb3DMaxVertex);
 		writeVal<CollisionPrimitive3DType>(modelDescFile, modelDesc.colliderData.collisionPrimitive3DType);

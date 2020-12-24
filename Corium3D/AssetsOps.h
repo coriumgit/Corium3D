@@ -58,12 +58,9 @@ namespace Corium3D {
 			glm::vec2 axisVec;
 			float radius;
 		};
-
-		glm::vec3 boundingSphereCenter;
-		float boundingSphereRadius;
+		
 		glm::vec3 aabb3DMinVertex;
 		glm::vec3 aabb3DMaxVertex;
-
 		glm::vec2 aabb2DMinVertex;
 		glm::vec2 aabb2DMaxVertex;
 
@@ -107,7 +104,11 @@ namespace Corium3D {
 		unsigned int bonesNr;
 		std::vector<unsigned int> bonesNrsPerMesh;		
 		std::vector<AnimationDesc> animationsDescs;
-		ColliderData colliderData; // TODO: incorporate this -data- to the collada and convert ColliderData to ColliderDesc
+
+		glm::vec3 boundingSphereCenter;
+		float boundingSphereRadius;
+
+		ColliderData colliderData;
 	};
 
 	void readSceneAssets(std::string const& assetsFileFullPath, unsigned int sceneIdx, SceneData& outSceneData, std::vector<ModelDesc>& outModelDescs, std::vector<unsigned int>& outModelSceneModelIdxsMap);

@@ -601,9 +601,10 @@ namespace Corium3D {
 			for (unsigned int collidedWithModelIdx = 0; collidedWithModelIdx < instancesNrMax; collidedWithModelIdx++)
 				proximityHandlingMethods[modelIdxMapped][collidedWithModelIdx] = new GameLmnt::ProximityHandlingMethods[sceneModelsNr];
 			onRayHitCallbacks[modelIdxMapped] = new GameLmnt::OnRayHit[instancesNrMax];
+			
+			modelsPrimalBoundingSpheres[modelIdxMapped] = BoundingSphere(modelDescs[modelIdxMapped].boundingSphereCenter, modelDescs[modelIdxMapped].boundingSphereRadius);
 
 			ColliderData colliderData = modelDescs[modelIdxMapped].colliderData;
-			modelsPrimalBoundingSpheres[modelIdxMapped] = BoundingSphere(colliderData.boundingSphereCenter, colliderData.boundingSphereRadius);
 			modelsPrimalAABB3Ds[modelIdxMapped] = AABB3DRotatable(colliderData.aabb3DMinVertex, colliderData.aabb3DMaxVertex);
 			if (colliderData.collisionPrimitive3DType != CollisionPrimitive3DType::NO_3D_COLLIDER) {
 				switch (colliderData.collisionPrimitive3DType) {
