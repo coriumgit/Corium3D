@@ -1145,7 +1145,7 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 	void BVH::MobileGameLmntDataNode3D::scaleBVs(glm::vec3 const& scale) {
 		static_cast<AABB3DRotatable&>(aabb).scale(scale);
 		boundingSphere.scale(scale);
-		collisionPrimitive.translate(scale);
+		collisionPrimitive.scale(scale);
 		if (!aabbFattened.doesContain(aabb))
 			aabbFattened = AABB3DRotatable::calcScaledAABB(static_cast<AABB3DRotatable&>(aabb), FATTENING_VEC);
 	}
@@ -1190,7 +1190,7 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 
 	void BVH::MobileGameLmntDataNode2D::scaleBPs(glm::vec2 const& scale) {
 		static_cast<AABB2DRotatable&>(aabb).scale(scale);	
-		collisionPrimitive.translate(scale);
+		collisionPrimitive.scale(scale);
 		if (!aabbFattened.doesContain(aabb))
 			aabbFattened = AABB2DRotatable::calcScaledAABB(static_cast<AABB2DRotatable&>(aabb), FATTENING_VEC);
 	}
