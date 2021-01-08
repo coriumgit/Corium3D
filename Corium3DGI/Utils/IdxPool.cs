@@ -17,7 +17,7 @@ namespace Corium3DGI.Utils
             if (recycleList.Count > 0)
                 return recycleList.Pop();
             else
-                return ++highestAcquiredIdx;
+                return (++highestAcquiredIdx);
             
         } 
 

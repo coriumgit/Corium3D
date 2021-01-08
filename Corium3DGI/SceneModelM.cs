@@ -2,7 +2,6 @@
 using CoriumDirectX;
 using Corium3DGI.Utils;
 using System;
-using System.Windows;
 using System.Collections.ObjectModel;
 using System.Windows.Media.Media3D;
 
@@ -20,7 +19,7 @@ namespace Corium3DGI
 
         public AssetsGen.ISceneAssetGen.ISceneModelData SceneModelAssetData { get; private set; }
 
-        public SceneM SceneMRef { get; private set; }
+        public DxVisualizer.IScene IDxScene { get; private set; }
 
         public ModelM ModelMRef { get; }
 
@@ -75,16 +74,12 @@ namespace Corium3DGI
 
         protected SceneModelM(SceneM sceneM, ModelM modelM)
         {                        
-            ModelMRef = modelM;
-            SceneMRef = sceneM;
+            ModelMRef = modelM;            
             name = modelM.Name;
 
-            modelM.CollisionPrimitive3dChanged += onModelCollisionPrimitive3DChanged;
-            modelM.CollisionPrimitive2dChanged += onModelCollisionPrimitive2DChanged;
-            modelM.CollisionBoxCenterChanged += onCollisionBoxCenterChanged;
-            modelM.CollisionBoxScaleChanged += onCollisionBoxScaleChanged;
+            SceneModelAssetData = sceneM.SceneAssetGen.addSceneModelData(modelM.ModelAssetGen, InstancesNrMax, IsStatic);
 
-            SceneModelAssetData = sceneM.SceneAssetGen.addSceneModelData(modelM.ModelAssetGen, InstancesNrMax, IsStatic);            
+            IDxScene = sceneM.IDxScene;
         }        
 
         public void Dispose()
@@ -101,10 +96,7 @@ namespace Corium3DGI
 
         public SceneModelInstanceM addSceneModelInstance(Vector3D instanceTranslationInit, Vector3D instanceScaleFactorInit, Vector3D instanceRotAxInit, float instanceRotAngInit, SceneModelInstanceM.EventHandlers eventHandlers)
         {
-            SceneModelInstanceM sceneModelInstance = new SceneModelInstanceMShell(this, idxPool.acquireIdx(), instanceTranslationInit, instanceScaleFactorInit, instanceRotAxInit, instanceRotAngInit, eventHandlers);            
-            assignCollisionPrimitive3dDxInstances(sceneModelInstance);            
-            assignCollisionPrimitive2dDxInstances(sceneModelInstance);
-
+            SceneModelInstanceM sceneModelInstance = new SceneModelInstanceMShell(this, idxPool.acquireIdx(), instanceTranslationInit, instanceScaleFactorInit, instanceRotAxInit, instanceRotAngInit, eventHandlers);
             SceneModelInstanceMs.Add(sceneModelInstance);
 
             return sceneModelInstance;
@@ -113,61 +105,12 @@ namespace Corium3DGI
         public void removeSceneModelInstance(SceneModelInstanceM sceneModelInstance)
         {
             SceneModelInstanceMs.Remove(sceneModelInstance);
-            idxPool.releaseIdx(sceneModelInstance.InstanceIdx);
             sceneModelInstance.Dispose();                        
         }
 
         public bool Equals(SceneModelM other)
         {
             return ModelMRef == other.ModelMRef;
-        }
-
-        public void onModelCollisionPrimitive3DChanged()
-        {
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-                assignCollisionPrimitive3dDxInstances(instance);
-        }
-
-        public void onModelCollisionPrimitive2DChanged()
-        {
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)            
-                assignCollisionPrimitive2dDxInstances(instance);            
-        }
-
-        private void assignCollisionPrimitive3dDxInstances(SceneModelInstanceM instance)
-        {
-            instance.IDxSceneModelInstanceCollider3D = ModelMRef.CollisionPrimitive3DSelected.createDxInstances(SceneMRef,
-                instance.Translate.Vector3DCpy, instance.Scale.Vector3DCpy, instance.RotQuat.Axis, (float)instance.RotQuat.Angle);
-        }
-
-        private void assignCollisionPrimitive2dDxInstances(SceneModelInstanceM instance)
-        {
-            instance.IDxSceneModelInstanceCollider2D = ModelMRef.CollisionPrimitive2DSelected.createDxInstances(SceneMRef,
-                new Vector(instance.Translate.Vector3DCpy.X, instance.Translate.Vector3DCpy.Y),
-                new Vector(instance.Scale.Vector3DCpy.X, instance.Scale.Vector3DCpy.Y),
-                (float)instance.RotQuat.Angle); // TODO: Settle the 3d rotation to 2d collision primitive rotation conversion here
-        }
-
-        private void onCollisionBoxCenterChanged(Vector3D center)
-        {
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-                instance.IDxSceneModelInstanceCollider3D[0].addToTransformGrp();
-
-            SceneMRef.transformGrpSetTranslation(center, DxVisualizer.IScene.TransformReferenceFrame.Local);
-
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-                instance.IDxSceneModelInstanceCollider3D[0].removeFromTransformGrp();
-        }
-
-        private void onCollisionBoxScaleChanged(Vector3D scale)
-        {
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-                instance.IDxSceneModelInstanceCollider3D[0].addToTransformGrp();
-
-            SceneMRef.transformGrpSetScale(scale, DxVisualizer.IScene.TransformReferenceFrame.Local);
-
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-                instance.IDxSceneModelInstanceCollider3D[0].removeFromTransformGrp();
         }
     }
 }

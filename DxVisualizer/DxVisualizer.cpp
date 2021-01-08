@@ -20,15 +20,6 @@ namespace CoriumDirectX {
 		return XMFLOAT4(color.ScR, color.ScG, color.ScB, color.ScA);
 	}
 
-	inline DxRenderer::TransformReferenceFrame marshalTransformReferenceFrame(DxVisualizer::IScene::TransformReferenceFrame referenceFrame) {
-		switch (referenceFrame) {
-			case DxVisualizer::IScene::TransformReferenceFrame::World:
-				return DxRenderer::TransformReferenceFrame::World;
-			case DxVisualizer::IScene::TransformReferenceFrame::Local:
-				return DxRenderer::TransformReferenceFrame::Local;
-		}
-	}
-
 	/*
 	DxVisualizer::Scene::SceneModelInstance::SceneModelInstance(DxRenderer::Scene* sceneRef, unsigned int modelID, DxRenderer::Transform const& transformInit, IScene::SelectionHandler^ selectionHandler) {					
 		DxRenderer::Scene::SceneModelInstance::SelectionHandler selectionHandlerMarshaled;
@@ -60,7 +51,7 @@ namespace CoriumDirectX {
 
 	Media3D::Vector3D^ DxVisualizer::Scene::SceneModelInstance::getTranslation()
 	{
-		XMFLOAT3 ret = sceneModelInstanceRef->getWorldTranslation();
+		XMFLOAT3 ret = sceneModelInstanceRef->getTranslation();
 		
 		return gcnew Vector3D(ret.x, ret.y, ret.z);
 	}
@@ -89,15 +80,6 @@ namespace CoriumDirectX {
 	void DxVisualizer::Scene::SceneModelInstance::removeFromTransformGrp()
 	{
 		sceneModelInstanceRef->removeFromTransformGrp();
-	}
-
-	void DxVisualizer::Scene::SceneModelInstance::assignParent(IScene::ISceneModelInstance^ parent)
-	{
-		sceneModelInstanceRef->assignParent(((SceneModelInstance^)parent)->sceneModelInstanceRef);
-	}
-
-	void DxVisualizer::Scene::SceneModelInstance::unparent() {
-		sceneModelInstanceRef->unparent();
 	}
 	
 	DxVisualizer::Scene::Scene(DxRenderer* dxRenderer, DxRenderer::Scene::TransformCallbackHandlers const& transformCallbackHandlers, [System::Runtime::InteropServices::Out] DxVisualizer::MouseCallbacks^% mouseCallbacksManaged) :
@@ -131,34 +113,34 @@ namespace CoriumDirectX {
 		return gcnew SceneModelInstance(sceneRef->createModelInstance(modelID, marshalColor(instanceColorMask), transform, selectionHandlerMarshaled));
 	}	
 
-	void DxVisualizer::Scene::transformGrpTranslate(Media3D::Vector3D^ translation, IScene::TransformReferenceFrame referenceFrame)
+	void DxVisualizer::Scene::transformGrpTranslate(Media3D::Vector3D^ translation)
 	{
-		sceneRef->transformGrpTranslate(marshalVector3D(translation), marshalTransformReferenceFrame(referenceFrame));
+		sceneRef->transformGrpTranslate(marshalVector3D(translation));
 	}
 
-	void DxVisualizer::Scene::transformGrpSetTranslation(Media3D::Vector3D^ translation, IScene::TransformReferenceFrame referenceFrame)
+	void DxVisualizer::Scene::transformGrpSetTranslation(Media3D::Vector3D^ translation)
 	{
-		sceneRef->transformGrpSetTranslation(marshalVector3D(translation), marshalTransformReferenceFrame(referenceFrame));
+		sceneRef->transformGrpSetTranslation(marshalVector3D(translation));
 	}
 
-	void DxVisualizer::Scene::transformGrpScale(Media3D::Vector3D^ scaleFactorQ, IScene::TransformReferenceFrame referenceFrame)
+	void DxVisualizer::Scene::transformGrpScale(Media3D::Vector3D^ scaleFactorQ)
 	{
-		sceneRef->transformGrpScale(marshalVector3D(scaleFactorQ), marshalTransformReferenceFrame(referenceFrame));
+		sceneRef->transformGrpScale(marshalVector3D(scaleFactorQ));
 	}
 
-	void DxVisualizer::Scene::transformGrpSetScale(Media3D::Vector3D^ scaleFactor, IScene::TransformReferenceFrame referenceFrame)
+	void DxVisualizer::Scene::transformGrpSetScale(Media3D::Vector3D^ scaleFactor)
 	{
-		sceneRef->transformGrpSetScale(marshalVector3D(scaleFactor), marshalTransformReferenceFrame(referenceFrame));
+		sceneRef->transformGrpSetScale(marshalVector3D(scaleFactor));
 	}
 
-	void DxVisualizer::Scene::transformGrpRotate(Media3D::Vector3D^ ax, float ang, IScene::TransformReferenceFrame referenceFrame)
+	void DxVisualizer::Scene::transformGrpRotate(Media3D::Vector3D^ ax, float ang)
 	{
-		sceneRef->transformGrpRotate(marshalVector3D(ax), ang, marshalTransformReferenceFrame(referenceFrame));
+		sceneRef->transformGrpRotate(marshalVector3D(ax), ang);
 	}
 
-	void DxVisualizer::Scene::transformGrpSetRotation(Media3D::Vector3D^ ax, float ang, IScene::TransformReferenceFrame referenceFrame)
+	void DxVisualizer::Scene::transformGrpSetRotation(Media3D::Vector3D^ ax, float ang)
 	{
-		sceneRef->transformGrpSetRotation(marshalVector3D(ax), ang, marshalTransformReferenceFrame(referenceFrame));
+		sceneRef->transformGrpSetRotation(marshalVector3D(ax), ang);
 	}
 
 	void DxVisualizer::Scene::panCamera(float x, float y) {
@@ -256,7 +238,6 @@ namespace CoriumDirectX {
 
 	void DxVisualizer::initRenderer(System::IntPtr surface) {
 		renderer->initDirectXLmnts((void*)surface);
-		RendererInitialized();			
 	}	 		
 
 	void DxVisualizer::render()

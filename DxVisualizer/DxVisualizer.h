@@ -10,7 +10,9 @@ namespace Media = System::Windows::Media;
 namespace Media3D = System::Windows::Media::Media3D;
 namespace Collections = System::Collections::Generic;
 
-namespace CoriumDirectX {	
+namespace CoriumDirectX {
+
+	public enum class PrimitiveTopology { LINELIST, TRIANGLELIST };
 
 	public ref class DxVisualizer {
 	public:	
@@ -27,12 +29,8 @@ namespace CoriumDirectX {
 				void highlight();
 				void dim();
 				void show();
-				void hide();
-				void assignParent(ISceneModelInstance^ parent);
-				void unparent();
+				void hide();		
 			};								
-
-			enum class TransformReferenceFrame { Local, World };
 
 			delegate void TranslationHandler(float x, float y, float z);
 			delegate void ScaleHandler(float x, float y, float z);
@@ -42,16 +40,16 @@ namespace CoriumDirectX {
 				TranslationHandler^ translationHandler;
 				ScaleHandler^ scaleHandler;
 				RotationHandler^ rotationHandler;
-			};						
+			};
 
 			void activate();
 			ISceneModelInstance^ createModelInstance(unsigned int modelID, Media::Color instanceColorMask, Media3D::Vector3D^ translationInit, Media3D::Vector3D^ scaleFactorInit, Media3D::Vector3D^ rotAxInit, float rotAngInit, ISceneModelInstance::SelectionHandler^ selectionHandler);
-			void transformGrpTranslate(Media3D::Vector3D^ translation, TransformReferenceFrame referenceFrame);
-			void transformGrpSetTranslation(Media3D::Vector3D^ translation, TransformReferenceFrame referenceFrame);
-			void transformGrpScale(Media3D::Vector3D^ scaleFactorQ, TransformReferenceFrame referenceFrame);
-			void transformGrpSetScale(Media3D::Vector3D^ scaleFactor, TransformReferenceFrame referenceFrame);
-			void transformGrpRotate(Media3D::Vector3D^ ax, float ang, TransformReferenceFrame referenceFrame);
-			void transformGrpSetRotation(Media3D::Vector3D^ ax, float ang, TransformReferenceFrame referenceFrame);
+			void transformGrpTranslate(Media3D::Vector3D^ translation);
+			void transformGrpSetTranslation(Media3D::Vector3D^ translation);
+			void transformGrpScale(Media3D::Vector3D^ scaleFactorQ);
+			void transformGrpSetScale(Media3D::Vector3D^ scaleFactor);
+			void transformGrpRotate(Media3D::Vector3D^ ax, float ang);
+			void transformGrpSetRotation(Media3D::Vector3D^ ax, float ang);
 			void panCamera(float x, float y);
 			void rotateCamera(float x, float y);
 			void zoomCamera(float amount);
@@ -62,8 +60,6 @@ namespace CoriumDirectX {
 			Media3D::Vector3D^ cursorPosToRayDirection(float x, float y);
 		};
 
-		enum class PrimitiveTopology { LINELIST, TRIANGLELIST };
-
 		delegate void OnMouseMoveCallback(float cursorX, float cursorY);
 		delegate void OnMouseUpCallback();
 
@@ -71,9 +67,6 @@ namespace CoriumDirectX {
 			OnMouseMoveCallback^ onMouseMoveCallback;
 			OnMouseUpCallback^ onMouseUpCallback;
 		};
-
-		delegate void OnRendererInit();
-		event OnRendererInit^ RendererInitialized;
 
 		DxVisualizer(float fov, float nearZ, float farZ);
 		~DxVisualizer();
@@ -100,8 +93,6 @@ namespace CoriumDirectX {
 				virtual void hide() = ISceneModelInstance::hide;				
 				virtual void addToTransformGrp() = ISceneModelInstance::addToTransformGrp;
 				virtual void removeFromTransformGrp() = ISceneModelInstance::removeFromTransformGrp;				
-				virtual void assignParent(IScene::ISceneModelInstance^ parent) = ISceneModelInstance::assignParent;
-				virtual void unparent() = ISceneModelInstance::unparent;
 
 			private:								
 				DxRenderer::Scene::SceneModelInstance* sceneModelInstanceRef;	
@@ -113,12 +104,12 @@ namespace CoriumDirectX {
 			!Scene();
 			virtual void activate() = IScene::activate;
 			virtual IScene::ISceneModelInstance^ createModelInstance(unsigned int modelID, Media::Color instanceColorMask, Media3D::Vector3D^ translationInit, Media3D::Vector3D^ scaleFactorInit, Media3D::Vector3D^ rotAxInit, float rotAngInit, IScene::ISceneModelInstance::SelectionHandler^ selectionHandler) = IScene::createModelInstance;
-			virtual void transformGrpTranslate(Media3D::Vector3D^ translation, IScene::TransformReferenceFrame referenceFrame) = IScene::transformGrpTranslate;
-			virtual void transformGrpSetTranslation(Media3D::Vector3D^ translation, IScene::TransformReferenceFrame referenceFrame) = IScene::transformGrpSetTranslation;
-			virtual void transformGrpScale(Media3D::Vector3D^ scaleFactorQ, IScene::TransformReferenceFrame referenceFrame) = IScene::transformGrpScale;
-			virtual void transformGrpSetScale(Media3D::Vector3D^ scaleFactor, IScene::TransformReferenceFrame referenceFrame) = IScene::transformGrpSetScale;
-			virtual void transformGrpRotate(Media3D::Vector3D^ ax, float ang, IScene::TransformReferenceFrame referenceFrame) = IScene::transformGrpRotate;
-			virtual void transformGrpSetRotation(Media3D::Vector3D^ ax, float ang, IScene::TransformReferenceFrame referenceFrame) = IScene::transformGrpSetRotation;
+			virtual void transformGrpTranslate(Media3D::Vector3D^ translation) = IScene::transformGrpTranslate;
+			virtual void transformGrpSetTranslation(Media3D::Vector3D^ translation) = IScene::transformGrpSetTranslation;
+			virtual void transformGrpScale(Media3D::Vector3D^ scaleFactorQ) = IScene::transformGrpScale;
+			virtual void transformGrpSetScale(Media3D::Vector3D^ scaleFactor) = IScene::transformGrpSetScale;
+			virtual void transformGrpRotate(Media3D::Vector3D^ ax, float ang) = IScene::transformGrpRotate;
+			virtual void transformGrpSetRotation(Media3D::Vector3D^ ax, float ang) = IScene::transformGrpSetRotation;
 			virtual void panCamera(float x, float y) = IScene::panCamera;
 			virtual void rotateCamera(float x, float y) = IScene::rotateCamera;
 			virtual void zoomCamera(float amount) = IScene::zoomCamera;
@@ -140,7 +131,7 @@ namespace CoriumDirectX {
 		static void marshalModelData(array<Media3D::Point3D>^ modelVertices, Media::Color modelColor, std::vector<DxRenderer::VertexData>& verticesDataMarshaled,
 									 array<unsigned short>^ modelVertexIndices, std::vector<WORD>& vertexIndicesMarshaled,
 									 Media3D::Point3D^ boundingSphereCenter, DirectX::XMFLOAT3& boundingSphereCenterMarshaled,
-									 DxVisualizer::PrimitiveTopology primitiveTopology, D3D_PRIMITIVE_TOPOLOGY& primitiveTopologyMarshaled);
+									 PrimitiveTopology primitiveTopology, D3D_PRIMITIVE_TOPOLOGY& primitiveTopologyMarshaled);		
 
 		DxRenderer* renderer;		
 	};

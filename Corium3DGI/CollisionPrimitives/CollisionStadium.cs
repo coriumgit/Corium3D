@@ -1,23 +1,19 @@
-﻿using CoriumDirectX;
-
-using System.Windows;
+﻿using System.Windows;
 using Corium3DGI.Utils;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using System.Windows.Data;
 using System.ComponentModel;
 using System;
-using System.Collections.Generic;
 
 namespace Corium3DGI
 {
-    public class CollisionStadium : CollisionPrimitive2D
+    public class CollisionStadium : CollisionPrimitive
     {
         private const string NAME_CACHE = "Stadium";
 
         private static string iconPathCache;
         private static Model3DCollection avatars3DCache;
-        private static List<uint> dxModelIds;
 
         private ObservablePoint center;
         public ObservablePoint Center
@@ -80,16 +76,16 @@ namespace Corium3DGI
             }
         }
 
-        public static void Init(DxVisualizer dxVisualizer)
+        static CollisionStadium()
         {            
-            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 255, G = 128, B = 0, A = 255 }, out iconPathCache, out avatars3DCache, dxVisualizer, out dxModelIds);
+            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 255, G = 128, B = 0, A = 255 }, out iconPathCache, out avatars3DCache);
         }
 
         public CollisionStadium(Point center, Vector axisVec, float height, float radius) {
             Name = NAME_CACHE;
             IconPath = iconPathCache;
             foreach (GeometryModel3D avatar3D in avatars3DCache)
-                avatars3D.Add(new GeometryModel3D(avatar3D.Geometry, avatar3D.Material));            
+                avatars3D.Add(new GeometryModel3D(avatar3D.Geometry, avatar3D.Material));
 
             this.center = new ObservablePoint();
             this.axisVec = new ObservableVector();
@@ -132,7 +128,7 @@ namespace Corium3DGI
             AxisVec.X = axisVec.X; AxisVec.Y = axisVec.Y;
         }
 
-        public CollisionStadium(CollisionStadium other)
+        public CollisionStadium(CollisionStadium other) : base(other)
         {
             center = new ObservablePoint(other.center);
             axisVec = new ObservableVector(other.axisVec);

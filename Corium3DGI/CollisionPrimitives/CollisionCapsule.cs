@@ -1,22 +1,18 @@
-﻿using CoriumDirectX;
-
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using Corium3DGI.Utils;
-using System.Collections.Generic;
 
 namespace Corium3DGI
 {
-    public class CollisionCapsule : CollisionPrimitive3D
+    public class CollisionCapsule : CollisionPrimitive
     {
         private const string NAME_CACHE = "Capsule";
         private static string iconPathCache;
         private static Model3DCollection avatars3DCache;
-        private static List<uint> dxModelIds;                
 
         private ObservablePoint3D center;
         public ObservablePoint3D Center
@@ -79,11 +75,9 @@ namespace Corium3DGI
             }
         }
 
-        public delegate void OnTransform(Point3D center, Point3D axisVec, float height, float radius);
-
-        public static void Init(DxVisualizer dxVisualizer)
+        static CollisionCapsule()
         {
-            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 255, G = 255, B = 0, A = 255 }, out iconPathCache, out avatars3DCache, dxVisualizer, out dxModelIds);
+            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 255, G = 255, B = 0, A = 255 }, out iconPathCache, out avatars3DCache);
         }
 
         public CollisionCapsule(Point3D center, Vector3D axisVec, float height, float radius)
@@ -91,7 +85,7 @@ namespace Corium3DGI
             Name = NAME_CACHE;
             IconPath = iconPathCache;
             foreach (GeometryModel3D avatar3D in avatars3DCache)
-                avatars3D.Add(new GeometryModel3D(avatar3D.Geometry, avatar3D.Material));            
+                avatars3D.Add(new GeometryModel3D(avatar3D.Geometry, avatar3D.Material));
 
             this.center = new ObservablePoint3D();
             this.axisVec = new ObservableVector3D();            

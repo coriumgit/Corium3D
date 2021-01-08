@@ -1,20 +1,18 @@
-﻿using CoriumDirectX;
-
+﻿using System.Collections;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using Corium3DGI.Utils;
-using System.Collections.Generic;
 
 namespace Corium3DGI
 {
-    public class CollisionBox : CollisionPrimitive3D
+    public class CollisionBox : CollisionPrimitive
     {
         private const string NAME_CACHE = "Box";
         private static string iconPathCache;
-        private static Model3DCollection avatars3DCache;        
-        private static uint dxModelID;        
+        private static Model3DCollection avatars3DCache;
 
         private ObservablePoint3D center;
         public ObservablePoint3D Center
@@ -31,6 +29,7 @@ namespace Corium3DGI
             }
         }
 
+
         private ObservablePoint3D scale;
         public ObservablePoint3D Scale
         {
@@ -46,20 +45,16 @@ namespace Corium3DGI
             }
         }
 
-        public delegate void OnTransform(Point3D center, Point3D scale);
-
-        public static void Init(DxVisualizer dxVisualizer)
-        {
-            List<uint> dxModelIdContainer = new List<uint>(1);
-            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 0, G = 255, B = 0, A = 255 }, out iconPathCache, out avatars3DCache, dxVisualizer, out dxModelIdContainer);
-            dxModelID = dxModelIdContainer[0];
+        static CollisionBox()
+        {            
+            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 0, G = 255, B = 0, A = 255 }, out iconPathCache, out avatars3DCache);            
         }
 
         public CollisionBox(Point3D center, Point3D scale) {
             Name = NAME_CACHE;
-            IconPath = iconPathCache;            
+            IconPath = iconPathCache;
             foreach (GeometryModel3D avatar3D in avatars3DCache)
-                avatars3D.Add(new GeometryModel3D(avatar3D.Geometry, avatar3D.Material));                        
+                avatars3D.Add(new GeometryModel3D(avatar3D.Geometry, avatar3D.Material));
 
             this.center = new ObservablePoint3D();
             this.scale = new ObservablePoint3D();
@@ -76,16 +71,6 @@ namespace Corium3DGI
             Center.X = center.X; Center.Y = center.Y; Center.Z = center.Z;
             Scale.X = scale.X; Scale.Y = scale.Y; Scale.Z = scale.Z;
         }     
-
-        public override List<DxVisualizer.IScene.ISceneModelInstance> createDxInstances(SceneM sceneM, Vector3D instanceTranslate, Vector3D instanceScale, Vector3D instanceRotAx, float instanceRotAng)
-        {
-            List<DxVisualizer.IScene.ISceneModelInstance> ret = new List<DxVisualizer.IScene.ISceneModelInstance>(1);
-            ret.Add(sceneM.createDxModelInstance(dxModelID, Color.FromArgb(50, 0, 255, 0),
-                                                (Vector3D)center.Point3DCpy + instanceTranslate,
-                                                new Vector3D(scale.Point3DCpy.X * instanceScale.X, scale.Point3DCpy.Y * instanceScale.Y, scale.Point3DCpy.Z * instanceScale.Z),
-                                                instanceRotAx, instanceRotAng, null));
-            return ret;
-        }
 
         private void bindScaleToScaleTransform(ScaleTransform3D scaleTransform3D)
         {

@@ -5,21 +5,13 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
-using System.Xml.Linq;
-using System.ComponentModel;
 
 namespace Corium3DGI
 {
     public class ModelM : ObservableObject, System.IDisposable
-    {
-        private static readonly string RESOURCES_PATHS_XML_PATH = System.IO.Path.Combine("Resources", "ResourcesPaths.xml");
-        private const string COLLISION_REGION_NAME_BASE = "Collision Region";
-        private static Utils.IdxPool collisionRegionsIdxPool = new Utils.IdxPool();
-        private static AssetsGen.ManagedImportedData collisionRegionModelData;
-
-        private int collisionRegionIdx = -1;
-        private DxVisualizer dxVisualizer;                
-
+    {                
+        private DxVisualizer dxVisualizer;
+        
         public AssetsGen.IModelAssetGen ModelAssetGen { get; private set; }
 
         private uint dxModelID;
@@ -70,8 +62,8 @@ namespace Corium3DGI
             }
         }
 
-        private List<CollisionPrimitive3D> collisionPrimitives3DCache = new List<CollisionPrimitive3D>();
-        public List<CollisionPrimitive3D> CollisionPrimitives3DCache
+        private List<CollisionPrimitive> collisionPrimitives3DCache = new List<CollisionPrimitive>();
+        public List<CollisionPrimitive> CollisionPrimitives3DCache
         {
             get { return collisionPrimitives3DCache; }
 
@@ -85,20 +77,16 @@ namespace Corium3DGI
             }
         }
 
-        private CollisionPrimitive3D collisionPrimitive3DSelected;
-        public CollisionPrimitive3D CollisionPrimitive3DSelected
+        private CollisionPrimitive collisionPrimitive3DSelected;
+        public CollisionPrimitive CollisionPrimitive3DSelected
         {
             get { return collisionPrimitive3DSelected; }
 
             set
             {
                 if (collisionPrimitive3DSelected != value)
-                {                    
+                {
                     collisionPrimitive3DSelected = value;
-                    collisionPrimitive3DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
-                    CollisionPrimitive3dChanged?.Invoke();
-
-                    /*
                     switch (value)
                     {
                         case CollisionBox cb:
@@ -115,14 +103,13 @@ namespace Corium3DGI
                             ModelAssetGen.clearCollisionPrimitive3D();
                             break;
                     }
-                    */
                     OnPropertyChanged("CollisionPrimitive3DSelected");
                 }
             } 
         }
 
-        private List<CollisionPrimitive2D> collisionPrimitives2DCache = new List<CollisionPrimitive2D>();
-        public List<CollisionPrimitive2D> CollisionPrimitives2DCache
+        private List<CollisionPrimitive> collisionPrimitives2DCache = new List<CollisionPrimitive>();
+        public List<CollisionPrimitive> CollisionPrimitives2DCache
         {
             get { return collisionPrimitives2DCache; }
 
@@ -136,8 +123,8 @@ namespace Corium3DGI
             }
         }
 
-        private CollisionPrimitive2D collisionPrimitive2DSelected;
-        public CollisionPrimitive2D CollisionPrimitive2DSelected
+        private CollisionPrimitive collisionPrimitive2DSelected;
+        public CollisionPrimitive CollisionPrimitive2DSelected
         {
             get { return collisionPrimitive2DSelected; }
 
@@ -146,9 +133,6 @@ namespace Corium3DGI
                 if (collisionPrimitive2DSelected != value)
                 {
                     collisionPrimitive2DSelected = value;
-                    collisionPrimitive3DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
-                    CollisionPrimitive2dChanged?.Invoke();
-                    /*
                     switch (value)
                     {
                         case CollisionRect cr:
@@ -165,111 +149,65 @@ namespace Corium3DGI
                             ModelAssetGen.clearCollisionPrimitive2D();
                             break;
                     }
-                    */                    
                     OnPropertyChanged("CollisionPrimitive2DSelected");
                 }
             }
         }
 
-        public delegate void OnCollisionPrimitive3dChanged();
-        public event OnCollisionPrimitive3dChanged CollisionPrimitive3dChanged;
-        public delegate void OnCollisionBoxCenterChanged(Vector3D ceneter);
-        public event OnCollisionBoxCenterChanged CollisionBoxCenterChanged;
-        public delegate void OnCollisionBoxScaleChanged(Vector3D ceneter);
-        public event OnCollisionBoxScaleChanged CollisionBoxScaleChanged;
-
-        public delegate void OnCollisionPrimitive2dChanged();        
-        public event OnCollisionPrimitive2dChanged CollisionPrimitive2dChanged;       
-
-        static ModelM()
-        {
-            string collisionRegionAvatarPath = XDocument.Load(RESOURCES_PATHS_XML_PATH).Root.Element("CollisionRegionAvatar").Value;
-            
-            AssetsGen.IModelAssetGen modelAssetGen = AssetsGen.createModelAssetGen(collisionRegionAvatarPath);
-            collisionRegionModelData = modelAssetGen.ManagedImportedDataRef;
-            modelAssetGen.Dispose();            
-        }
-
         public ModelM(string model3dDatalFilePath, DxVisualizer dxVisualizer)
         {
-            if (model3dDatalFilePath != string.Empty)
-                name = Path.GetFileNameWithoutExtension(model3dDatalFilePath);
-            else
-            {
-                collisionRegionIdx = collisionRegionsIdxPool.acquireIdx();
-                name = COLLISION_REGION_NAME_BASE + collisionRegionIdx.ToString("D2");
-            }
-
-            ModelAssetGen = AssetsGen.createModelAssetGen(model3dDatalFilePath);                        
-            AssetsGen.ManagedImportedData modelData;
-            if (model3dDatalFilePath != string.Empty)
-                modelData = ModelAssetGen.ManagedImportedDataRef;
-            else
-                modelData = collisionRegionModelData;
+            name = Path.GetFileNameWithoutExtension(model3dDatalFilePath);
+            
+            ModelAssetGen = AssetsGen.createModelAssetGen(model3dDatalFilePath);
+            AssetsGen.ManagedImportedData modelImportData = ModelAssetGen.ManagedImportedDataRef;
 
             this.dxVisualizer = dxVisualizer;
-            dxVisualizer.addModel(modelData.meshesVertices[0],
-                    modelData.meshesVertexIndices[0],
-                    Color.FromArgb(255, 175, 175, 175),
-                    modelData.boundingSphereCenter,
-                    modelData.boundingSphereRadius,
-                    DxVisualizer.PrimitiveTopology.TRIANGLELIST, out dxModelID);
-
+            dxVisualizer.addModel(modelImportData.meshesVertices[0],
+                modelImportData.meshesVertexIndices[0],
+                Color.FromArgb(255, 175, 175, 175),
+                modelImportData.boundingSphereCenter,
+                modelImportData.boundingSphereRadius,
+                PrimitiveTopology.TRIANGLELIST, out dxModelID);
+            
             avatars3D = new Model3DCollection();
-            foreach (MeshGeometry3D meshGeometry in modelData.meshesGeometries)
+            foreach (MeshGeometry3D meshGeometry in modelImportData.meshesGeometries)
                 avatars3D.Add(new GeometryModel3D(meshGeometry, new DiffuseMaterial(new SolidColorBrush(Colors.WhiteSmoke))));
 
-            collisionPrimitives3DCache.Add(new CollisionPrimitive3D());
-            CollisionBox collisionBox = new CollisionBox(modelData.boundingBoxCenter, modelData.boundingBoxScale);
-
-            collisionBox.Center.PropertyChanged += onCubeColliderCenterChanged;
-            collisionBox.Scale.PropertyChanged += onCubeColliderScaleChanged;
-
-            collisionPrimitives3DCache.Add(collisionBox);
-
-            collisionPrimitives3DCache.Add(new CollisionSphere(modelData.boundingSphereCenter, modelData.boundingSphereRadius));
-            collisionPrimitives3DCache.Add(new CollisionCapsule(modelData.boundingCapsuleCenter,
-                                                                modelData.boundingCapsuleAxisVec,
-                                                                modelData.boundingCapsuleHeight,
-                                                                modelData.boundingCapsuleRadius));
+            collisionPrimitives3DCache.Add(new CollisionPrimitive());
+            Point3D aabb3DMinVertex = modelImportData.aabb3DMinVertex;
+            Point3D aabb3DMaxVertex = modelImportData.aabb3DMaxVertex;
+            Point3D boxCenter = new Point3D(0.5 * (aabb3DMinVertex.X + aabb3DMaxVertex.X), 
+                                            0.5 * (aabb3DMinVertex.Y + aabb3DMaxVertex.Y), 
+                                            0.5 * (aabb3DMinVertex.Z + aabb3DMaxVertex.Z));
+            Point3D boxScale = new Point3D(0.5 * (aabb3DMaxVertex.X - aabb3DMinVertex.X),
+                                           0.5 * (aabb3DMaxVertex.Y - aabb3DMinVertex.Y),
+                                           0.5 * (aabb3DMaxVertex.Z - aabb3DMinVertex.Z));
+            collisionPrimitives3DCache.Add(new CollisionBox(boxCenter, boxScale));           
+            collisionPrimitives3DCache.Add(new CollisionSphere(modelImportData.boundingSphereCenter, modelImportData.boundingSphereRadius));
+            collisionPrimitives3DCache.Add(new CollisionCapsule(modelImportData.boundingCapsuleCenter, 
+                                                                modelImportData.boundingCapsuleAxisVec,
+                                                                modelImportData.boundingCapsuleHeight,
+                                                                modelImportData.boundingCapsuleRadius));
             collisionPrimitive3DSelected = collisionPrimitives3DCache[0];
 
-            collisionPrimitives2DCache.Add(new CollisionPrimitive2D());
-            collisionPrimitives2DCache.Add(new CollisionRect(new Point(modelData.boundingBoxCenter.X, modelData.boundingBoxCenter.Y), new Point(modelData.boundingBoxScale.X, modelData.boundingBoxScale.Y)));
-            collisionPrimitives2DCache.Add(new CollisionCircle(new Point(modelData.boundingSphereCenter.X, modelData.boundingSphereCenter.Y), modelData.boundingSphereRadius));
-            collisionPrimitives2DCache.Add(new CollisionStadium(new Point(modelData.boundingCapsuleCenter.X, modelData.boundingCapsuleCenter.Y),
-                                                                new Vector(modelData.boundingCapsuleAxisVec.X, modelData.boundingCapsuleAxisVec.Y),
-                                                                modelData.boundingCapsuleHeight,
-                                                                modelData.boundingCapsuleRadius));
-            collisionPrimitive2DSelected = collisionPrimitives2DCache[0];
+            collisionPrimitives2DCache.Add(new CollisionPrimitive());            
+            Point rectCenter = new Point(0.5 * (aabb3DMinVertex.X + aabb3DMaxVertex.X),
+                                         0.5 * (aabb3DMinVertex.Y + aabb3DMaxVertex.Y));
+            Point rectScale = new Point(0.5 * (aabb3DMaxVertex.X - aabb3DMinVertex.X),
+                                        0.5 * (aabb3DMaxVertex.Y - aabb3DMinVertex.Y));
+            collisionPrimitives2DCache.Add(new CollisionRect(rectCenter, rectScale));
+            collisionPrimitives2DCache.Add(new CollisionCircle(new Point(modelImportData.boundingSphereCenter.X, modelImportData.boundingSphereCenter.Y), modelImportData.boundingSphereRadius));
+            collisionPrimitives2DCache.Add(new CollisionStadium(new Point(modelImportData.boundingCapsuleCenter.X, modelImportData.boundingCapsuleCenter.Y),
+                                                                new Vector(modelImportData.boundingCapsuleAxisVec.X, modelImportData.boundingCapsuleAxisVec.Y),
+                                                                modelImportData.boundingCapsuleHeight,
+                                                                modelImportData.boundingCapsuleRadius));
+            collisionPrimitive2DSelected = collisionPrimitives2DCache[0];            
         }         
-
-        private void onCubeColliderCenterChanged(object center, PropertyChangedEventArgs e)
-        {
-            CollisionBoxCenterChanged?.Invoke((Vector3D)((Utils.ObservablePoint3D)center).Point3DCpy);
-        }
-
-        private void onCubeColliderScaleChanged(object scale, PropertyChangedEventArgs e)
-        {
-            CollisionBoxScaleChanged?.Invoke((Vector3D)((Utils.ObservablePoint3D)scale).Point3DCpy);
-        }
-
-        private void OnSphereTransform(Point3D center, float radius)
-        {
-
-        }
-
-        private void OnCapsuleTransform(Point3D center, Point3D axisVec, float height, float radius)
-        {
-
-        }
 
         public void Dispose()
         {
             dxVisualizer.removeModel(DxModelID);
-            ModelAssetGen.Dispose();
-            if (collisionRegionIdx > -1)
-                collisionRegionsIdxPool.releaseIdx(collisionRegionIdx);
+            ModelAssetGen.Dispose();            
         }
     }
 }

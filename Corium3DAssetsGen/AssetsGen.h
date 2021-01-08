@@ -20,8 +20,8 @@ namespace Corium3D {
 			array<array<unsigned short>^>^ meshesVertexIndices;
 			Media3D::Point3D boundingSphereCenter;
 			float boundingSphereRadius;
-			Media3D::Point3D boundingBoxCenter;
-			Media3D::Point3D boundingBoxScale;
+			Media3D::Point3D aabb3DMinVertex;
+			Media3D::Point3D aabb3DMaxVertex;
 			Media3D::Point3D boundingCapsuleCenter;
 			Media3D::Vector3D boundingCapsuleAxisVec;
 			float boundingCapsuleHeight;
@@ -100,7 +100,8 @@ namespace Corium3D {
 			virtual void assignCollisionStadium(Win::Point^ center1, Win::Vector^ axisVec, float radius) = IModelAssetGen::assignCollisionStadium;
 			ModelDesc const* getAssetsFileReadyModelDesc(unsigned int modelIdx);
 
-		private:						
+		private:			
+			System::String^ modelPath;
 			ManagedImportedData^ managedImportedData;
 			Assimp::Importer* importer;
 			ModelDesc* modelDesc;

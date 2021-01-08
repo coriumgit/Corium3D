@@ -1,12 +1,10 @@
 ﻿using Corium3D;
-
 using System;
 using System.ComponentModel;
 using System.Windows.Media.Media3D;
 using Corium3DGI.Utils;
 using CoriumDirectX;
 using System.Windows.Media;
-using System.Collections.Generic;
 
 namespace Corium3DGI
 {
@@ -15,51 +13,7 @@ namespace Corium3DGI
         private EventHandlers eventHandlers;
         private DxVisualizer.IScene.ISceneModelInstance.SelectionHandler selectionHandler;
         private AssetsGen.ISceneAssetGen.ISceneModelData.ISceneModelInstanceData sceneModelInstanceAssetData;
-        private DxVisualizer.IScene.ISceneModelInstance iDxSceneModelInstance;
-
-        private List<DxVisualizer.IScene.ISceneModelInstance> iDxSceneModelInstanceCollider3D = null;
-        public List<DxVisualizer.IScene.ISceneModelInstance> IDxSceneModelInstanceCollider3D
-        {
-            get { return iDxSceneModelInstanceCollider3D; }
-            set
-            {
-                if (iDxSceneModelInstanceCollider3D != null)
-                {
-                    foreach (DxVisualizer.IScene.ISceneModelInstance instance in iDxSceneModelInstanceCollider3D)
-                        instance.Dispose();
-                }
-
-                iDxSceneModelInstanceCollider3D = value;
-
-                if (iDxSceneModelInstanceCollider3D != null)
-                {
-                    foreach (DxVisualizer.IScene.ISceneModelInstance instance in iDxSceneModelInstanceCollider3D)
-                        instance.assignParent(iDxSceneModelInstance);
-                }
-            }
-        }
-
-        private List<DxVisualizer.IScene.ISceneModelInstance> iDxSceneModelInstanceCollider2D = null;
-        public List<DxVisualizer.IScene.ISceneModelInstance> IDxSceneModelInstanceCollider2D
-        {
-            get { return iDxSceneModelInstanceCollider2D; }
-            set
-            {
-                if (iDxSceneModelInstanceCollider2D != null)
-                {
-                    foreach (DxVisualizer.IScene.ISceneModelInstance instance in iDxSceneModelInstanceCollider2D)
-                        instance.Dispose();
-                }
-
-                iDxSceneModelInstanceCollider2D = value;
-
-                if (iDxSceneModelInstanceCollider2D != null)
-                {
-                    foreach (DxVisualizer.IScene.ISceneModelInstance instance in iDxSceneModelInstanceCollider2D)
-                        instance.assignParent(iDxSceneModelInstance);
-                }
-            }
-        }
+        private DxVisualizer.IScene.ISceneModelInstance iDxSceneModelInstance;         
 
         public SceneModelM SceneModelMRef { get; }
 
@@ -133,8 +87,8 @@ namespace Corium3DGI
             sceneModelInstanceAssetData = sceneModel.SceneModelAssetData.addSceneModelInstanceData(translate, scale, RotQuat);
 
             selectionHandler = new DxVisualizer.IScene.ISceneModelInstance.SelectionHandler(onInstanceSelected);
-            iDxSceneModelInstance = sceneModel.SceneMRef.createDxModelInstance(sceneModel.ModelMRef.DxModelID, Color.FromArgb(0, 0, 0, 0), translate, scale, rotAx, rotAng, selectionHandler);
-        }                        
+            iDxSceneModelInstance = sceneModel.IDxScene.createModelInstance(sceneModel.ModelMRef.DxModelID, Color.FromArgb(0, 0, 0, 0), translate, scale, rotAx, rotAng, selectionHandler);
+        }        
 
         public void setDisplayedTranslation(Vector3D translation)
         {
@@ -214,12 +168,12 @@ namespace Corium3DGI
             
         public void addToTransformGrp()
         {
-            iDxSceneModelInstance.addToTransformGrp();            
+            iDxSceneModelInstance.addToTransformGrp();
         }
 
         public void removeFromTransformGrp()
         {
-            iDxSceneModelInstance.removeFromTransformGrp();            
+            iDxSceneModelInstance.removeFromTransformGrp();
         }        
 
         public void Dispose()

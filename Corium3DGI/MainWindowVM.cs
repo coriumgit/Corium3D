@@ -23,12 +23,10 @@ namespace Corium3DGI
         private const double CAMERA_ZOOM_PER_MOUSE_WHEEL_TURN = 0.005;        
         private const double DOUBLE_EPSILON = 1E-6;
         private const double SCENE_MODEL_INSTANCE_INIT_DIST_FROM_CAMERA = 10.0;
-        private const uint GRID_HALF_WIDTH = 500;
+        private const uint GRID_HALF_WIDHT = 500;
         private const uint GRID_HALF_HEIGHT = 500;
 
         private DxVisualizer dxVisualizer;
-        private UIElement modelViewportContainer;
-        private UIElement sceneViewportContainer;
         private uint gridDxModelId;        
         private CameraAction cameraAction = CameraAction.REST;
         private bool isModelTransforming = false;
@@ -69,7 +67,7 @@ namespace Corium3DGI
                 {
                     selectedScene = value;
                     if (selectedScene != null)                    
-                        selectedScene.activateDxScene();
+                        selectedScene.IDxScene.activate();
 
                     SelectedSceneModel = null;                    
                     OnPropertyChanged("SelectedScene");
@@ -105,14 +103,14 @@ namespace Corium3DGI
                     if (selectedSceneModelInstance != null)
                     {
                         selectedSceneModelInstance.dim();
-                        selectedSceneModelInstance.removeFromTransformGrp();
+                        selectedSceneModelInstance.removeFromTransformGrp();                        
                     }
 
                     selectedSceneModelInstance = value;
                     if (selectedSceneModelInstance != null)
                     {
                         selectedSceneModelInstance.highlight();
-                        selectedSceneModelInstance.addToTransformGrp();
+                        selectedSceneModelInstance.addToTransformGrp();                        
                     }
                     OnPropertyChanged("SelectedSceneModelInstance");
                 }
@@ -149,14 +147,10 @@ namespace Corium3DGI
             }
         }
 
-        public ICommand ExposeModelViewportCmd { get; }
-        public ICommand ExposeSceneViewportCmd { get; }
         public ICommand ImportModelCmd { get; }
-        public ICommand AddCollisionRegionCmd { get; }
         public ICommand RemoveModelCmd { get; }
-        public ICommand GenAssetsFileCmd { get; }
+        public ICommand SaveImportedModelsCmd { get; }
         public ICommand AddSceneCmd { get; }
-        public ICommand RenameSceneCmd { get; }
         public ICommand RemoveSceneCmd { get; }
         public ICommand AddSceneModelCmd { get; }
         public ICommand RemoveSceneModelCmd { get; }
@@ -169,7 +163,8 @@ namespace Corium3DGI
         public ICommand DropSceneViewportCmd { get; }
         public ICommand AddSceneModelInstanceCmd { get; }
         public ICommand ToggleSceneModelInstanceVisibilityCmd { get; }
-        public ICommand RemoveSceneModelInstanceCmd { get; }        
+        public ICommand RemoveSceneModelInstanceCmd { get; }
+        public ICommand SaveSceneCmd { get; }
         public ICommand MouseDownSceneViewportCmd { get; }
         public ICommand MouseUpSceneViewportCmd { get; }
         public ICommand MouseMoveSceneViewportCmd { get; }
@@ -181,20 +176,15 @@ namespace Corium3DGI
         public ICommand ClearFocusCmd { get; }
         public ICommand CaptureFrameCmd { get; }
 
-        public MainWindowVM(ICorium3DGIView view)
-        {             
-            dxVisualizer = view.DxVisualizerRef;
-            view.UIElementsLoaded += OnViewUiLmntsLoaded;
+        public MainWindowVM(DxVisualizer dxVisualizer)
+        {
+            this.dxVisualizer = dxVisualizer;
 
-            ExposeModelViewportCmd = new RelayCommand(p => exposeModelViewport());
-            ExposeSceneViewportCmd = new RelayCommand(p => exposeSceneViewport());
             ImportModelCmd = new RelayCommand(p => importModel());
-            AddCollisionRegionCmd = new RelayCommand(p => addCollisionRegion());
             RemoveModelCmd = new RelayCommand(p => removeModel(), p => SelectedModel != null);
-            GenAssetsFileCmd = new RelayCommand(p => genAssetsFile(), p => ModelMs.Count > 0);
+            SaveImportedModelsCmd = new RelayCommand(p => saveImportedModels(), p => ModelMs.Count > 0);
             AddSceneCmd = new RelayCommand(p => addScene((KeyboardFocusChangedEventArgs)p));
-            RenameSceneCmd = new RelayCommand(p => renameSceneCmd(), p => SelectedSceneModel != null);
-            RemoveSceneCmd = new RelayCommand(p => removeScene(), p => SelectedScene != null);
+            RemoveSceneCmd = new RelayCommand(p => removeScene());
             AddSceneModelCmd = new RelayCommand(p => addSceneModel(), p => SelectedModel != null && SelectedScene != null);
             RemoveSceneModelCmd = new RelayCommand(p => removeSceneModel(), p => SelectedSceneModel != null);
             OnViewportLoadedCmd = new RelayCommand(p => onViewportLoaded());
@@ -204,9 +194,10 @@ namespace Corium3DGI
             DragLeaveSceneViewportCmd = new RelayCommand(p => sceneModelDragLeaveViewport((DragEventArgs)p));
             DragOverSceneViewportCmd = new RelayCommand(p => sceneModelDragOverViewport((DragEventArgs)p));
             DropSceneViewportCmd = new RelayCommand(p => sceneModelDropOnViewport((DragEventArgs)p));
-            AddSceneModelInstanceCmd = new RelayCommand(p => addSceneModelInstance(), p => SelectedSceneModel != null);            
+            AddSceneModelInstanceCmd = new RelayCommand(p => addSceneModelInstance(), p => SelectedSceneModel != null);
             ToggleSceneModelInstanceVisibilityCmd = new RelayCommand(p => toggleSceneModelInstanceVisibility(), p => SelectedSceneModelInstance != null);
-            RemoveSceneModelInstanceCmd = new RelayCommand(p => removeSceneModelInstance(), p => SelectedSceneModelInstance != null);            
+            RemoveSceneModelInstanceCmd = new RelayCommand(p => removeSceneModelInstance(), p => SelectedSceneModelInstance != null);
+            SaveSceneCmd = new RelayCommand(p => saveScene(), p => SelectedScene != null);
             MouseDownSceneViewportCmd = new RelayCommand(p => mouseDownSceneViewport((MouseButtonEventArgs)p));
             MouseUpSceneViewportCmd = new RelayCommand(p => mouseUpSceneViewport((MouseButtonEventArgs)p));
             MouseMoveSceneViewportCmd = new RelayCommand(p => mouseMoveSceneViewport((MouseEventArgs)p));
@@ -217,64 +208,20 @@ namespace Corium3DGI
             MouseWheelModelViewportCmd = new RelayCommand(p => zoomModelCamera((MouseWheelEventArgs)p));
             ClearFocusCmd = new RelayCommand(p => clearFocus());
             CaptureFrameCmd = new RelayCommand(p => captureFrame());
-            
-            CollisionPrimitive.Init();            
-            dxVisualizer.RendererInitialized += onDxVisualizerRendererInit;
 
+            // Forcing a call to CollisionPrimitives' static constructors
+            CollisionPrimitive collisionPrimitive = new CollisionPrimitive();
+            CollisionBox collisionBox = new CollisionBox(new Point3D(), new Point3D());
+            CollisionSphere collisionSphere = new CollisionSphere(new Point3D(), 0);
+            CollisionCapsule collisionCapsule = new CollisionCapsule(new Point3D(), new Vector3D(), 0, 0);
+            CollisionRect collisionRect = new CollisionRect(new Point(), new Point());
+            CollisionCircle collisionCircle = new CollisionCircle(new Point(), 0);
+            CollisionStadium collisionStadium = new CollisionStadium(new Point(), new Vector(), 0, 0);            
+            
             transformGrpCallbackHandlers.translationHandler = new DxVisualizer.IScene.TranslationHandler(onTransformGrpTranslated);
             transformGrpCallbackHandlers.scaleHandler = new DxVisualizer.IScene.ScaleHandler(onTransformGrpScaled);
             transformGrpCallbackHandlers.rotationHandler = new DxVisualizer.IScene.RotationHandler(onTransformGrpRotated);
-        }
-
-        private void OnViewUiLmntsLoaded(object sender, RoutedEventArgs e)
-        {
-            ICorium3DGIView view = (ICorium3DGIView)sender;
-            modelViewportContainer = view.ModelViewportContainer;
-            sceneViewportContainer = view.SceneViewportContainer;
-        }
-
-        private void onDxVisualizerRendererInit()
-        {
-            uint vertGridLinesNr = 2 * GRID_HALF_WIDTH + 1;
-            uint horizonGridLinesNr = 2 * GRID_HALF_HEIGHT + 1;
-            Point3D[] vertices = new Point3D[2 * (vertGridLinesNr + horizonGridLinesNr)];
-            ushort[] vertexIndices = new ushort[2 * (vertGridLinesNr + horizonGridLinesNr)];
-            for (uint vertLineIdx = 0; vertLineIdx < vertGridLinesNr; vertLineIdx++)
-            {
-                vertices[2 * vertLineIdx] = new Point3D(-GRID_HALF_WIDTH + vertLineIdx, 0.0f, -GRID_HALF_HEIGHT);
-                vertices[2 * vertLineIdx + 1] = new Point3D(-GRID_HALF_WIDTH + vertLineIdx, 0.0f, GRID_HALF_HEIGHT);
-                vertexIndices[2 * vertLineIdx] = (ushort)(2 * vertLineIdx);
-                vertexIndices[2 * vertLineIdx + 1] = (ushort)(2 * vertLineIdx + 1);
-            }
-            for (uint horizonLineIdx = 0; horizonLineIdx < horizonGridLinesNr; horizonLineIdx++)
-            {
-                vertices[2 * (vertGridLinesNr + horizonLineIdx)] = new Point3D(-GRID_HALF_WIDTH, 0.0f, -GRID_HALF_HEIGHT + horizonLineIdx);
-                vertices[2 * (vertGridLinesNr + horizonLineIdx) + 1] = new Point3D(GRID_HALF_WIDTH, 0.0f, -GRID_HALF_HEIGHT + horizonLineIdx);
-                vertexIndices[2 * (vertGridLinesNr + horizonLineIdx)] = (ushort)(2 * (vertGridLinesNr + horizonLineIdx));
-                vertexIndices[2 * (vertGridLinesNr + horizonLineIdx) + 1] = (ushort)(2 * (vertGridLinesNr + horizonLineIdx) + 1);
-            }
-            dxVisualizer.addModel(vertices, vertexIndices, Color.FromArgb(255, 255, 255, 255), new Point3D(0, 0, 0), GRID_HALF_WIDTH, DxVisualizer.PrimitiveTopology.LINELIST, out gridDxModelId);
-
-            CollisionBox.Init(dxVisualizer);
-            CollisionSphere.Init(dxVisualizer);
-            CollisionCapsule.Init(dxVisualizer);
-            CollisionRect.Init(dxVisualizer);
-            CollisionCircle.Init(dxVisualizer);
-            CollisionStadium.Init(dxVisualizer);
-        }
-
-        private void exposeModelViewport()
-        {
-            modelViewportContainer.Visibility = Visibility.Visible;
-            sceneViewportContainer.Visibility = Visibility.Hidden;
-            SelectedSceneModelInstance = null;
-        }
-
-        private void exposeSceneViewport()
-        {
-            modelViewportContainer.Visibility = Visibility.Hidden;
-            sceneViewportContainer.Visibility = Visibility.Visible;
-        }
+        }    
 
         private void importModel()
         {
@@ -288,14 +235,12 @@ namespace Corium3DGI
             
             if (dlg.ShowDialog() == true)
             {
-                foreach (string model3dDatalFilePath in dlg.FileNames)                                                                                          
-                    ModelMs.Add(new ModelM(model3dDatalFilePath, dxVisualizer));                
+                foreach (string model3dDatalFilePath in dlg.FileNames)
+                {                                                         
+                    ModelM model = new ModelM(model3dDatalFilePath, dxVisualizer);
+                    ModelMs.Add(model);
+                }
             }
-        }
-
-        private void addCollisionRegion()
-        {
-            ModelMs.Add(new ModelM(string.Empty, dxVisualizer));
         }
 
         private void removeModel()
@@ -306,7 +251,7 @@ namespace Corium3DGI
             ModelMs.Remove(SelectedModel);            
         }
 
-        private void genAssetsFile()
+        private void saveImportedModels()
         {
             Microsoft.Win32.SaveFileDialog selectFolderDlg = new Microsoft.Win32.SaveFileDialog()
             {
@@ -322,11 +267,6 @@ namespace Corium3DGI
             SceneM addedSceneM = new SceneM(((TextBox)e.Source).Text, dxVisualizer, gridDxModelId, transformGrpCallbackHandlers);            
             SceneMs.Add(addedSceneM);            
             SelectedScene = addedSceneM;                        
-        }
-
-        private void renameSceneCmd()
-        {
-            // TODO: implement this
         }
 
         private void removeScene()
@@ -347,7 +287,26 @@ namespace Corium3DGI
 
         private void onViewportLoaded()
         {
-            
+            uint vertGridLinesNr = 2 * GRID_HALF_WIDHT + 1;
+            uint horizonGridLinesNr = 2 * GRID_HALF_HEIGHT + 1;
+            Point3D[] vertices = new Point3D[2 * (vertGridLinesNr + horizonGridLinesNr)];
+            ushort[] vertexIndices = new ushort[2 * (vertGridLinesNr + horizonGridLinesNr)];
+            for (uint vertLineIdx = 0; vertLineIdx < vertGridLinesNr; vertLineIdx++)
+            {
+                vertices[2 * vertLineIdx] = new Point3D(-GRID_HALF_WIDHT + vertLineIdx, 0.0f, -GRID_HALF_HEIGHT);
+                vertices[2 * vertLineIdx + 1] = new Point3D(-GRID_HALF_WIDHT + vertLineIdx, 0.0f, GRID_HALF_HEIGHT);
+                vertexIndices[2 * vertLineIdx] = (ushort)(2 * vertLineIdx);
+                vertexIndices[2 * vertLineIdx + 1] = (ushort)(2 * vertLineIdx + 1);
+            }
+            for (uint horizonLineIdx = 0; horizonLineIdx < horizonGridLinesNr; horizonLineIdx++)
+            {
+                vertices[2 * (vertGridLinesNr + horizonLineIdx)] = new Point3D(-GRID_HALF_WIDHT, 0.0f, -GRID_HALF_HEIGHT + horizonLineIdx);
+                vertices[2 * (vertGridLinesNr + horizonLineIdx) + 1] = new Point3D(GRID_HALF_WIDHT, 0.0f, -GRID_HALF_HEIGHT + horizonLineIdx);
+                vertexIndices[2 * (vertGridLinesNr + horizonLineIdx)] = (ushort)(2 * (vertGridLinesNr + horizonLineIdx));
+                vertexIndices[2 * (vertGridLinesNr + horizonLineIdx) + 1] = (ushort)(2 * (vertGridLinesNr + horizonLineIdx) + 1);
+            }
+
+            dxVisualizer.addModel(vertices, vertexIndices, Color.FromArgb(255, 255, 255, 255), new Point3D(0, 0, 0), GRID_HALF_WIDHT, PrimitiveTopology.LINELIST, out gridDxModelId);
         }
 
         private void onViewportSizeChagned(SizeChangedEventArgs e)
@@ -394,14 +353,14 @@ namespace Corium3DGI
             {                                
                 Vector3D draggedSceneModelTranslation = cursorPosToDraggedModelTranslation(e.GetPosition((FrameworkElement)e.OriginalSource));
                 draggedSceneModelInstance.setDisplayedTranslation(draggedSceneModelTranslation);
-                SelectedScene.transformGrpSetTranslation(draggedSceneModelTranslation, DxVisualizer.IScene.TransformReferenceFrame.World);
+                SelectedScene.transformGrpSetTranslation(draggedSceneModelTranslation);
             }
         }
 
         private Vector3D cursorPosToDraggedModelTranslation(Point cursorPos)
         {
-            Vector3D rayDirection = SelectedScene.cursorPosToDxRayDirection(cursorPos);
-            return (Vector3D)((Point3D)SelectedScene.getDxCameraPos() + (SCENE_MODEL_INSTANCE_INIT_DIST_FROM_CAMERA * rayDirection));
+            Vector3D rayDirection = (Vector3D)SelectedScene.IDxScene.cursorPosToRayDirection((float)cursorPos.X, (float)cursorPos.Y);
+            return (Vector3D)((Point3D)SelectedScene.IDxScene.getCameraPos() + (SCENE_MODEL_INSTANCE_INIT_DIST_FROM_CAMERA * rayDirection));
         }
 
         private void sceneModelDropOnViewport(DragEventArgs e)
@@ -420,7 +379,7 @@ namespace Corium3DGI
             };
 
             SelectedSceneModelInstance = SelectedSceneModel.addSceneModelInstance(new Vector3D(0, 0, 0), new Vector3D(1, 1, 1), new Vector3D(1, 0, 0), 0, eventHandlers);            
-        }        
+        }
 
         private void onSceneModelInstanceSelected(SceneModelInstanceM selectedSceneModelInstanceM)
         {
@@ -430,17 +389,17 @@ namespace Corium3DGI
 
         private void onTransformPanelTranslationEdited(object sender, PropertyChangedEventArgs e)
         {
-            SelectedScene.transformGrpSetTranslation(SelectedSceneModelInstance.Translate.Vector3DCpy, DxVisualizer.IScene.TransformReferenceFrame.World);
+            SelectedScene.transformGrpSetTranslation(SelectedSceneModelInstance.Translate.Vector3DCpy);
         }
 
         private void onTransformPanelScaleEdited(object sender, PropertyChangedEventArgs e)
         {
-            SelectedScene.transformGrpSetScale(SelectedSceneModelInstance.Scale.Vector3DCpy, DxVisualizer.IScene.TransformReferenceFrame.World);
+            SelectedScene.transformGrpSetScale(SelectedSceneModelInstance.Scale.Vector3DCpy);
         }
 
         private void onTransformPanelRotEdited(object sender, PropertyChangedEventArgs e)
         {
-            SelectedScene.transformGrpSetRotation(SelectedSceneModelInstance.RotQuat.Axis, SelectedSceneModelInstance.RotQuat.Angle, DxVisualizer.IScene.TransformReferenceFrame.World);            
+            SelectedScene.transformGrpSetRotation(SelectedSceneModelInstance.RotQuat.Axis, SelectedSceneModelInstance.RotQuat.Angle);            
         }
 
         private void onTransformGrpTranslated(float x, float y, float z)
@@ -466,7 +425,12 @@ namespace Corium3DGI
         private void removeSceneModelInstance()
         {
             SelectedSceneModel.removeSceneModelInstance(SelectedSceneModelInstance);
-        }        
+        }
+
+        private void saveScene()
+        {            
+            
+        }
 
         private void mouseDownSceneViewport(MouseButtonEventArgs e)
         {
@@ -522,9 +486,9 @@ namespace Corium3DGI
                 if (cameraAction != CameraAction.REST)
                 {
                     if (cameraAction == CameraAction.ROTATE)
-                        SelectedScene.rotateDxCamera(cursorMoveVec);
+                        SelectedScene.IDxScene.rotateCamera((float)cursorMoveVec.X, (float)cursorMoveVec.Y);
                     else if (cameraAction == CameraAction.PAN)                    
-                        SelectedScene.panDxCamera(cursorMoveVec);                                                
+                        SelectedScene.IDxScene.panCamera((float)cursorMoveVec.X, (float)cursorMoveVec.Y);                                                
                 }
 
                 SelectedScene.DxVisualizerMouseMoveNotifier((float)currMousePos.X, (float)currMousePos.Y);
@@ -537,7 +501,7 @@ namespace Corium3DGI
         {
             if (cameraAction == CameraAction.REST)
             {
-                SelectedScene.zoomDxCamera(e.Delta);
+                SelectedScene.IDxScene.zoomCamera(e.Delta);
             }
         }        
 

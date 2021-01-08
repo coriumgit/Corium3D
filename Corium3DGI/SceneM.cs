@@ -2,12 +2,10 @@
 using Corium3D;
 using System;
 using System.Collections.ObjectModel;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
-
 
 namespace Corium3DGI
 {
@@ -22,7 +20,7 @@ namespace Corium3DGI
 
         public AssetsGen.ISceneAssetGen SceneAssetGen { get; private set; }
 
-        private DxVisualizer.IScene iDxScene;
+        public DxVisualizer.IScene IDxScene { get; private set; }
 
         private string name;
         public string Name
@@ -37,11 +35,11 @@ namespace Corium3DGI
                     OnPropertyChanged("Name");
                 }
             }
-        }
+        }        
 
         private DxVisualizer.MouseCallbacks dxVisualizerMouseNotifiers;
-        public DxVisualizer.OnMouseMoveCallback DxVisualizerMouseMoveNotifier {
-            get { return dxVisualizerMouseNotifiers.onMouseMoveCallback; }
+        public DxVisualizer.OnMouseMoveCallback DxVisualizerMouseMoveNotifier { 
+            get { return dxVisualizerMouseNotifiers.onMouseMoveCallback; } 
         }
 
         public DxVisualizer.OnMouseUpCallback DxVisualizerMouseUpNotifier
@@ -51,26 +49,26 @@ namespace Corium3DGI
 
         public ObservableCollection<SceneModelM> SceneModelMs { get; } = new ObservableCollection<SceneModelM>();
 
-        public SceneM(string name, DxVisualizer dxVisualizer, uint gridDxModelId, DxVisualizer.IScene.TransformCallbackHandlers transformCallbackHandlers)
+        public SceneM(string name, DxVisualizer dxVisualizer, uint gridDxModelId, DxVisualizer.IScene.TransformCallbackHandlers transformCallbackHandlers) 
         {
             this.name = name;
-            SceneAssetGen = AssetsGen.createSceneAssetGen();
-            iDxScene = dxVisualizer.createScene(transformCallbackHandlers, out dxVisualizerMouseNotifiers);
-            gridDxInstance = iDxScene.createModelInstance(gridDxModelId, Color.FromArgb(0, 0, 0, 0), new Vector3D(0, 0, 0), new Vector3D(1, 1, 1), new Vector3D(1, 0, 0), 0, null);
+            SceneAssetGen = AssetsGen.createSceneAssetGen();            
+            IDxScene = dxVisualizer.createScene(transformCallbackHandlers, out dxVisualizerMouseNotifiers);
+            gridDxInstance = IDxScene.createModelInstance(gridDxModelId, Color.FromArgb(0, 0, 0, 0), new Vector3D(0, 0, 0), new Vector3D(1, 1, 1), new Vector3D(1, 0, 0), 0, null);
         }
 
         public void Dispose()
         {
             gridDxInstance.Dispose();
-            foreach (SceneModelM sceneModel in SceneModelMs)
+            foreach (SceneModelM sceneModel in SceneModelMs)                                            
                 sceneModel.Dispose();
-            iDxScene.Dispose();
+            IDxScene.Dispose();
 
             SceneAssetGen.Dispose();
         }
 
         public SceneModelM addSceneModel(ModelM modelM)
-        {
+        {            
             foreach (SceneModelM sceneModel in SceneModelMs)
             {
                 if (sceneModel.ModelMRef == modelM)
@@ -93,7 +91,7 @@ namespace Corium3DGI
                     SceneModelMs.Remove(sceneModel);
                     return;
                 }
-            }
+            }            
         }
 
         public void removeSceneModel(SceneModelM sceneModelM)
@@ -109,83 +107,43 @@ namespace Corium3DGI
             }
         }
 
-        public DxVisualizer.IScene.ISceneModelInstance createDxModelInstance(uint dxModelID, Color colorMask, Vector3D translate, Vector3D scale, Vector3D rotAx, float rotAng, DxVisualizer.IScene.ISceneModelInstance.SelectionHandler selectionHandler) {
-            return iDxScene.createModelInstance(dxModelID, colorMask, translate, scale, rotAx, rotAng, selectionHandler);
-        }
-
-        public void syncDxVisualsWithModelsUpdate()
-        {
-            //foreach (SceneModelM sceneModel in SceneModelMs)
-            //    sceneModel.flushDxVisualsUpdate();
-        }        
-
-        public Vector3D cursorPosToDxRayDirection(Point cursorPos)
-        {
-            return (Vector3D)iDxScene.cursorPosToRayDirection((float)cursorPos.X, (float)cursorPos.Y);
-        }
-
-        public Point3D getDxCameraPos()
-        {
-            return (Point3D)iDxScene.getCameraPos();
-        }
-
-        public void panDxCamera(Vector cursorMoveVec)
-        {
-            iDxScene.panCamera((float)cursorMoveVec.X, (float)cursorMoveVec.Y);
-        }
-
-        public void rotateDxCamera(Vector cursorMoveVec)
-        {
-            iDxScene.rotateCamera((float)cursorMoveVec.X, (float)cursorMoveVec.Y);
-        }        
-
-        public void zoomDxCamera(float amount)
-        {
-            iDxScene.zoomCamera(amount);
-        }        
-        
-        public void activateDxScene()
-        {
-            iDxScene.activate();
-        }
-
         public bool cursorSelect(float x, float y)
         {
-            bool wasSceneModelInstanceSelected = iDxScene.cursorSelect(x, y);
+            bool wasSceneModelInstanceSelected = IDxScene.cursorSelect(x, y);
             //if (!wasSceneModelInstanceSelected)
               //  IDxScene.dimHighlightedInstance();
 
             return wasSceneModelInstanceSelected;
         }
 
-        public void transformGrpTranslate(Vector3D translation, DxVisualizer.IScene.TransformReferenceFrame referenceFrame)
+        public void transformGrpTranslate(Vector3D translation)
         {
-            iDxScene.transformGrpTranslate(translation, referenceFrame);
+            IDxScene.transformGrpTranslate(translation);
         }
 
-        public void transformGrpSetTranslation(Vector3D translation, DxVisualizer.IScene.TransformReferenceFrame referenceFrame)
+        public void transformGrpSetTranslation(Vector3D translation)
         {
-            iDxScene.transformGrpSetTranslation(translation, referenceFrame);
+            IDxScene.transformGrpSetTranslation(translation);
         }
 
-        public void transformGrpScale(Vector3D scaleFactorQ, DxVisualizer.IScene.TransformReferenceFrame referenceFrame)
+        public void transformGrpScale(Vector3D scaleFactorQ)
         {
-            iDxScene.transformGrpScale(scaleFactorQ, referenceFrame);
+            IDxScene.transformGrpScale(scaleFactorQ);
         }
 
-        public void transformGrpSetScale(Vector3D scaleFactor, DxVisualizer.IScene.TransformReferenceFrame referenceFrame)
+        public void transformGrpSetScale(Vector3D scaleFactor)
         {
-            iDxScene.transformGrpSetScale(scaleFactor, referenceFrame);
+            IDxScene.transformGrpSetScale(scaleFactor);
         }
 
-        public void transformGrpRotate(Vector3D ax, double ang, DxVisualizer.IScene.TransformReferenceFrame referenceFrame)
+        public void transformGrpRotate(Vector3D ax, double ang)
         {
-            iDxScene.transformGrpRotate(ax, (float)ang, referenceFrame);
+            IDxScene.transformGrpRotate(ax, (float)ang);
         }
 
-        public void transformGrpSetRotation(Vector3D ax, double ang, DxVisualizer.IScene.TransformReferenceFrame referenceFrame)
+        public void transformGrpSetRotation(Vector3D ax, double ang)
         {
-            iDxScene.transformGrpSetRotation(ax, (float)ang, referenceFrame);
+            IDxScene.transformGrpSetRotation(ax, (float)ang);
         }
     }
 
