@@ -20,7 +20,7 @@ namespace Corium3DGI
             base.OnStartup(e);        
             
             MainWindowV view = new MainWindowV();
-            view.DataContext = new MainWindowVM(view.DxVisualizerRef);
+            view.DataContext = new MainWindowVM(view);
             view.Show();
         }
     }
