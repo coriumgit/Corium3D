@@ -28,7 +28,7 @@
                  TextAlignment="Left" 
                  Padding="0"
                  FontSize="12"                                
-                 Text="{Binding RelativeSource={RelativeSource AncestorType={x:Type cc:MouseMoveNumberBoxUpdater}}, Path=NumberBoxText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"                                                                                   
+                 Text="{Binding RelativeSource={RelativeSource AncestorType={x:Type cc:MouseMoveNumberBoxUpdater}}, Path=NumberBoxText, Mode=TwoWay, UpdateSourceTrigger=Default}"                                                                                   
                  behaviours:InputBehaviours.UpdateSourcePropertyOnEnterPress="TextBox.Text"/>
     </Grid>
 </UserControl>

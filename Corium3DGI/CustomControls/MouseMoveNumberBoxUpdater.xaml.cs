@@ -53,15 +53,14 @@ namespace Corium3DGI.CustomCtrls
         }
         
         public MouseMoveNumberBoxUpdater() : base()
-        {
-            txtBoxBinding = GetBindingExpression(TextBox.TextProperty);
+        {            
             InitializeComponent();
         }
 
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
-            txtBoxBinding = GetBindingExpression(TextBox.TextProperty);
+            txtBoxBinding = numberBox.GetBindingExpression(TextBox.TextProperty);
         }
 
         public void OnLabelPressed(object sender, MouseButtonEventArgs e)
@@ -79,7 +78,7 @@ namespace Corium3DGI.CustomCtrls
             if (isUpdateViaMouseMoveActivated)
             {
                 double mousePosX = e.GetPosition(this).X;
-                double mouseMove = (mousePosX - prevMouseXPos);
+                double mouseMove = mousePosX - prevMouseXPos;
 
                 double parsedDouble;
                 if (double.TryParse(numberBox.Text, out parsedDouble))
@@ -99,8 +98,7 @@ namespace Corium3DGI.CustomCtrls
             if (isUpdateViaMouseMoveActivated)
             {
                 isUpdateViaMouseMoveActivated = false;
-                ((Label)sender).ReleaseMouseCapture();
-                Keyboard.ClearFocus();
+                ((Label)sender).ReleaseMouseCapture();                
             }
         }
 

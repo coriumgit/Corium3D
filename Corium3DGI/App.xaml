@@ -101,7 +101,7 @@
                         <ColumnDefinition/>
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
-                    <cc:MouseMoveNumberBoxUpdater Margin="5 0 0 0" Grid.Column="0" UpdaterText="X" NumberBoxText="{Binding Path=X, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <cc:MouseMoveNumberBoxUpdater Margin="5 0 0 0" Grid.Column="0" UpdaterText="X" NumberBoxText="{Binding Path=X, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                     <cc:MouseMoveNumberBoxUpdater Margin="5 0 0 0" Grid.Column="1" UpdaterText="Y" NumberBoxText="{Binding Path=Y, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                     <cc:MouseMoveNumberBoxUpdater Margin="5 0 0 0" Grid.Column="2" UpdaterText="Z" NumberBoxText="{Binding Path=Z, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                 </Grid>

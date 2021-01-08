@@ -9,16 +9,18 @@
                     <DataTemplate.Resources>
                         <cc:DoubleHalfer x:Key="doubleHalfer"/>
                     </DataTemplate.Resources>
-                    <Image Source="{Binding RelativeSource={RelativeSource AncestorType={x:Type cc:ImageButton}}, Path= Source}" 
-                           Width="{Binding RelativeSource={RelativeSource AncestorType={x:Type cc:ImageButton}}, Path= Width}" 
-                           Height="{Binding RelativeSource={RelativeSource AncestorType={x:Type cc:ImageButton}}, Path= Height}"
-                           IsHitTestVisible="False">
-                        <Image.RenderTransform>
-                            <RotateTransform CenterX="{Binding RelativeSource={RelativeSource AncestorType={x:Type cc:ImageButton}}, Path= Width, Converter={StaticResource doubleHalfer}}" 
-                                             CenterY="{Binding RelativeSource={RelativeSource AncestorType={x:Type cc:ImageButton}}, Path= Height, Converter={StaticResource doubleHalfer}}"
-                                             Angle="{Binding RelativeSource={RelativeSource AncestorType={x:Type cc:ImageButton}}, Path= Rotation}"/>
-                        </Image.RenderTransform>
-                    </Image>
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="{Binding RelativeSource={RelativeSource AncestorType={x:Type cc:ImageButton}}, Path= Source}" 
+                               Width="{Binding RelativeSource={RelativeSource AncestorType={x:Type cc:ImageButton}}, Path= Width}" 
+                               Height="{Binding RelativeSource={RelativeSource AncestorType={x:Type cc:ImageButton}}, Path= Height}"
+                               IsHitTestVisible="False">
+                            <Image.RenderTransform>
+                                <RotateTransform CenterX="{Binding RelativeSource={RelativeSource AncestorType={x:Type cc:ImageButton}}, Path= Width, Converter={StaticResource doubleHalfer}}" 
+                                                 CenterY="{Binding RelativeSource={RelativeSource AncestorType={x:Type cc:ImageButton}}, Path= Height, Converter={StaticResource doubleHalfer}}"
+                                                 Angle="{Binding RelativeSource={RelativeSource AncestorType={x:Type cc:ImageButton}}, Path= Rotation}"/>
+                            </Image.RenderTransform>
+                        </Image>
+                    </StackPanel>
                 </DataTemplate>
             </Setter.Value>
         </Setter>
