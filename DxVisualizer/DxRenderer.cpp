@@ -53,7 +53,7 @@ namespace CoriumDirectX {
         SAFE_RELEASE(cbViewMat);
         SAFE_RELEASE(cbProjMat);
         SAFE_RELEASE(cbModelID);
-        SAFE_RELEASE(cbGlobalTransformat);
+        SAFE_RELEASE(cbWorldTransformat);
         SAFE_RELEASE(cbBlur);
         SAFE_RELEASE(blendStateTransparency);
 
@@ -181,10 +181,10 @@ namespace CoriumDirectX {
         bd.ByteWidth = sizeof(XMMATRIX);
         bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
         bd.CPUAccessFlags = 0;
-        hr = dev->CreateBuffer(&bd, NULL, &cbGlobalTransformat);
+        hr = dev->CreateBuffer(&bd, NULL, &cbWorldTransformat);
         if (FAILED(hr)) {
-            OutputDebugStringW(L"Could not create the global transformat constant buffer.");
-            goto CbGlobalTransformatFailed;
+            OutputDebugStringW(L"Could not create the world transformat constant buffer.");
+            goto CbWorldTransformatFailed;
         }
 
         ZeroMemory(&bd, sizeof(bd));
@@ -325,9 +325,9 @@ namespace CoriumDirectX {
         cbBlur->Release();    
 
     CbBlurFailed:
-        cbGlobalTransformat->Release();
+        cbWorldTransformat->Release();
 
-    CbGlobalTransformatFailed:
+    CbWorldTransformatFailed:
         cbModelID->Release();
 
     CbModelIDFailed:
@@ -997,9 +997,9 @@ namespace CoriumDirectX {
                     devcon->IASetInputLayout(vlScene);
 
                     devcon->UpdateSubresource(cbModelID, 0, NULL, &modelID, 0, 0);                    
-                    devcon->UpdateSubresource(cbGlobalTransformat, 0, NULL, &identityMat, 0, 0);
+                    devcon->UpdateSubresource(cbWorldTransformat, 0, NULL, &identityMat, 0, 0);
 
-                    ID3D11Buffer* constBuffers[4] = { cbViewMat, cbProjMat, cbModelID, cbGlobalTransformat };
+                    ID3D11Buffer* constBuffers[4] = { cbViewMat, cbProjMat, cbModelID, cbWorldTransformat };
                     devcon->VSSetConstantBuffers(0, 4, constBuffers);
 
                     ID3D11Buffer* vertexBuffers[2] = { modelRenderData.modelGeoData.vertexBuffer, modelRenderData.visibleInstancesDataBuffer };
@@ -1099,7 +1099,7 @@ namespace CoriumDirectX {
                     
                     UINT handleModelID = MODELS_NR_MAX + manipulatorHandleModelIdx + 1;
                     devcon->UpdateSubresource(cbModelID, 0, NULL, &handleModelID, 0, 0);
-                    devcon->UpdateSubresource(cbGlobalTransformat, 0, NULL, &activeScene->instancesManipulator.getTransformat(), 0, 0);
+                    devcon->UpdateSubresource(cbWorldTransformat, 0, NULL, &activeScene->instancesManipulator.getTransformat(), 0, 0);
                     ID3D11Buffer* vertexBuffers[2] = { handleModelRenderData.modelGeoData.vertexBuffer, handleModelRenderData.instancesDataBuffer };
                     UINT strides[2] = { sizeof(VertexData), sizeof(VisibleInstanceData) };
                     UINT offsets[2] = { 0, 0 };
@@ -1152,108 +1152,161 @@ namespace CoriumDirectX {
     };
 
     XMMATRIX DxRenderer::Transform::genTransformat() const {
-        XMMATRIX transformat = XMMatrixScaling(scaleFactor.x, scaleFactor.y, scaleFactor.z);
-        transformat = XMMatrixMultiply(XMMatrixRotationAxis(XMLoadFloat3(&rotAx), rotAng), transformat);
-        transformat = XMMatrixMultiply(XMMatrixTranslationFromVector(XMLoadFloat3(&translation)), transformat);
+        XMMATRIX transformat = XMMatrixTranslationFromVector(XMLoadFloat3(&translation));
+        transformat = XMMatrixMultiply(XMMatrixRotationAxis(XMLoadFloat3(&rotAx), rotAng / 180.0f * XM_PI), transformat);
+        transformat = XMMatrixMultiply(XMMatrixScalingFromVector(XMLoadFloat3(&scaleFactor)), transformat);
 
         return transformat;
     }
 
-    /*
-    void DxRenderer::Scene::SceneModelInstance::translate(XMFLOAT3 const& _translation) {        
-        setTranslation(pos + XMLoadFloat3(&_translation));
-    }
-
-    void DxRenderer::Scene::SceneModelInstance::setTranslation(XMFLOAT3 const& _translation) {
-        setTranslation(XMLoadFloat3(&_translation));
-    }
-    */
-
-    void DxRenderer::Scene::SceneModelInstance::translate(DirectX::CXMVECTOR translation) {
-        setTranslation(pos + translation);
-    }
-       
-    void DxRenderer::Scene::SceneModelInstance::setTranslation(DirectX::CXMVECTOR translation) {
-        pos = translation;        
-        if (kdtreeDataNodeHolder) {
-            XMFLOAT3 _pos;
-            XMStoreFloat3(&_pos, pos);
-            scene.kdtree->setTranslationForNodeBoundingSphere(kdtreeDataNodeHolder, float3ToArr(_pos));
-        }
-
-        recompTransformat();
-        updateBuffers();
-    }
-
-    DirectX::XMFLOAT3 DxRenderer::Scene::SceneModelInstance::getTranslation() {
-        XMFLOAT3 ret;
-        XMStoreFloat3(&ret, pos);
-        
-        return ret;
-    }   
-
     // TODO: Verify that instance is not in the transform group
+    // TODO: move manipulator to the mean position of the transform group
     void DxRenderer::Scene::SceneModelInstance::addToTransformGrp() {
         //kdtree->destroy(instance->kdtreeDataNodeHolder);
         scene.transformGrp.push_back(this);
         transformGrpIt = scene.transformGrp.end();
         --transformGrpIt;
         scene.instancesManipulator.onTransformGrpTranslationSet(pos);
+        scene.instancesManipulator.onTransformGrpRotationSet(rot);
     }
 
     // TODO: Verify that instance is in the transform group
+    // TODO: move manipulator to the mean position of the transform group or reset its transform if the group is empty
     void DxRenderer::Scene::SceneModelInstance::removeFromTransformGrp() {
         scene.transformGrp.erase(transformGrpIt);
         //instance->addInstanceToKdtree();  
     }
 
-    /*
-    void DxRenderer::Scene::SceneModelInstance::scale(XMFLOAT3 const& _scaleFactorQ) {        
-        setScale(scaleFactor * XMLoadFloat3(&_scaleFactorQ));        
+    DirectX::XMFLOAT3 DxRenderer::Scene::SceneModelInstance::getWorldTranslation() {
+        XMFLOAT3 ret;
+        if (parent)
+            XMStoreFloat3(&ret, XMVector3Transform(pos, parent->getWorldTransformat()));
+        else
+            XMStoreFloat3(&ret, pos);
+
+        return ret;
+    }
+
+    void DxRenderer::Scene::SceneModelInstance::translate(DirectX::CXMVECTOR translation, TransformReferenceFrame referenceFrame) {
+        if (referenceFrame == TransformReferenceFrame::Local || parent == NULL)
+            pos += translation;
+        else
+            pos +=  XMVector3Transform(translation, XMMatrixInverse(NULL, parent->worldTransformat));
+
+        recompLocalTransformat();
+        //updateKdTreeNode();
+    }
+       
+    void DxRenderer::Scene::SceneModelInstance::setTranslation(DirectX::CXMVECTOR translation, TransformReferenceFrame referenceFrame) {
+        if (referenceFrame == TransformReferenceFrame::Local || parent == NULL)
+            pos = translation;        
+        else
+            pos = XMVector3Transform(translation, XMMatrixInverse(NULL, parent->worldTransformat));
+
+        recompLocalTransformat();
+        //updateKdTreeNode();
+    }
+
+    void DxRenderer::Scene::SceneModelInstance::updateKdTreeNodeDueToTranslate()
+    {
+        if (!kdtreeDataNodeHolder)
+            return;
+
+        XMFLOAT3 boundingSphereTranslation;
+        if (parent)
+            XMStoreFloat3(&boundingSphereTranslation, scene.renderer.modelsRenderData[modelID].boundingSphere.getCenter() + XMVector3Transform(pos, parent->worldTransformat));
+        else
+            XMStoreFloat3(&boundingSphereTranslation, scene.renderer.modelsRenderData[modelID].boundingSphere.getCenter() + pos);
+        scene.kdtree->setTranslationForNodeBoundingSphere(kdtreeDataNodeHolder, float3ToArr(boundingSphereTranslation));
+    }
+
+    void DxRenderer::Scene::SceneModelInstance::scale(DirectX::CXMVECTOR scaleFactorQ, TransformReferenceFrame referenceFrame) {
+        if (referenceFrame == TransformReferenceFrame::Local || parent == NULL)
+            scaleFactor += scaleFactorQ;
+        else
+            scaleFactor += XMVector3Transform(scaleFactorQ, XMMatrixInverse(NULL, parent->worldTransformat));
+        
+        recompLocalTransformat();
+        //updateKdTreeNode();
     }
     
-    void DxRenderer::Scene::SceneModelInstance::setScale(XMFLOAT3 const& _scaleFactor) {
-        setScale(XMLoadFloat3(&_scaleFactor));         
+    void DxRenderer::Scene::SceneModelInstance::setScale(DirectX::CXMVECTOR scaleFactor, TransformReferenceFrame referenceFrame) {
+        if (referenceFrame == TransformReferenceFrame::Local || parent == NULL)
+            this->scaleFactor = scaleFactor;
+        else            
+            this->scaleFactor = XMVector3Transform(scaleFactor, XMMatrixInverse(NULL, parent->worldTransformat));
+        
+        recompLocalTransformat();
+        //updateKdTreeNode();
     }
-    */
-    void DxRenderer::Scene::SceneModelInstance::scale(DirectX::CXMVECTOR scaleFactorQ) {
-        setScale(scaleFactor + scaleFactorQ);
+
+    void DxRenderer::Scene::SceneModelInstance::updateKdTreeNodeDueToScale()
+    {
+        if (!kdtreeDataNodeHolder)
+            return;
+
+        BoundingSphere const& instanceBoundingSphere = scene.renderer.modelsRenderData[modelID].boundingSphere;
+        XMVECTOR boundingSpherePos = instanceBoundingSphere.getCenter() + XMVector3Transform(pos, worldTransformat);
+        XMFLOAT3 _scaleFactor;                
+        XMStoreFloat3(&_scaleFactor, scaleFactor);
+		scene.kdtree->setRadiusForNodeBoundingSphere(kdtreeDataNodeHolder, (std::max)((std::max)(_scaleFactor.x, _scaleFactor.y), _scaleFactor.z));
     }
-    
-    void DxRenderer::Scene::SceneModelInstance::setScale(DirectX::CXMVECTOR scaleFactor) {
-        this->scaleFactor = scaleFactor;        
-        if (kdtreeDataNodeHolder) {
-            XMFLOAT3 _scaleFactor;
-            XMStoreFloat3(&_scaleFactor, scaleFactor);
-            scene.kdtree->setRadiusForNodeBoundingSphere(kdtreeDataNodeHolder, (std::max)((std::max)(_scaleFactor.x, _scaleFactor.y), _scaleFactor.z));
+
+    void DxRenderer::Scene::SceneModelInstance::rotate(DirectX::CXMVECTOR _rot, TransformReferenceFrame referenceFrame) {
+        if (referenceFrame == TransformReferenceFrame::Local || parent == NULL)
+            rot = XMQuaternionMultiply(rot, _rot);
+        else {            
+            XMVECTOR _rotLocal = XMVector3Transform(_rot, XMMatrixInverse(NULL, parent->worldTransformat));
+            XMVECTOR _rotLocalNormalized = XMQuaternionNormalize(_rotLocal);
+            rot = XMQuaternionMultiply(rot, _rotLocalNormalized);
+            XMVECTOR _rotAx;
+            float _rotAng;
+            XMQuaternionToAxisAngle(&_rotAx, &_rotAng, _rot);
+            rot = XMQuaternionMultiply(rot, XMQuaternionRotationAxis(XMVector3Transform(_rotAx, XMMatrixInverse(NULL, parent->worldTransformat)), _rotAng));
         }
-        recompTransformat();
-        updateBuffers();
+        
+        recompLocalTransformat();
+        //updateKdTreeNode();
     }
 
-    /*
-    void DxRenderer::Scene::SceneModelInstance::rotate(XMFLOAT3 const& ax, float ang) {         
-		setRotation(XMQuaternionMultiply(rot, XMQuaternionRotationAxis(XMVectorSet(ax.x, ax.y, ax.z, 0.0f), ang / 180.0f * XM_PI)));
+    void DxRenderer::Scene::SceneModelInstance::setRotation(DirectX::CXMVECTOR _rot, TransformReferenceFrame referenceFrame) {
+        if (referenceFrame == TransformReferenceFrame::Local || parent == NULL)
+            rot = _rot;
+        else {
+            rot = XMVector3Transform(_rot, XMMatrixInverse(NULL, parent->worldTransformat));
+            rot = XMQuaternionNormalize(rot);            
+            XMVECTOR _rotAx;
+            float _rotAng;
+            XMQuaternionToAxisAngle(&_rotAx, &_rotAng, _rot);
+            rot = XMQuaternionRotationAxis(XMVector3Transform(_rotAx, XMMatrixInverse(NULL, parent->worldTransformat)), _rotAng);
+        }
+        
+        recompLocalTransformat();
+        //updateKdTreeNode();
     }
 
-    void DxRenderer::Scene::SceneModelInstance::setRotation(XMFLOAT3 const& ax, float ang) {
-        setRotation(XMQuaternionRotationAxis(XMVectorSet(ax.x, ax.y, ax.z, 0.0f), ang / 180.0f * XM_PI));        
-    }
-    */
-
-    void DxRenderer::Scene::SceneModelInstance::rotate(DirectX::CXMVECTOR _rot) {
-        setRotation(XMQuaternionMultiply(rot, _rot));        
-    }
-
-    void DxRenderer::Scene::SceneModelInstance::setRotation(DirectX::CXMVECTOR _rot) {
-        rot = _rot;
+    void DxRenderer::Scene::SceneModelInstance::updateKdTreeNodeDueToRotation()
+    {
         if (kdtreeDataNodeHolder) {
             XMFLOAT3 rotatedBoundSphereC;
             XMStoreFloat3(&rotatedBoundSphereC, pos + XMVector3Rotate(scene.renderer.modelsRenderData[modelID].boundingSphere.getCenter(), rot));
-            scene.kdtree->setTranslationForNodeBoundingSphere(kdtreeDataNodeHolder, float3ToArr(rotatedBoundSphereC));
+            scene.kdtree->setTranslationForNodeBoundingSphere(kdtreeDataNodeHolder, float3ToArr(rotatedBoundSphereC));            
         }
-        recompTransformat();
-        updateBuffers();
+    }
+
+    inline BoundingSphere calcTransformedBoundingSphere(BoundingSphere const& boundingSphere, CXMMATRIX transformat, XMVECTOR const& scaleFactor) {
+        return BoundingSphere(XMVector3Transform(boundingSphere.getCenter(), transformat), boundingSphere.getRadius() * max(max(XMVectorGetX(scaleFactor), XMVectorGetY(scaleFactor)), XMVectorGetZ(scaleFactor)));
+    }
+
+    void DxRenderer::Scene::SceneModelInstance::updateKdTreeNode()
+    {
+        if (kdtreeDataNodeHolder) {
+            BoundingSphere boundingSphere = calcTransformedBoundingSphere(scene.renderer.modelsRenderData[modelID].boundingSphere, worldTransformat, scaleFactor);
+            XMFLOAT3 boundingSphereCenterTransformed;
+            XMStoreFloat3(&boundingSphereCenterTransformed, boundingSphere.getCenter());
+            scene.kdtree->setTranslationForNodeBoundingSphere(kdtreeDataNodeHolder, float3ToArr(boundingSphereCenterTransformed));            
+            scene.kdtree->setRadiusForNodeBoundingSphere(kdtreeDataNodeHolder, boundingSphere.getRadius());
+        }
     }
 
     void DxRenderer::Scene::SceneModelInstance::highlight() {    
@@ -1303,17 +1356,38 @@ namespace CoriumDirectX {
         if (isInstanceDescendant(parent))
             return false;
         
+        unparent();
         this->parent = parent;
-        parent->children.push_back(this);
-        //scene.renderer.devcon->UpdateSubresource()
+        parent->children.push_back(this);                
+        pos -= parent->pos;
+        scaleFactor = XMVectorDivide(scaleFactor, parent->scaleFactor); // TODO: Address division by zero
+        rot = XMQuaternionMultiply(rot, XMQuaternionInverse(parent->rot));
+        localTransformat = XMMatrixMultiply(worldTransformat, XMMatrixInverse(NULL, parent->worldTransformat));
+        
         return true;
     }
 
-    void DxRenderer::Scene::SceneModelInstance::unparent() {
+    void DxRenderer::Scene::SceneModelInstance::unparent() {  
+        if (parent == NULL)
+            return;
 
+        pos = XMVector3Transform(pos, worldTransformat);
+        scaleFactor *= parent->scaleFactor;
+        rot = XMVector3Transform(rot, worldTransformat);
+        localTransformat = worldTransformat;
+        parent->children.remove(this);
+        parent = NULL;
     }
 
     void DxRenderer::Scene::SceneModelInstance::release() {
+        if (parent)
+            parent->children.remove(this);
+
+        for (SceneModelInstance* child : children) {
+            child->parent = NULL;
+            child->release();
+        }
+
         // TODO: if (kdtreeDataNodeHolder)
         scene.kdtree->destroy(kdtreeDataNodeHolder);
 
@@ -1333,11 +1407,7 @@ namespace CoriumDirectX {
         }
 
         throw std::exception("release was called on a SceneModelInstance of a removed model.");
-    }
-
-    inline BoundingSphere calcTransformedBoundingSphere(BoundingSphere const& boundingSphere, XMVECTOR const& translation, XMVECTOR const& scaleFactor, XMVECTOR rot) {
-        return BoundingSphere::calcTransformedBoundingSphere(boundingSphere, translation + XMVector3Rotate(boundingSphere.getCenter(), rot), max(max(XMVectorGetX(scaleFactor), XMVectorGetY(scaleFactor)), XMVectorGetZ(scaleFactor)));
-    }
+    }    
 
     DxRenderer::Scene::SceneModelInstance::SceneModelInstance(Scene& _scene, UINT _modelID, CXMVECTOR _instanceColorMask, Transform const& transform, SelectionHandler _selectionHandler) :
             scene(_scene), modelID(_modelID), instanceColorMask(_instanceColorMask),
@@ -1345,7 +1415,7 @@ namespace CoriumDirectX {
             pos(XMLoadFloat3(&transform.translation)), 
             scaleFactor(XMLoadFloat3(&transform.scaleFactor)), 
             rot(XMQuaternionRotationAxis(XMLoadFloat3(&transform.rotAx), transform.rotAng / 180.0f * XM_PI)),
-            modelTransformat(transform.genTransformat()),
+            localTransformat(transform.genTransformat()), worldTransformat(localTransformat),
             kdtreeDataNodeHolder(*(new KDTreeDataNodeHolder())) {
 
         addInstanceToKdtree();
@@ -1382,7 +1452,7 @@ namespace CoriumDirectX {
     DxRenderer::Scene::SceneModelInstance::~SceneModelInstance() { delete &kdtreeDataNodeHolder; }
 
     void DxRenderer::Scene::SceneModelInstance::addInstanceToKdtree() {
-        BoundingSphere boundingSphere = calcTransformedBoundingSphere(scene.renderer.modelsRenderData[modelID].boundingSphere, pos, scaleFactor, rot);
+        BoundingSphere boundingSphere = calcTransformedBoundingSphere(scene.renderer.modelsRenderData[modelID].boundingSphere, worldTransformat, scaleFactor);
         XMFLOAT3 boundingSphereCenter;
         XMStoreFloat3(&boundingSphereCenter, boundingSphere.getCenter());
         kdtreeDataNodeHolder = scene.kdtree->insert(float3ToArr(boundingSphereCenter), boundingSphere.getRadius(), *this);        
@@ -1441,7 +1511,7 @@ namespace CoriumDirectX {
             visibleInstancesIdxs = &scene.renderer.modelsRenderData[modelID].visibleInstancesIdxs;            
         }
 
-        VisibleInstanceData instanceData = { modelTransformat, instanceColorMask, instanceIdx };
+        VisibleInstanceData instanceData = { worldTransformat, instanceColorMask, instanceIdx };
         D3D11_BOX rangeBox = { transformatsBufferOffset * sizeof(VisibleInstanceData), 0U, 0U, (transformatsBufferOffset + 1) * sizeof(VisibleInstanceData), 1U, 1U };
         scene.renderer.devcon->UpdateSubresource(instancesDataBuffer, 0, &rangeBox, &instanceData, 0, 0);
 
@@ -1460,10 +1530,24 @@ namespace CoriumDirectX {
     }       
 
     // modelTransformat = XMMatrixAffineTransformation(scaleFactor, XMVectorZero(), rot, pos);
-    void DxRenderer::Scene::SceneModelInstance::recompTransformat() {
-        modelTransformat = XMMatrixTranslationFromVector(pos);        
-        modelTransformat = XMMatrixMultiply(XMMatrixRotationQuaternion(rot) , modelTransformat);
-        modelTransformat = XMMatrixMultiply(XMMatrixScalingFromVector(scaleFactor), modelTransformat);
+    void DxRenderer::Scene::SceneModelInstance::recompLocalTransformat() {
+        localTransformat = XMMatrixTranslationFromVector(pos);        
+        localTransformat = XMMatrixMultiply(XMMatrixRotationQuaternion(rot) , localTransformat);
+        localTransformat = XMMatrixMultiply(XMMatrixScalingFromVector(scaleFactor), localTransformat);   
+        recompWorldTransformat();
+    }
+
+    void DxRenderer::Scene::SceneModelInstance::recompWorldTransformat() {
+        if (parent)
+            worldTransformat = XMMatrixMultiply(localTransformat, parent->worldTransformat);
+        else
+            worldTransformat = localTransformat;
+
+        for (SceneModelInstance* child : children)
+            child->recompWorldTransformat();    
+
+        updateKdTreeNode();
+        updateBuffers();
     }
 
     bool DxRenderer::Scene::SceneModelInstance::isInstanceDescendant(SceneModelInstance* instance)
@@ -1489,28 +1573,28 @@ namespace CoriumDirectX {
         return new SceneModelInstance(*this, modelID, XMLoadFloat4(&instanceColorMask), transformInit, selectionHandler);
     }   
 
-    void DxRenderer::Scene::transformGrpTranslate(DirectX::XMFLOAT3 const& translation) {        
-        transformGrpTranslateEXE(XMLoadFloat3(&translation), TransformSrc::Outside);        
+    void DxRenderer::Scene::transformGrpTranslate(DirectX::XMFLOAT3 const& translation, TransformReferenceFrame referenceFrame) {
+        transformGrpTranslateEXE(XMLoadFloat3(&translation), referenceFrame, TransformSrc::Outside);
     }
 
-    void DxRenderer::Scene::transformGrpSetTranslation(DirectX::XMFLOAT3 const& translation) {
-        transformGrpSetTranslationEXE(XMLoadFloat3(&translation));        
+    void DxRenderer::Scene::transformGrpSetTranslation(DirectX::XMFLOAT3 const& translation, TransformReferenceFrame referenceFrame) {
+        transformGrpSetTranslationEXE(XMLoadFloat3(&translation), referenceFrame);
     }
 
-    void DxRenderer::Scene::transformGrpScale(DirectX::XMFLOAT3 const& scaleFactorQ) {
-        transformGrpScaleEXE(XMLoadFloat3(&scaleFactorQ), TransformSrc::Outside);
+    void DxRenderer::Scene::transformGrpScale(DirectX::XMFLOAT3 const& scaleFactorQ, TransformReferenceFrame referenceFrame) {
+        transformGrpScaleEXE(XMLoadFloat3(&scaleFactorQ), referenceFrame, TransformSrc::Outside);
     }
 
-    void DxRenderer::Scene::transformGrpSetScale(DirectX::XMFLOAT3 const& scaleFactor) {
-        transformGrpSetScaleEXE(XMLoadFloat3(&scaleFactor));
+    void DxRenderer::Scene::transformGrpSetScale(DirectX::XMFLOAT3 const& scaleFactor, TransformReferenceFrame referenceFrame) {
+        transformGrpSetScaleEXE(XMLoadFloat3(&scaleFactor), referenceFrame);
     }
 
-    void DxRenderer::Scene::transformGrpRotate(DirectX::XMFLOAT3 const& ax, float ang) {
-        transformGrpRotateEXE(XMLoadFloat3(&ax), ang, TransformSrc::Outside);
+    void DxRenderer::Scene::transformGrpRotate(DirectX::XMFLOAT3 const& ax, float ang, TransformReferenceFrame referenceFrame) {
+        transformGrpRotateEXE(XMLoadFloat3(&ax), ang, referenceFrame, TransformSrc::Outside);
     }
 
-    void DxRenderer::Scene::transformGrpSetRotation(DirectX::XMFLOAT3 const& ax, float ang) {
-        transformGrpSetRotationEXE(XMQuaternionRotationAxis(XMLoadFloat3(&ax), ang / 180 * XM_PI));
+    void DxRenderer::Scene::transformGrpSetRotation(DirectX::XMFLOAT3 const& ax, float ang, TransformReferenceFrame referenceFrame) {
+        transformGrpSetRotationEXE(XMQuaternionRotationAxis(XMLoadFloat3(&ax), ang / 180 * XM_PI), referenceFrame);
     }
 
     void DxRenderer::Scene::panCamera(float x, float y) {
@@ -1651,7 +1735,7 @@ namespace CoriumDirectX {
                 std::vector<VisibleInstanceData> visibleInstancesDataStaging(modelRenderData.visibleInstancesBuffersCapacity);
                 for (unsigned int transformatsBufferOffset = 0; transformatsBufferOffset < modelRenderData.visibleInstancesNr; transformatsBufferOffset++) {
                     UINT instanceIdx = modelRenderData.visibleInstancesIdxs[transformatsBufferOffset];
-                    visibleInstancesDataStaging[transformatsBufferOffset] = { sceneModelData->sceneModelInstances[instanceIdx]->getModelTransformat(), sceneModelData->sceneModelInstances[instanceIdx]->instanceColorMask, instanceIdx };
+                    visibleInstancesDataStaging[transformatsBufferOffset] = { sceneModelData->sceneModelInstances[instanceIdx]->getWorldTransformat(), sceneModelData->sceneModelInstances[instanceIdx]->instanceColorMask, instanceIdx };
                 }
                 D3D11_BOX rangeBox = { 0U, 0U, 0U, modelRenderData.visibleInstancesNr * sizeof(VisibleInstanceData), 1U, 1U };
 				renderer.devcon->UpdateSubresource(modelRenderData.visibleInstancesDataBuffer, 0, &rangeBox, &visibleInstancesDataStaging[0], 0, 0);                
@@ -1660,7 +1744,7 @@ namespace CoriumDirectX {
                 std::vector<VisibleInstanceData> visibleHighlightedInstancesDataStaging(modelRenderData.visibleInstancesBuffersCapacity);
                 for (unsigned int transformatsBufferOffset = 0; transformatsBufferOffset < modelRenderData.visibleHighlightedInstancesNr; transformatsBufferOffset++) {
                     UINT instanceIdx = modelRenderData.visibleHighlightedInstancesIdxs[transformatsBufferOffset];
-                    visibleHighlightedInstancesDataStaging[transformatsBufferOffset] = { sceneModelData->sceneModelInstances[instanceIdx]->getModelTransformat(), sceneModelData->sceneModelInstances[instanceIdx]->instanceColorMask, instanceIdx };
+                    visibleHighlightedInstancesDataStaging[transformatsBufferOffset] = { sceneModelData->sceneModelInstances[instanceIdx]->getWorldTransformat(), sceneModelData->sceneModelInstances[instanceIdx]->instanceColorMask, instanceIdx };
                 }
                 D3D11_BOX rangeBox = { 0U, 0U, 0U, modelRenderData.visibleHighlightedInstancesNr * sizeof(VisibleInstanceData), 1U, 1U };
                 renderer.devcon->UpdateSubresource(modelRenderData.visibleHighlightedInstancesDataBuffer, 0, &rangeBox, &visibleHighlightedInstancesDataStaging[0], 0, 0);                
@@ -1692,9 +1776,9 @@ namespace CoriumDirectX {
         }
     }
 
-    void DxRenderer::Scene::transformGrpTranslateEXE(DirectX::CXMVECTOR translation, TransformSrc src) {
+    void DxRenderer::Scene::transformGrpTranslateEXE(DirectX::CXMVECTOR translation, TransformReferenceFrame referenceFrame, TransformSrc src) {
         for (std::list<SceneModelInstance*>::iterator it = transformGrp.begin(); it != transformGrp.end(); ++it)
-            (*it)->translate(translation);
+            (*it)->translate(translation, referenceFrame);
         instancesManipulator.onTransformGrpTranslated(translation);
 
         if (src == TransformSrc::Manipulator) {
@@ -1706,15 +1790,15 @@ namespace CoriumDirectX {
         }                             
     }
 
-    void DxRenderer::Scene::transformGrpSetTranslationEXE(DirectX::CXMVECTOR translation) {
+    void DxRenderer::Scene::transformGrpSetTranslationEXE(DirectX::CXMVECTOR translation, TransformReferenceFrame referenceFrame) {
         for (std::list<SceneModelInstance*>::iterator it = transformGrp.begin(); it != transformGrp.end(); ++it)
-            (*it)->setTranslation(translation);         
+            (*it)->setTranslation(translation, referenceFrame);
         instancesManipulator.onTransformGrpTranslationSet(translation);
     }
 
-    void DxRenderer::Scene::transformGrpScaleEXE(DirectX::CXMVECTOR scaleFactorQ, TransformSrc src) {
+    void DxRenderer::Scene::transformGrpScaleEXE(DirectX::CXMVECTOR scaleFactorQ, TransformReferenceFrame referenceFrame, TransformSrc src) {
         for (std::list<SceneModelInstance*>::iterator it = transformGrp.begin(); it != transformGrp.end(); ++it)
-            (*it)->scale(scaleFactorQ);
+            (*it)->scale(scaleFactorQ, referenceFrame);
 
         if (src == TransformSrc::Manipulator) {
             if (transformCallbackHandlers.scaleHandler) {
@@ -1725,15 +1809,15 @@ namespace CoriumDirectX {
         }
     }
 
-    void DxRenderer::Scene::transformGrpSetScaleEXE(DirectX::CXMVECTOR scaleFactor) {
+    void DxRenderer::Scene::transformGrpSetScaleEXE(DirectX::CXMVECTOR scaleFactor, TransformReferenceFrame referenceFrame) {
         for (std::list<SceneModelInstance*>::iterator it = transformGrp.begin(); it != transformGrp.end(); ++it)
-            (*it)->setScale(scaleFactor);
+            (*it)->setScale(scaleFactor, referenceFrame);
     }
 
-    void DxRenderer::Scene::transformGrpRotateEXE(DirectX::CXMVECTOR rotAx, float rotAng, TransformSrc src) {
+    void DxRenderer::Scene::transformGrpRotateEXE(DirectX::CXMVECTOR rotAx, float rotAng, TransformReferenceFrame referenceFrame, TransformSrc src) {
         XMVECTOR quat = XMQuaternionRotationAxis(rotAx, rotAng / 180 * XM_PI);
         for (std::list<SceneModelInstance*>::iterator it = transformGrp.begin(); it != transformGrp.end(); ++it)
-            (*it)->rotate(quat);
+            (*it)->rotate(quat, referenceFrame);
         instancesManipulator.onTransformGrpRotated(quat);
 
         if (src == TransformSrc::Manipulator) {
@@ -1745,9 +1829,9 @@ namespace CoriumDirectX {
         }
     }
 
-    void DxRenderer::Scene::transformGrpSetRotationEXE(DirectX::CXMVECTOR rot) {
+    void DxRenderer::Scene::transformGrpSetRotationEXE(DirectX::CXMVECTOR rot, TransformReferenceFrame referenceFrame) {
         for (std::list<SceneModelInstance*>::iterator it = transformGrp.begin(); it != transformGrp.end(); ++it)
-            (*it)->setRotation(rot);
+            (*it)->setRotation(rot, referenceFrame);
         instancesManipulator.onTransformGrpRotationSet(rot);
     }
 
@@ -2058,21 +2142,21 @@ namespace CoriumDirectX {
             if (activeHandle == Handle::TranslateX || activeHandle == Handle::TranslateY || activeHandle == Handle::TranslateZ) {
                 XMVECTOR currTransformPlaneDragPoint = transformAxisContainingPlaneDragPoint(activeTranslationAxis, cursorPosX, cursorPosY);
                 XMVECTOR translationVec = XMVector3Dot(activeTranslationAxis, currTransformPlaneDragPoint - prevTransformPlaneDragPoint) * activeTranslationAxis;
-                scene.transformGrpTranslateEXE(translationVec, TransformSrc::Manipulator);
+                scene.transformGrpTranslateEXE(translationVec, TransformReferenceFrame::World, TransformSrc::Manipulator);
 
                 prevTransformPlaneDragPoint = currTransformPlaneDragPoint;
             }
             else if (activeHandle == Handle::ScaleX || activeHandle == Handle::ScaleY || activeHandle == Handle::ScaleZ) {                
                 XMVECTOR currTransformPlaneDragPoint = transformAxisContainingPlaneDragPoint(activeScaleAxis, cursorPosX, cursorPosY);
                 XMVECTOR scaleVec = XMVector3Dot(activeScaleAxis, currTransformPlaneDragPoint - prevTransformPlaneDragPoint) * activeScaleAxisRotated;
-                scene.transformGrpScaleEXE(scaleVec, TransformSrc::Manipulator);
+                scene.transformGrpScaleEXE(scaleVec, TransformReferenceFrame::World, TransformSrc::Manipulator);
 
                 prevTransformPlaneDragPoint = currTransformPlaneDragPoint;
             }
             else if (activeHandle == Handle::TranslateXY || activeHandle == Handle::TranslateXZ || activeHandle == Handle::TranslateYZ) {
                 XMVECTOR currTransformPlaneDragPoint = translationPlaneDragPoint(activeTranslationPlaneNormal, cursorPosX, cursorPosY);
                 XMVECTOR translationVec = currTransformPlaneDragPoint - prevTransformPlaneDragPoint;
-                scene.transformGrpTranslateEXE(translationVec, TransformSrc::Manipulator);
+                scene.transformGrpTranslateEXE(translationVec, TransformReferenceFrame::World, TransformSrc::Manipulator);
 
                 prevTransformPlaneDragPoint = currTransformPlaneDragPoint;
             }
@@ -2082,7 +2166,7 @@ namespace CoriumDirectX {
                 XMVECTOR c = XMVector3Cross(instancePosToRotationStartPosVec, cursorMoveVecInWorldSpace);
                 XMVECTOR d = XMVector3Dot(c, activeRotationAxis);                                
                 XMVECTOR q = XMQuaternionRotationAxis(activeRotationAxis, XMVectorGetX(XMVector3Dot(XMVector3Cross(instancePosToRotationStartPosVec, cursorMoveVecInWorldSpace), activeRotationAxis)) / 180.0f * XM_PI);
-                scene.transformGrpRotateEXE(activeRotationAxis, XMVectorGetX(XMVector3Dot(XMVector3Cross(instancePosToRotationStartPosVec, cursorMoveVecInWorldSpace), activeRotationAxis)), TransformSrc::Manipulator);
+                scene.transformGrpRotateEXE(activeRotationAxis, XMVectorGetX(XMVector3Dot(XMVector3Cross(instancePosToRotationStartPosVec, cursorMoveVecInWorldSpace), activeRotationAxis)), TransformReferenceFrame::World, TransformSrc::Manipulator);
 
                 prevCursorPos = { cursorPosX, cursorPosY };
             }

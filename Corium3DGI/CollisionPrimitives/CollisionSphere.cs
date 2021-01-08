@@ -1,18 +1,21 @@
-﻿using System.ComponentModel;
+﻿using CoriumDirectX;
+
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using Corium3DGI.Utils;
+using System.Collections.Generic;
 
 namespace Corium3DGI
 {
-    public class CollisionSphere : CollisionPrimitive
+    public class CollisionSphere : CollisionPrimitive3D
     {
         private const string NAME_CACHE = "Sphere";
-
         private static string iconPathCache;
         private static Model3DCollection avatars3DCache;
+        private static List<uint> dxModelIds;
+        
 
         private ObservablePoint3D center;
         public ObservablePoint3D Center
@@ -44,16 +47,17 @@ namespace Corium3DGI
             }
         }
 
-        static CollisionSphere()
+        public delegate void OnTransform(Point3D center, float radius);
+        public static void Init(DxVisualizer dxVisualizer)
         {            
-            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 0, G = 0, B = 255, A = 255 }, out iconPathCache, out avatars3DCache);
+            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 0, G = 0, B = 255, A = 255 }, out iconPathCache, out avatars3DCache, dxVisualizer, out dxModelIds);
         }
 
         public CollisionSphere(Point3D center, float radius) {
             Name = NAME_CACHE;
             IconPath = iconPathCache;
             foreach (GeometryModel3D avatar3D in avatars3DCache)
-                avatars3D.Add(new GeometryModel3D(avatar3D.Geometry, avatar3D.Material));
+                avatars3D.Add(new GeometryModel3D(avatar3D.Geometry, avatar3D.Material));            
 
             this.center = new ObservablePoint3D();
             this.radius = radius;

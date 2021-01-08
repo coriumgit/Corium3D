@@ -14,10 +14,6 @@ namespace CoriumDirectX {
 
 	template <class T, unsigned int K>
 	class KDTree {	
-	//private:
-	//	class Point;
-	//	class Node;	
-	//	class Node::KeySphereNode;
 	public:										
 		class DataNode;	
 
@@ -166,7 +162,7 @@ namespace CoriumDirectX {
 		void printRecurs(Node* root, unsigned int space);
 #endif	
 	};	
-
+	
 	template<class T, unsigned int K>
 	class KDTree<T,K>::Node {
 	public:
@@ -210,7 +206,7 @@ namespace CoriumDirectX {
 		Node(Node* _parent, Region const& _containingRegion) : parent(_parent), containingRegion(_containingRegion) {}
 		void splitNode();
 	};
-
+		
 	template<class T, unsigned int K>
 	class KDTree<T,K>::Node::KeySphereNode {
 	public:
@@ -234,8 +230,7 @@ namespace CoriumDirectX {
 		Node* owner;
 		typename std::list<KeySphereNode*>::iterator ownerKeySphereNodesListIt;
 	};
-
-
+	
 	template <class T, unsigned int K>
 	class KDTree<T, K>::DataNode : private KDTree<T, K>::Node::KeySphereNode {
 	public:
@@ -258,7 +253,7 @@ namespace CoriumDirectX {
 			Node::KeySphereNode(_keySphere), data(_data), nodesDuosIt(_nodesDuosIt) {}
 		~DataNode() {}
 	};
-
+	
 	template<class T, unsigned int K>
 	class KDTree<T,K>::RebuildNode : public KDTree<T, K>::Node::KeySphereNode {
 	public:

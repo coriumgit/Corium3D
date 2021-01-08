@@ -1,48 +1,59 @@
-﻿using System;
+﻿using CoriumDirectX;
+
+using System;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
-using CoriumDirectX;
 using System.Windows.Media.Imaging;
-using System.Windows.Controls;
 
 namespace Corium3DGI
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindowV : Window
+    public partial class MainWindowV : Window, ICorium3DGIView
     {
         private bool isSceneViewportVisible = false;
         private TimeSpan prevRenderTime;        
 
         // TODO: remove this when the SceneViewPort is a custom control
         public DxVisualizer DxVisualizerRef { get; private set; }
+        public UIElement ModelViewportContainer { get; private set; }
+        public UIElement SceneViewportContainer { get; private set; }
+
+        public event RoutedEventHandler UIElementsLoaded;
 
         // TODO: Move to view model when the SceneViewPort is a custom control
         public float CameraFieldOfView { get; } = 60;
         public float CameraNearPlaneDist { get; } = 1; //0.125;
         public float CameraFarPlaneDist { get; } = 1000;
-
+        
         public MainWindowV()
         {
             DxVisualizerRef = new DxVisualizer(CameraFieldOfView, CameraNearPlaneDist, CameraFarPlaneDist);
             InitializeComponent();
         }
 
-        private void OnSceneViewportLoaded(object sender, RoutedEventArgs e)
-        {                                    
-            sceneViewport.WindowOwner = (new System.Windows.Interop.WindowInteropHelper(this)).Handle;
-            sceneViewport.OnRender = RenderDxScene;
-            sceneViewport.RequestRender();
+        private void OnWindowLoaded(object sender, RoutedEventArgs e)
+        {
+            ModelViewportContainer = modelViewportContainer;
+            SceneViewportContainer = sceneViewportContainer;
+            UIElementsLoaded.Invoke(this, e);
         }
 
         private void OnWindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             CompositionTarget.Rendering -= OnCompositionTargetRendering;
         }
+
+        private void OnSceneViewportLoaded(object sender, RoutedEventArgs e)
+        {            
+            sceneViewport.WindowOwner = (new System.Windows.Interop.WindowInteropHelper(this)).Handle;
+            sceneViewport.OnRender = RenderDxScene;
+            sceneViewport.RequestRender();                        
+        }        
 
         private void RenderDxScene(IntPtr surface, bool isSurfaceNew)
         {
@@ -112,19 +123,7 @@ namespace Corium3DGI
                     checkBox.IsChecked = !checkBox.IsChecked;
             }
             */
-        }
-
-        private void ExposeModelViewport(object sender, MouseButtonEventArgs e)
-        {
-            modelViewportContainer.Visibility = Visibility.Visible;
-            sceneViewportContainer.Visibility = Visibility.Hidden;
-        }
-
-        private void ExposeSceneViewport(object sender, MouseButtonEventArgs e)
-        {
-            modelViewportContainer.Visibility = Visibility.Hidden;
-            sceneViewportContainer.Visibility = Visibility.Visible;
-        }
+        }        
 
         public void ModelsDataTable_DeleteModel(object sender, RoutedEventArgs e)
         {            

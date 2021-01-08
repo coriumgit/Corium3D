@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<ResourcesPaths>
-  
+<ResourcesPaths>  
   <CollisionPrimitivesAvatars>    
     <CollisionPrimitiveAvatars Primitive="None">
       <Icon>Resources\Imgs\empty.png</Icon>
@@ -40,5 +39,7 @@
       <Model>Resources\Models3D\demi_circle_top.dae</Model>
       <Model>Resources\Models3D\demi_circle_bottom.dae</Model>
     </CollisionPrimitiveAvatars>      
-  </CollisionPrimitivesAvatars> 
+  </CollisionPrimitivesAvatars>
+
+  <CollisionRegionAvatar>Resources\Models3D\null_obj.fbx</CollisionRegionAvatar>      
 </ResourcesPaths>
