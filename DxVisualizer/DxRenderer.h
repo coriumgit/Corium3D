@@ -19,8 +19,7 @@ namespace CoriumDirectX {
 	const unsigned int INSTANCES_NR_MAX = 1024;
 	const unsigned int INSTANCES_BUFFERS_CAPACITY_INIT = 20;
 	const unsigned int INSTANCES_BUFFERS_CAPACITY_INC_FACTOR = 2;
-	const int GRAPHICS_DEBUG_MODEL_ID = -1;
-    const int FRAMES_NR_TO_CAPTURE = 0;
+	const int GRAPHICS_DEBUG_MODEL_ID = -1;    
 
 	class DxRenderer {
 	public:	
@@ -38,6 +37,8 @@ namespace CoriumDirectX {
 			DirectX::XMMATRIX genTransformat() const;
 		};
 
+        enum class TransformReferenceFrame { Local, World };
+
         class Scene {
         public:
             friend DxRenderer;
@@ -51,8 +52,8 @@ namespace CoriumDirectX {
                 //	y -> cursor y coord on selection
                 typedef void(*SelectionHandler)(float x, float y);                
 
-                DirectX::XMFLOAT3 getTranslation();
-                DirectX::FXMMATRIX& getModelTransformat() { return modelTransformat; }
+                DirectX::XMFLOAT3 getWorldTranslation();
+                DirectX::FXMMATRIX& getWorldTransformat() { return worldTransformat; }
                 void addToTransformGrp();
                 void removeFromTransformGrp();
                 void highlight();
@@ -73,8 +74,9 @@ namespace CoriumDirectX {
                 DirectX::XMVECTOR instanceColorMask;
                 DirectX::XMVECTOR pos;
                 DirectX::XMVECTOR scaleFactor;
-                DirectX::XMVECTOR rot;
-                DirectX::XMMATRIX modelTransformat;
+                DirectX::XMVECTOR rot;                
+                DirectX::XMMATRIX localTransformat;
+                DirectX::XMMATRIX worldTransformat;
                 KDTreeDataNodeHolder& kdtreeDataNodeHolder;
                 SelectionHandler selectionHandler;
                 bool isShown = true;
@@ -87,24 +89,25 @@ namespace CoriumDirectX {
 
                 SceneModelInstance(Scene& Scene, UINT modelID, DirectX::CXMVECTOR _instanceColorMask, Transform const& transformInit, SelectionHandler callbackHandlers);
                 ~SceneModelInstance();
-                void addInstanceToKdtree();
-                //void translate(DirectX::XMFLOAT3 const& translation);
-                //void setTranslation(DirectX::XMFLOAT3 const& translation);            
-                void translate(DirectX::CXMVECTOR translation);
-                void setTranslation(DirectX::CXMVECTOR translation);
-                //void scale(DirectX::XMFLOAT3 const& scaleFactorQ);
-                //void setScale(DirectX::XMFLOAT3 const& scaleFactor);
-                void scale(DirectX::CXMVECTOR scaleFactorQ);
-                void setScale(DirectX::CXMVECTOR scaleFactor);
-                //void rotate(DirectX::XMFLOAT3 const& ax, float ang);
-                //void setRotation(DirectX::XMFLOAT3 const& ax, float ang);
-                void rotate(DirectX::CXMVECTOR rot);
-                void setRotation(DirectX::CXMVECTOR rot);
+                void addInstanceToKdtree();                
+                void translate(DirectX::CXMVECTOR translation, TransformReferenceFrame referenceFrame);
+                void setTranslation(DirectX::CXMVECTOR translation, TransformReferenceFrame referenceFrame);
+                void updateKdTreeNodeDueToTranslate();                
+                void scale(DirectX::CXMVECTOR scaleFactorQ, TransformReferenceFrame referenceFrame);
+                void setScale(DirectX::CXMVECTOR scaleFactor, TransformReferenceFrame referenceFrame);
+                void updateKdTreeNodeDueToScale();                
+                void rotate(DirectX::CXMVECTOR rot, TransformReferenceFrame referenceFrame);
+                void setRotation(DirectX::CXMVECTOR rot, TransformReferenceFrame referenceFrame);
+                void updateKdTreeNodeDueToRotation();
+
+                void updateKdTreeNode();
+
                 void loadInstanceTransformatToBuffer();
                 void unloadInstanceTransformatFromBuffer();
                 void updateInstanceTransformatInBuffer();
                 void updateBuffers();
-                void recompTransformat();
+                void recompWorldTransformat();
+                void recompLocalTransformat();                
                 bool isInstanceDescendant(SceneModelInstance* instance);
             };            
 
@@ -115,13 +118,13 @@ namespace CoriumDirectX {
             };
 
             void activate();
-            SceneModelInstance* createModelInstance(unsigned int modelID, DirectX::XMFLOAT4 const& instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler);
-            void transformGrpTranslate(DirectX::XMFLOAT3 const& translation);
-            void transformGrpSetTranslation(DirectX::XMFLOAT3 const& translation);
-            void transformGrpScale(DirectX::XMFLOAT3 const& scaleFactorQ);
-            void transformGrpSetScale(DirectX::XMFLOAT3 const& scaleFactor);
-            void transformGrpRotate(DirectX::XMFLOAT3 const& ax, float ang);
-            void transformGrpSetRotation(DirectX::XMFLOAT3 const& ax, float ang);
+            SceneModelInstance* createModelInstance(unsigned int modelID, DirectX::XMFLOAT4 const& instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler);            
+            void transformGrpTranslate(DirectX::XMFLOAT3 const& translation, TransformReferenceFrame referenceFrame);
+            void transformGrpSetTranslation(DirectX::XMFLOAT3 const& translation, TransformReferenceFrame referenceFrame);
+            void transformGrpScale(DirectX::XMFLOAT3 const& scaleFactorQ, TransformReferenceFrame referenceFrame);
+            void transformGrpSetScale(DirectX::XMFLOAT3 const& scaleFactor, TransformReferenceFrame referenceFrame);
+            void transformGrpRotate(DirectX::XMFLOAT3 const& ax, float ang, TransformReferenceFrame referenceFrame);
+            void transformGrpSetRotation(DirectX::XMFLOAT3 const& ax, float ang, TransformReferenceFrame referenceFrame);
             void panCamera(float x, float y);
             void rotateCamera(float x, float y);
             void zoomCamera(float amount);
@@ -280,12 +283,12 @@ namespace CoriumDirectX {
             void loadVisibleInstancesDataToBuffers();
             void unloadVisibleInstancesDataToBuffers();
             void eraseSceneModelData(unsigned int modelID);
-            void transformGrpTranslateEXE(DirectX::CXMVECTOR translation, TransformSrc src);
-            void transformGrpSetTranslationEXE(DirectX::CXMVECTOR translation);
-            void transformGrpScaleEXE(DirectX::CXMVECTOR scaleFactorQ, TransformSrc src);
-            void transformGrpSetScaleEXE(DirectX::CXMVECTOR scaleFactor);
-            void transformGrpRotateEXE(DirectX::CXMVECTOR rotAx, float rotAng, TransformSrc src);
-            void transformGrpSetRotationEXE(DirectX::CXMVECTOR rot);
+            void transformGrpTranslateEXE(DirectX::CXMVECTOR translation, TransformReferenceFrame referenceFrame, TransformSrc src);
+            void transformGrpSetTranslationEXE(DirectX::CXMVECTOR translation, TransformReferenceFrame referenceFrame);
+            void transformGrpScaleEXE(DirectX::CXMVECTOR scaleFactorQ, TransformReferenceFrame referenceFrame, TransformSrc src);
+            void transformGrpSetScaleEXE(DirectX::CXMVECTOR scaleFactor, TransformReferenceFrame referenceFrame);
+            void transformGrpRotateEXE(DirectX::CXMVECTOR rotAx, float rotAng, TransformReferenceFrame referenceFrame, TransformSrc src);
+            void transformGrpSetRotationEXE(DirectX::CXMVECTOR rot, TransformReferenceFrame referenceFrame);
             bool testBoundingSphereVisibility(std::array<float, 3> const& boundingSphereCenter, float boundingSphereRadius);
             bool testAabbVisibility(std::array<float, 3> const& aabbMin, std::array<float, 3> const& aabbMax);
         };
@@ -372,7 +375,7 @@ namespace CoriumDirectX {
 		ID3D11Buffer* cbProjMat;
 		ID3D11Buffer* cbViewMat;
 		ID3D11Buffer* cbModelID;
-        ID3D11Buffer* cbGlobalTransformat;
+        ID3D11Buffer* cbWorldTransformat;
 		ID3D11Buffer* cbBlur;
 		UINT viewportWidth = 0;
 		UINT viewportHeight = 0;
@@ -427,7 +430,7 @@ namespace CoriumDirectX {
 		float farZ;
 
 		IDXGraphicsAnalysis* pGraphicsAnalysis = NULL;
-		unsigned int framesNrToCapture = FRAMES_NR_TO_CAPTURE;
+		unsigned int framesNrToCapture = 0;
         
 		HRESULT loadShaders();	
 		HRESULT initShaderResources(void* resource);		

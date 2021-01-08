@@ -1,18 +1,21 @@
-﻿using System.Windows;
+﻿using CoriumDirectX;
+
+using System.Windows;
 using Corium3DGI.Utils;
 using System.Windows.Media;
-using System.ComponentModel;
 using System.Windows.Media.Media3D;
 using System.Windows.Data;
+using System.Collections.Generic;
 
 namespace Corium3DGI
 {
-    public class CollisionRect : CollisionPrimitive
+    public class CollisionRect : CollisionPrimitive2D
     {
         private const string NAME_CACHE = "Rect";
 
         private static string iconPathCache;
         private static Model3DCollection avatars3DCache;
+        private static List<uint> dxModelIds;
 
         private ObservablePoint center;
         public ObservablePoint Center
@@ -45,17 +48,17 @@ namespace Corium3DGI
             }
         }
 
-        static CollisionRect()
+        public static void Init(DxVisualizer dxVisualizer)
         {            
-            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 0, G = 196, B = 80, A = 255 }, out iconPathCache, out avatars3DCache);
+            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 0, G = 196, B = 80, A = 255 }, out iconPathCache, out avatars3DCache, dxVisualizer, out dxModelIds);
         }
 
         public CollisionRect(Point center, Point scale) {
             Name = NAME_CACHE;
             IconPath = iconPathCache;
             foreach (GeometryModel3D avatar3D in avatars3DCache)
-                avatars3D.Add(new GeometryModel3D(avatar3D.Geometry, avatar3D.Material));
-
+                avatars3D.Add(new GeometryModel3D(avatar3D.Geometry, avatar3D.Material));            
+        
             this.center = new ObservablePoint();
             this.scale = new ObservablePoint();
 
