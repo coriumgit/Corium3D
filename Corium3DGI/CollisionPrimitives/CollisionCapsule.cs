@@ -13,8 +13,7 @@ namespace Corium3DGI
 {
     public class CollisionCapsule : CollisionPrimitive3D
     {
-        private const string NAME_CACHE = "Capsule";
-        private static string iconPathCache;
+        private const string NAME_CACHE = "Capsule";        
         private static Model3DCollection avatars3DCache;
         private static List<uint> dxModelIds;                
 
@@ -83,13 +82,12 @@ namespace Corium3DGI
 
         public static void Init(DxVisualizer dxVisualizer)
         {
-            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 255, G = 255, B = 0, A = 255 }, out iconPathCache, out avatars3DCache, dxVisualizer, out dxModelIds);
+            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 255, G = 255, B = 0, A = 255 }, out avatars3DCache, dxVisualizer, out dxModelIds);
         }
 
         public CollisionCapsule(Point3D center, Vector3D axisVec, float height, float radius)
         {
             Name = NAME_CACHE;
-            IconPath = iconPathCache;
             foreach (GeometryModel3D avatar3D in avatars3DCache)
                 avatars3D.Add(new GeometryModel3D(avatar3D.Geometry, avatar3D.Material));            
 

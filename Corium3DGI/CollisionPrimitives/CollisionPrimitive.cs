@@ -12,12 +12,9 @@ namespace Corium3DGI
     {
         private static readonly string RESOURCES_PATHS_XML_PATH = System.IO.Path.Combine("Resources", "ResourcesPaths.xml");        
 
-        private const string NAME_CACHE = "None";
-        private static string iconPathCache;                
+        private const string NAME_CACHE = "None";                   
 
-        public string Name { get; protected set; }
-
-        public string IconPath { get; protected set; }
+        public string Name { get; protected set; }        
                 
         protected Model3DCollection avatars3D;
         public Model3DCollection Avatars3D
@@ -34,21 +31,14 @@ namespace Corium3DGI
             }
         }    
 
-        public static void Init()
-        {            
-            cacheAvatarsAssets(NAME_CACHE, out iconPathCache);
-        }
-
         public CollisionPrimitive() {
             Name = NAME_CACHE;
-            IconPath = iconPathCache;
             avatars3D = new Model3DCollection();            
         }        
 
         public CollisionPrimitive(CollisionPrimitive other)
         {
             Name = other.Name;
-            IconPath = other.IconPath;
             avatars3D = other.avatars3D;            
         }
 
@@ -59,18 +49,10 @@ namespace Corium3DGI
 
         public abstract void asssignPrimitiveDataInModelAssetGen(AssetsGen.IModelAssetGen modelAssetGen);        
 
-        protected static void cacheAvatarsAssets(string primitiveName, out string iconPath)
+        protected static void cacheAvatarsAssets(string primitiveName, Color primitiveColor, out Model3DCollection avatars3D, DxVisualizer dxVisualizer, out List<uint> dxModelIDs)
         {
             XElement root = XDocument.Load(RESOURCES_PATHS_XML_PATH).Root.Element("CollisionPrimitivesAvatars");
-            XElement avatarsPathsNode = root.Elements().Where(e => e.Attribute("Primitive").Value == primitiveName).FirstOrDefault();
-            iconPath = avatarsPathsNode.Descendants().Where(e => e.Name == "Icon").FirstOrDefault().Value;            
-        }
-
-        protected static void cacheAvatarsAssets(string primitiveName, Color primitiveColor, out string iconPath, out Model3DCollection avatars3D, DxVisualizer dxVisualizer, out List<uint> dxModelIDs)
-        {
-            XElement root = XDocument.Load(RESOURCES_PATHS_XML_PATH).Root.Element("CollisionPrimitivesAvatars");
-            XElement avatarsPathsNode = root.Elements().Where(e => e.Attribute("Primitive").Value == primitiveName).FirstOrDefault();
-            iconPath = avatarsPathsNode.Descendants().Where(e => e.Name == "Icon").FirstOrDefault().Value;
+            XElement avatarsPathsNode = root.Elements().Where(e => e.Attribute("Primitive").Value == primitiveName).FirstOrDefault();            
             avatars3D = new Model3DCollection();
             dxModelIDs = new List<uint>();                
             foreach (XElement modelPathLmnt in avatarsPathsNode.Descendants().Where(e => e.Name == "Model"))

@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:dx="clr-namespace:Microsoft.Wpf.Interop.DirectX;assembly=Microsoft.Wpf.Interop.DirectX"
-        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"        
         xmlns:local="clr-namespace:Corium3DGI" 
         xmlns:utils="clr-namespace:Corium3DGI.Utils"
         xmlns:cc="clr-namespace:Corium3DGI.CustomCtrls"
@@ -63,13 +63,13 @@
                             <Border DockPanel.Dock="Bottom" BorderThickness="0 2 0 2" BorderBrush="DarkGray">
                                 <UniformGrid Columns="4">
                                     <cc:ImageButton Grid.Column="0"                       
-                                                    Source="Resources\Imgs\LoadFromDisk.png"
+                                                    Source="Resources\Imgs\BlobWithArrow.png"
                                                     Width="30"
                                                     Height="30"                                       
                                                     Command="{Binding Path=ImportModelCmd}"/>
 
                                     <cc:ImageButton Grid.Column="1" 
-                                                    Source="Resources\Imgs\RegionSphere.png"
+                                                    Source="Resources\Imgs\RegionSphereWithPlus.png"
                                                     Width="30"
                                                     Height="30"
                                                     Content=""
@@ -119,10 +119,7 @@
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
-
-                                    <DataTemplate x:Key="ModelTypeIcon" DataType="{x:Type local:ModelM}">
-                                        
-                                    </DataTemplate>
+                                    
                                 </DataGrid.Resources>
 
                                 <DataGrid.Columns>
@@ -131,13 +128,32 @@
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="TextAlignment" Value="Center"/>
                                                 <Setter Property="Background" Value="Transparent"/>
-                                                <Setter Property="Text" Value="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Converter={StaticResource rowIdxConverter}}">
-                                                </Setter>
+                                                <Setter Property="Text" Value="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Converter={StaticResource rowIdxConverter}}"/>
                                             </Style>
                                         </DataGridTextColumn.ElementStyle>
                                     </DataGridTextColumn>
                                     
-                                    <!--<DataGridTemplateColumn El-->
+                                    <DataGridTemplateColumn IsReadOnly="True" Width="2*" Header="Type">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate DataType="{x:Type local:ModelM}">
+                                                <DataTemplate.Resources>
+                                                    <utils:DataTypeConverter x:Key="dataTypeConverter"/>
+                                                </DataTemplate.Resources>
+                                                
+                                                <Image Name="ModelTypeIcon" Width="15" Height="15"/>
+
+                                                <DataTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding Path=., Converter={StaticResource dataTypeConverter}}" Value="{x:Type local:MeshModelM}">
+                                                        <Setter TargetName="ModelTypeIcon" Property="Source" Value="Resources/Imgs/blob.png"/>
+                                                    </DataTrigger>
+
+                                                    <DataTrigger Binding="{Binding Path=., Converter={StaticResource dataTypeConverter}}" Value="{x:Type local:CollisionRegionModelM}">
+                                                        <Setter TargetName="ModelTypeIcon" Property="Source" Value="Resources/Imgs/RegionSphere.png"/>
+                                                    </DataTrigger>
+                                                </DataTemplate.Triggers>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                     
                                     <DataGridTextColumn IsReadOnly="True" Width="8*" Header="Name" Binding="{Binding Path=Name}"/>
                                 </DataGrid.Columns>
@@ -148,10 +164,99 @@
                     <!-- model collision primitives panes -->
                     <Border Grid.Row="1" BorderThickness="5" BorderBrush="DarkGray">
                         <Grid>
+                            <Grid.Resources>
+                                <DataTemplate x:Key="CollisionPrimitiveInComboBox" DataType="{x:Type local:CollisionPrimitive}">
+                                    <DataTemplate.Resources>
+                                        <utils:DataTypeConverter x:Key="dataTypeConverter"/>
+                                    </DataTemplate.Resources>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Name="CollisionPrimitiveIcon" Margin="0 0 10 0" Width="20" Height="20"/>
+                                        <Label Padding="0" Content="{Binding Path=Name}" VerticalAlignment="Center" FontSize="12"/>
+                                    </StackPanel>
+
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding Path=., Converter={StaticResource dataTypeConverter}}" Value="{x:Type local:CollisionBox}">
+                                            <Setter TargetName="CollisionPrimitiveIcon" Property="Source" Value="Resources\Imgs\box.png"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Path=., Converter={StaticResource dataTypeConverter}}" Value="{x:Type local:CollisionSphere}">
+                                            <Setter TargetName="CollisionPrimitiveIcon" Property="Source" Value="Resources\Imgs\sphere.png"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Path=., Converter={StaticResource dataTypeConverter}}" Value="{x:Type local:CollisionCapsule}">
+                                            <Setter TargetName="CollisionPrimitiveIcon" Property="Source" Value="Resources\Imgs\capsule.png"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Path=., Converter={StaticResource dataTypeConverter}}" Value="{x:Type local:CollisionPrimitive3D}">
+                                            <Setter TargetName="CollisionPrimitiveIcon" Property="Source" Value="Resources\Imgs\empty.png"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Path=., Converter={StaticResource dataTypeConverter}}" Value="{x:Type local:CollisionRect}">
+                                            <Setter TargetName="CollisionPrimitiveIcon" Property="Source" Value="Resources\Imgs\rectangle.png"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Path=., Converter={StaticResource dataTypeConverter}}" Value="{x:Type local:CollisionCircle}">
+                                            <Setter TargetName="CollisionPrimitiveIcon" Property="Source" Value="Resources\Imgs\circle.png"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Path=., Converter={StaticResource dataTypeConverter}}" Value="{x:Type local:CollisionStadium}">
+                                            <Setter TargetName="CollisionPrimitiveIcon" Property="Source" Value="Resources\Imgs\stadium.png"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Path=., Converter={StaticResource dataTypeConverter}}" Value="{x:Type local:CollisionPrimitive2D}">
+                                            <Setter TargetName="CollisionPrimitiveIcon" Property="Source" Value="Resources\Imgs\empty.png"/>
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+
+                                <DataTemplate DataType="{x:Type local:CollisionPrimitive}"/>
+
+                                <DataTemplate DataType="{x:Type local:CollisionBox}">
+                                    <StackPanel Orientation="Vertical">
+                                        <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
+                                        <cc:LabeledContentControl Margin="2 0 2 0" Key="Scale:" Content="{Binding Path=Scale}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+
+                                <DataTemplate DataType="{x:Type local:CollisionSphere}">
+                                    <StackPanel Orientation="Vertical">
+                                        <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
+                                        <cc:MouseMoveNumberBoxUpdater Margin="2 0 2 0" UpdaterText="Radius:" NumberBoxText="{Binding Path=Radius, Mode=TwoWay}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+
+                                <DataTemplate DataType="{x:Type local:CollisionCapsule}">
+                                    <StackPanel Orientation="Vertical">
+                                        <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
+                                        <cc:LabeledContentControl Margin="2 5 2 5" Key="Axis Vec:" Content="{Binding Path=AxisVec}" ContentTemplate="{StaticResource AxisAlignment3D}"/>
+                                        <cc:MouseMoveNumberBoxUpdater Margin="2 5 2 5" UpdaterText="Height:" NumberBoxText="{Binding Path=Height, Mode=TwoWay}"/>
+                                        <cc:MouseMoveNumberBoxUpdater Margin="2 0 2 0" UpdaterText="Radius:" NumberBoxText="{Binding Path=Radius, Mode=TwoWay}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+
+                                <DataTemplate DataType="{x:Type local:CollisionRect}">
+                                    <StackPanel Orientation="Vertical">
+                                        <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
+                                        <cc:LabeledContentControl Margin="2 0 2 0" Key="Scale:" Content="{Binding Path=Scale}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+
+                                <DataTemplate DataType="{x:Type local:CollisionCircle}">
+                                    <StackPanel Orientation="Vertical">
+                                        <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
+                                        <cc:MouseMoveNumberBoxUpdater Margin="2 0 2 0" UpdaterText="Radius:" NumberBoxText="{Binding Path=Radius, Mode=TwoWay}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+
+                                <DataTemplate DataType="{x:Type local:CollisionStadium}">
+                                    <StackPanel Orientation="Vertical">
+                                        <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
+                                        <cc:LabeledContentControl Margin="2 5 2 5" Key="Axis Vec:" Content="{Binding Path=AxisVec}" ContentTemplate="{StaticResource AxisAlignment}"/>
+                                        <cc:MouseMoveNumberBoxUpdater Margin="2 5 2 5" UpdaterText="Height:" NumberBoxText="{Binding Path=Height, Mode=TwoWay}"/>
+                                        <cc:MouseMoveNumberBoxUpdater Margin="2 0 2 0" UpdaterText="Radius:" NumberBoxText="{Binding Path=Radius, Mode=TwoWay}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </Grid.Resources>
+                            
                             <Grid.RowDefinitions>
                                 <RowDefinition/>
                                 <RowDefinition/>
                             </Grid.RowDefinitions>
+                            
                             <Grid.Style>
                                 <Style TargetType="Grid">
                                     <Style.Triggers>
@@ -161,6 +266,7 @@
                                     </Style.Triggers>
                                 </Style>
                             </Grid.Style>
+                            
                             <!-- collision primitive 3D pane -->
                             <Border Grid.Row="0" BorderThickness="2" BorderBrush="DarkGray">
                                 <DockPanel Grid.Row="0">
@@ -420,7 +526,18 @@
                                     </DockPanel>
                                 </Border>
 
-                                <ContentPresenter DockPanel.Dock="Bottom" Content="{Binding Path=SelectedSceneModelInstance}"/>
+                                <ContentPresenter DockPanel.Dock="Bottom" Content="{Binding Path=SelectedSceneModelInstance}">
+                                    <ContentPresenter.Resources>
+                                        <DataTemplate DataType="{x:Type local:SceneModelInstanceM}">
+                                            <StackPanel Orientation="Vertical">
+                                                <cc:LabeledContentControl Margin="2 5 2 5" Key="Name:" Content="{Binding Path=Name}"/>
+                                                <cc:LabeledContentControl Margin="2 5 2 5" Key="Translate:" Content="{Binding Path=Translate}"/>
+                                                <cc:LabeledContentControl Margin="2 5 2 5" Key="Scale:" Content="{Binding Path=Scale}"/>
+                                                <cc:LabeledContentControl Margin="2 5 2 5" Key="Rotation:" Content="{Binding Path=RotEueler}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ContentPresenter.Resources>
+                                </ContentPresenter>
                             </DockPanel>
                         </Border>
                     </Grid>

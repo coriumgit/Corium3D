@@ -12,8 +12,7 @@ namespace Corium3DGI
     public class CollisionRect : CollisionPrimitive2D
     {
         private const string NAME_CACHE = "Rect";
-
-        private static string iconPathCache;
+        
         private static Model3DCollection avatars3DCache;
         private static List<uint> dxModelIds;
 
@@ -50,12 +49,11 @@ namespace Corium3DGI
 
         public static void Init(DxVisualizer dxVisualizer)
         {            
-            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 0, G = 196, B = 80, A = 255 }, out iconPathCache, out avatars3DCache, dxVisualizer, out dxModelIds);
+            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 0, G = 196, B = 80, A = 255 }, out avatars3DCache, dxVisualizer, out dxModelIds);
         }
 
         public CollisionRect(Point center, Point scale) {
-            Name = NAME_CACHE;
-            IconPath = iconPathCache;
+            Name = NAME_CACHE;            
             foreach (GeometryModel3D avatar3D in avatars3DCache)
                 avatars3D.Add(new GeometryModel3D(avatar3D.Geometry, avatar3D.Material));            
         

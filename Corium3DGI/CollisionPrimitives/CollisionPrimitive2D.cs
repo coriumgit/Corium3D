@@ -8,10 +8,6 @@ namespace Corium3DGI
 {
     public class CollisionPrimitive2D : CollisionPrimitive
     {
-        public virtual Vector Translation { get { return new Vector(0.0f, 0.0f); } }
-        public virtual Vector Scale { get { return new Vector(1.0f, 1.0f); } }
-        public virtual float Rot { get { return 0.0f; } }
-
         public virtual List<DxVisualizer.IScene.ISceneModelInstance> createDxInstances(SceneM sceneM, Vector instanceTranslate, Vector instanceScale, float instanceRotAng)
         {
             return null;

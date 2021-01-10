@@ -129,6 +129,7 @@
     <Compile Include="CollisionPrimitives\CollisionSphere.cs" />
     <Compile Include="CollisionPrimitives\CollisionCapsule.cs" />
     <Compile Include="CollisionPrimitives\CollisionRect.cs" />
+    <Compile Include="CollisionRegionModelM.cs" />
     <Compile Include="CustomControls\ImageButton.cs" />
     <Compile Include="CustomControls\LabeledContentControl.xaml.cs">
       <DependentUpon>LabeledContentControl.xaml</DependentUpon>
@@ -138,9 +139,11 @@
     </Compile>
     <Compile Include="CustomControls\TextBoxAutoSelectingText.cs" />
     <Compile Include="CustomControls\ToggledImageButton.cs" />
+    <Compile Include="MeshModelM.cs" />
     <Compile Include="SceneModelInstanceM.cs" />
     <Compile Include="SceneModelM.cs" />
     <Compile Include="Utils\BindingProxy.cs" />
+    <Compile Include="Utils\DataTypeConverter.cs" />
     <Compile Include="Utils\DoubleToBoolConverter.cs" />
     <Compile Include="Utils\Extensions.cs" />
     <Compile Include="ICorium3DGIView.cs" />
@@ -213,6 +216,9 @@
     <Content Include="Resources\Imgs\blob.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Resources\Imgs\BlobWithArrow.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Resources\Imgs\camera.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -229,6 +235,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\Imgs\RegionSphere.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Imgs\RegionSphereWithPlus.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\Models3D\box.dae">
