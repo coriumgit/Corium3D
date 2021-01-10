@@ -193,7 +193,7 @@ namespace Corium3DGI
             RemoveModelCmd = new RelayCommand(p => removeModel(), p => SelectedModel != null);
             GenAssetsFileCmd = new RelayCommand(p => genAssetsFile(), p => ModelMs.Count > 0);
             AddSceneCmd = new RelayCommand(p => addScene((KeyboardFocusChangedEventArgs)p));
-            RenameSceneCmd = new RelayCommand(p => renameSceneCmd(), p => SelectedSceneModel != null);
+            RenameSceneCmd = new RelayCommand(p => renameSceneCmd(), p => SelectedScene != null);
             RemoveSceneCmd = new RelayCommand(p => removeScene(), p => SelectedScene != null);
             AddSceneModelCmd = new RelayCommand(p => addSceneModel(), p => SelectedModel != null && SelectedScene != null);
             RemoveSceneModelCmd = new RelayCommand(p => removeSceneModel(), p => SelectedSceneModel != null);
@@ -217,8 +217,7 @@ namespace Corium3DGI
             MouseWheelModelViewportCmd = new RelayCommand(p => zoomModelCamera((MouseWheelEventArgs)p));
             ClearFocusCmd = new RelayCommand(p => clearFocus());
             CaptureFrameCmd = new RelayCommand(p => captureFrame());
-            
-            CollisionPrimitive.Init();            
+                        
             dxVisualizer.RendererInitialized += onDxVisualizerRendererInit;
 
             transformGrpCallbackHandlers.translationHandler = new DxVisualizer.IScene.TranslationHandler(onTransformGrpTranslated);
@@ -289,13 +288,13 @@ namespace Corium3DGI
             if (dlg.ShowDialog() == true)
             {
                 foreach (string model3dDatalFilePath in dlg.FileNames)                                                                                          
-                    ModelMs.Add(new ModelM(model3dDatalFilePath, dxVisualizer));                
+                    ModelMs.Add(new MeshModelM(model3dDatalFilePath, dxVisualizer));                
             }
         }
 
         private void addCollisionRegion()
         {
-            ModelMs.Add(new ModelM(string.Empty, dxVisualizer));
+            ModelMs.Add(new CollisionRegionModelM(dxVisualizer));
         }
 
         private void removeModel()

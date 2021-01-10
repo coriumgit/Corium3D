@@ -87,13 +87,6 @@
                 </cc:LabeledContentControl>
             </ControlTemplate>
 
-            <DataTemplate x:Key="CollisionPrimitiveInComboBox" DataType="{x:Type local:CollisionPrimitive}">
-                <StackPanel Orientation="Horizontal">
-                    <Image Source="{Binding Path=IconPath}" Margin="0 0 10 0" Width="20" Height="20"/>
-                    <Label Padding="0" Content="{Binding Path=Name}" VerticalAlignment="Center" FontSize="12"/>
-                </StackPanel>
-            </DataTemplate>
-
             <DataTemplate DataType="{x:Type utils:ObservablePoint3D}">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -120,7 +113,7 @@
                 </Grid>
             </DataTemplate>
 
-            <DataTemplate x:Key="AxisAlignment3D"  DataType="{x:Type utils:ObservableVector3D}">
+            <DataTemplate x:Key="AxisAlignment3D" DataType="{x:Type utils:ObservableVector3D}">
                 <DataTemplate.Resources>
                     <utils:DoubleToBoolConverter x:Key="doubleToBoolConverter"/>
                 </DataTemplate.Resources>
@@ -184,67 +177,9 @@
                     </Grid.RowDefinitions>
                     <cc:LabeledContentControl Margin="2 5 2 5" Grid.Row="0" Key="Axis:" Content="{Binding Path=Axis, Mode=TwoWay}"/>
                     <cc:MouseMoveNumberBoxUpdater Margin="2 0 2 0" Grid.Row="1" UpdaterText="Angle:" NumberBoxText="{Binding Path=Angle, Mode=TwoWay}"/>
-                    
+
                 </Grid>
             </DataTemplate>
-
-            <DataTemplate DataType="{x:Type local:CollisionPrimitive}"/>
-
-            <DataTemplate DataType="{x:Type local:CollisionBox}">
-                <StackPanel Orientation="Vertical">
-                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
-                    <cc:LabeledContentControl Margin="2 0 2 0" Key="Scale:" Content="{Binding Path=Scale}"/>
-                </StackPanel>
-            </DataTemplate>
-
-            <DataTemplate DataType="{x:Type local:CollisionSphere}">
-                <StackPanel Orientation="Vertical">
-                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
-                    <cc:MouseMoveNumberBoxUpdater Margin="2 0 2 0" UpdaterText="Radius:" NumberBoxText="{Binding Path=Radius, Mode=TwoWay}"/>
-                </StackPanel>
-            </DataTemplate>
-
-            <DataTemplate DataType="{x:Type local:CollisionCapsule}">
-                <StackPanel Orientation="Vertical">
-                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
-                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Axis Vec:" Content="{Binding Path=AxisVec}" ContentTemplate="{StaticResource AxisAlignment3D}"/>
-                    <cc:MouseMoveNumberBoxUpdater Margin="2 5 2 5" UpdaterText="Height:" NumberBoxText="{Binding Path=Height, Mode=TwoWay}"/>
-                    <cc:MouseMoveNumberBoxUpdater Margin="2 0 2 0" UpdaterText="Radius:" NumberBoxText="{Binding Path=Radius, Mode=TwoWay}"/>
-                </StackPanel>
-            </DataTemplate>
-
-            <DataTemplate DataType="{x:Type local:CollisionRect}">
-                <StackPanel Orientation="Vertical">
-                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
-                    <cc:LabeledContentControl Margin="2 0 2 0" Key="Scale:" Content="{Binding Path=Scale}"/>
-                </StackPanel>
-            </DataTemplate>
-
-            <DataTemplate DataType="{x:Type local:CollisionCircle}">
-                <StackPanel Orientation="Vertical">
-                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
-                    <cc:MouseMoveNumberBoxUpdater Margin="2 0 2 0" UpdaterText="Radius:" NumberBoxText="{Binding Path=Radius, Mode=TwoWay}"/>
-                </StackPanel>
-            </DataTemplate>
-
-            <DataTemplate DataType="{x:Type local:CollisionStadium}">
-                <StackPanel Orientation="Vertical">
-                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
-                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Axis Vec:" Content="{Binding Path=AxisVec}" ContentTemplate="{StaticResource AxisAlignment}"/>
-                    <cc:MouseMoveNumberBoxUpdater Margin="2 5 2 5" UpdaterText="Height:" NumberBoxText="{Binding Path=Height, Mode=TwoWay}"/>
-                    <cc:MouseMoveNumberBoxUpdater Margin="2 0 2 0" UpdaterText="Radius:" NumberBoxText="{Binding Path=Radius, Mode=TwoWay}"/>
-                </StackPanel>
-            </DataTemplate>
-
-            <DataTemplate DataType="{x:Type local:SceneModelInstanceM}">
-                <StackPanel Orientation="Vertical">
-                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Name:" Content="{Binding Path=Name}"/>
-                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Translate:" Content="{Binding Path=Translate}"/>
-                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Scale:" Content="{Binding Path=Scale}"/>
-                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Rotation:" Content="{Binding Path=RotEueler}"/>
-                </StackPanel>
-            </DataTemplate>
-            
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -12,24 +12,18 @@ namespace Corium3DGI
 {
     public class ModelM : ObservableObject, System.IDisposable
     {
-        private static readonly string RESOURCES_PATHS_XML_PATH = System.IO.Path.Combine("Resources", "ResourcesPaths.xml");
-        private const string COLLISION_REGION_NAME_BASE = "Collision Region";
-        private static Utils.IdxPool collisionRegionsIdxPool = new Utils.IdxPool();
-        private static AssetsGen.ManagedImportedData collisionRegionModelData;
+        private static readonly string RESOURCES_PATHS_XML_PATH = Path.Combine("Resources", "ResourcesPaths.xml");
+        private static AssetsGen.ManagedImportedData nullModelData;
 
-        private int collisionRegionIdx = -1;
-        private DxVisualizer dxVisualizer;                
+        private DxVisualizer dxVisualizer;                                
 
         public AssetsGen.IModelAssetGen ModelAssetGen { get; private set; }
 
-        private uint dxModelID;
-        public uint DxModelID { get { return dxModelID; } }
-
-        private string name;
+        protected string name;
         public string Name
         {
             get { return name; }
-            
+
             set
             {
                 if (name != value)
@@ -40,6 +34,9 @@ namespace Corium3DGI
             }
         }
 
+        private uint dxModelID;
+        public uint DxModelID { get { return dxModelID; } }
+        
         private Model3DCollection avatars3D;
         public Model3DCollection Avatars3D
         {
@@ -97,25 +94,6 @@ namespace Corium3DGI
                     collisionPrimitive3DSelected = value;
                     collisionPrimitive3DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
                     CollisionPrimitive3dChanged?.Invoke();
-
-                    /*
-                    switch (value)
-                    {
-                        case CollisionBox cb:
-                            ModelAssetGen.assignCollisionBox(cb.Center.Point3DCpy, cb.Scale.Point3DCpy);
-                            break;
-                        case CollisionSphere cs:
-                            ModelAssetGen.assignCollisionSphere(cs.Center.Point3DCpy, cs.Radius);
-                            break;
-                        case CollisionCapsule cc:
-                            Vector3D axisVec = cc.Height * cc.AxisVec.Vector3DCpy;
-                            ModelAssetGen.assignCollisionCapsule(cc.Center.Point3DCpy - 0.5 * axisVec, axisVec, cc.Radius);
-                            break;
-                        default:
-                            ModelAssetGen.clearCollisionPrimitive3D();
-                            break;
-                    }
-                    */
                     OnPropertyChanged("CollisionPrimitive3DSelected");
                 }
             } 
@@ -147,25 +125,7 @@ namespace Corium3DGI
                 {
                     collisionPrimitive2DSelected = value;
                     collisionPrimitive3DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
-                    CollisionPrimitive2dChanged?.Invoke();
-                    /*
-                    switch (value)
-                    {
-                        case CollisionRect cr:
-                            ModelAssetGen.assignCollisionRect(cr.Center.PointCpy, cr.Scale.PointCpy);
-                            break;
-                        case CollisionCircle cc:
-                            ModelAssetGen.assignCollisionCircle(cc.Center.PointCpy, cc.Radius);
-                            break;
-                        case CollisionStadium cs:
-                            Vector axisVec = cs.Height * cs.AxisVec.VectorCpy;
-                            ModelAssetGen.assignCollisionStadium(cs.Center.PointCpy - 0.5 * axisVec, axisVec, cs.Radius);
-                            break;
-                        default:
-                            ModelAssetGen.clearCollisionPrimitive2D();
-                            break;
-                    }
-                    */                    
+                    CollisionPrimitive2dChanged?.Invoke();              
                     OnPropertyChanged("CollisionPrimitive2DSelected");
                 }
             }
@@ -179,33 +139,24 @@ namespace Corium3DGI
         public event OnCollisionBoxScaleChanged CollisionBoxScaleChanged;
 
         public delegate void OnCollisionPrimitive2dChanged();        
-        public event OnCollisionPrimitive2dChanged CollisionPrimitive2dChanged;       
+        public event OnCollisionPrimitive2dChanged CollisionPrimitive2dChanged;
 
         static ModelM()
         {
-            string collisionRegionAvatarPath = XDocument.Load(RESOURCES_PATHS_XML_PATH).Root.Element("CollisionRegionAvatar").Value;
-            
-            AssetsGen.IModelAssetGen modelAssetGen = AssetsGen.createModelAssetGen(collisionRegionAvatarPath);
-            collisionRegionModelData = modelAssetGen.ManagedImportedDataRef;
-            modelAssetGen.Dispose();            
+            string nullModelAvatarPath = XDocument.Load(RESOURCES_PATHS_XML_PATH).Root.Element("NullModelAvatar").Value;
+            AssetsGen.IModelAssetGen modelAssetGen = AssetsGen.createModelAssetGen(nullModelAvatarPath);
+            nullModelData = modelAssetGen.ManagedImportedDataRef;
+            modelAssetGen.Dispose();
         }
 
         public ModelM(string model3dDatalFilePath, DxVisualizer dxVisualizer)
-        {
-            if (model3dDatalFilePath != string.Empty)
-                name = Path.GetFileNameWithoutExtension(model3dDatalFilePath);
-            else
-            {
-                collisionRegionIdx = collisionRegionsIdxPool.acquireIdx();
-                name = COLLISION_REGION_NAME_BASE + collisionRegionIdx.ToString("D2");
-            }
-
+        {            
             ModelAssetGen = AssetsGen.createModelAssetGen(model3dDatalFilePath);                        
             AssetsGen.ManagedImportedData modelData;
             if (model3dDatalFilePath != string.Empty)
                 modelData = ModelAssetGen.ManagedImportedDataRef;
             else
-                modelData = collisionRegionModelData;
+                modelData = nullModelData;
 
             this.dxVisualizer = dxVisualizer;
             dxVisualizer.addModel(modelData.meshesVertices[0],
@@ -221,10 +172,8 @@ namespace Corium3DGI
 
             collisionPrimitives3DCache.Add(new CollisionPrimitive3D());
             CollisionBox collisionBox = new CollisionBox(modelData.boundingBoxCenter, modelData.boundingBoxScale);
-
             collisionBox.Center.PropertyChanged += onCubeColliderCenterChanged;
             collisionBox.Scale.PropertyChanged += onCubeColliderScaleChanged;
-
             collisionPrimitives3DCache.Add(collisionBox);
 
             collisionPrimitives3DCache.Add(new CollisionSphere(modelData.boundingSphereCenter, modelData.boundingSphereRadius));
@@ -232,6 +181,11 @@ namespace Corium3DGI
                                                                 modelData.boundingCapsuleAxisVec,
                                                                 modelData.boundingCapsuleHeight,
                                                                 modelData.boundingCapsuleRadius));
+            // TODO: <<continue here>>
+
+
+
+
             collisionPrimitive3DSelected = collisionPrimitives3DCache[0];
 
             collisionPrimitives2DCache.Add(new CollisionPrimitive2D());
@@ -264,12 +218,10 @@ namespace Corium3DGI
 
         }
 
-        public void Dispose()
+        virtual public void Dispose()
         {
             dxVisualizer.removeModel(DxModelID);
-            ModelAssetGen.Dispose();
-            if (collisionRegionIdx > -1)
-                collisionRegionsIdxPool.releaseIdx(collisionRegionIdx);
+            ModelAssetGen.Dispose();            
         }
     }
 }
