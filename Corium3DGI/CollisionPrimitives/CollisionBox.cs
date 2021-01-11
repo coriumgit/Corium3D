@@ -73,16 +73,16 @@ namespace Corium3DGI
 
             Center.X = center.X; Center.Y = center.Y; Center.Z = center.Z;
             Scale.X = scale.X; Scale.Y = scale.Y; Scale.Z = scale.Z;
-        }     
+        }
 
-        public override List<DxVisualizer.IScene.ISceneModelInstance> createDxInstances(SceneM sceneM, Vector3D instanceTranslate, Vector3D instanceScale, Vector3D instanceRotAx, float instanceRotAng)
+        public override DxVisualizer.IScene.ISceneModelInstance[] createDxInstances(SceneM sceneM, Vector3D instanceTranslate, Vector3D instanceScale, Vector3D instanceRotAx, float instanceRotAng)
         {
-            List<DxVisualizer.IScene.ISceneModelInstance> ret = new List<DxVisualizer.IScene.ISceneModelInstance>(1);
-            ret.Add(sceneM.createDxModelInstance(dxModelID, Color.FromArgb(50, 0, 255, 0),
-                                                (Vector3D)center.Point3DCpy + instanceTranslate,
-                                                new Vector3D(scale.Point3DCpy.X * instanceScale.X, scale.Point3DCpy.Y * instanceScale.Y, scale.Point3DCpy.Z * instanceScale.Z),
-                                                instanceRotAx, instanceRotAng, null));
-            return ret;
+            return new DxVisualizer.IScene.ISceneModelInstance[] {
+                sceneM.createDxModelInstance(dxModelID, Color.FromArgb(50, 0, 255, 0),
+                                             (Vector3D)center.Point3DCpy + instanceTranslate,
+                                             new Vector3D(scale.Point3DCpy.X * instanceScale.X, scale.Point3DCpy.Y * instanceScale.Y, scale.Point3DCpy.Z * instanceScale.Z),
+                                             instanceRotAx, instanceRotAng, null)
+            };            
         }
 
         private void bindScaleToScaleTransform(ScaleTransform3D scaleTransform3D)

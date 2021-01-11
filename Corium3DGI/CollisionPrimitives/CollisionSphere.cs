@@ -13,7 +13,7 @@ namespace Corium3DGI
     {
         private const string NAME_CACHE = "Sphere";        
         private static Model3DCollection avatars3DCache;
-        private static List<uint> dxModelIds;
+        private static uint dxModelID;
         
 
         private ObservablePoint3D center;
@@ -48,8 +48,10 @@ namespace Corium3DGI
 
         public delegate void OnTransform(Point3D center, float radius);
         public static void Init(DxVisualizer dxVisualizer)
-        {            
-            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 0, G = 0, B = 255, A = 255 }, out avatars3DCache, dxVisualizer, out dxModelIds);
+        {
+            List<uint> dxModelIdContainer = new List<uint>(1);
+            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 0, G = 0, B = 255, A = 255 }, out avatars3DCache, dxVisualizer, out dxModelIdContainer);
+            dxModelID = dxModelIdContainer[0];
         }
 
         public CollisionSphere(Point3D center, float radius) {
@@ -70,7 +72,17 @@ namespace Corium3DGI
             Avatars3D[0].Transform = transform3DGroup;
 
             Center.X = center.X; Center.Y = center.Y; Center.Z = center.Z;
-        }       
+        }
+
+        public override DxVisualizer.IScene.ISceneModelInstance[] createDxInstances(SceneM sceneM, Vector3D instanceTranslate, Vector3D instanceScale, Vector3D instanceRotAx, float instanceRotAng)
+        {          
+            return new DxVisualizer.IScene.ISceneModelInstance[] {
+                sceneM.createDxModelInstance(dxModelID, Color.FromArgb(50, 0, 0, 255),
+                                             (Vector3D)center.Point3DCpy + instanceTranslate,
+                                             new Vector3D(radius * instanceScale.X, radius * instanceScale.Y, radius * instanceScale.Z),
+                                             instanceRotAx, instanceRotAng, null)
+            };          
+        }
 
         private void bindRadiusToScaleTransform(ScaleTransform3D scaleTransform3D)
         {

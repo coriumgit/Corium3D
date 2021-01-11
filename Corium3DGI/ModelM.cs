@@ -133,10 +133,25 @@ namespace Corium3DGI
 
         public delegate void OnCollisionPrimitive3dChanged();
         public event OnCollisionPrimitive3dChanged CollisionPrimitive3dChanged;
-        public delegate void OnCollisionBoxCenterChanged(Vector3D ceneter);
+
+        public delegate void OnCollisionBoxCenterChanged(Vector3D center);
         public event OnCollisionBoxCenterChanged CollisionBoxCenterChanged;
         public delegate void OnCollisionBoxScaleChanged(Vector3D ceneter);
         public event OnCollisionBoxScaleChanged CollisionBoxScaleChanged;
+
+        public delegate void OnCollisionSphereCenterChanged(Vector3D center);
+        public event OnCollisionSphereCenterChanged CollisionSphereCenterChanged;
+        public delegate void OnCollisionSphereRadiusChanged(float radius);
+        public event OnCollisionSphereRadiusChanged CollisionSphereRadiusChanged;
+
+        public delegate void OnCollisionCapsuleCenterChanged(CollisionCapsule capsule);
+        public event OnCollisionCapsuleCenterChanged CollisionCapsuleCenterChanged;
+        public delegate void OnCollisionCapsuleAxisVecChanged(CollisionCapsule capsule);
+        public event OnCollisionCapsuleAxisVecChanged CollisionCapsuleAxisVecChanged;
+        public delegate void OnCollisionCapsuleHeightChanged(CollisionCapsule capsule);
+        public event OnCollisionCapsuleHeightChanged CollisionCapsuleHeightChanged;
+        public delegate void OnCollisionCapsuleRadiusChanged(CollisionCapsule capsule);
+        public event OnCollisionCapsuleRadiusChanged CollisionCapsuleRadiusChanged;
 
         public delegate void OnCollisionPrimitive2dChanged();        
         public event OnCollisionPrimitive2dChanged CollisionPrimitive2dChanged;
@@ -171,20 +186,22 @@ namespace Corium3DGI
                 avatars3D.Add(new GeometryModel3D(meshGeometry, new DiffuseMaterial(new SolidColorBrush(Colors.WhiteSmoke))));
 
             collisionPrimitives3DCache.Add(new CollisionPrimitive3D());
+
             CollisionBox collisionBox = new CollisionBox(modelData.boundingBoxCenter, modelData.boundingBoxScale);
-            collisionBox.Center.PropertyChanged += onCubeColliderCenterChanged;
-            collisionBox.Scale.PropertyChanged += onCubeColliderScaleChanged;
+            collisionBox.Center.PropertyChanged += onCollisionCubeCenterChanged;
+            collisionBox.Scale.PropertyChanged += onCollisionCubeScaleChanged;
             collisionPrimitives3DCache.Add(collisionBox);
 
-            collisionPrimitives3DCache.Add(new CollisionSphere(modelData.boundingSphereCenter, modelData.boundingSphereRadius));
-            collisionPrimitives3DCache.Add(new CollisionCapsule(modelData.boundingCapsuleCenter,
-                                                                modelData.boundingCapsuleAxisVec,
-                                                                modelData.boundingCapsuleHeight,
-                                                                modelData.boundingCapsuleRadius));
-            // TODO: <<continue here>>
+            CollisionSphere collisionSphere = new CollisionSphere(modelData.boundingSphereCenter, modelData.boundingSphereRadius);
+            collisionSphere.Center.PropertyChanged += onCollisionSphereCenterChanged;
+            collisionSphere.PropertyChanged += onCollisionSphereChanged;
+            collisionPrimitives3DCache.Add(collisionSphere);
 
-
-
+            CollisionCapsule collisionCapsule = new CollisionCapsule(modelData.boundingCapsuleCenter, modelData.boundingCapsuleAxisVec, modelData.boundingCapsuleHeight, modelData.boundingCapsuleRadius);
+            collisionCapsule.Center.PropertyChanged += onCollisionCapsuleCenterChanged;
+            collisionCapsule.AxisVec.PropertyChanged += onCollisionCapsuleAxisVecChanged;
+            collisionCapsule.PropertyChanged += onCollisionCapsuleChanged;
+            collisionPrimitives3DCache.Add(collisionCapsule);            
 
             collisionPrimitive3DSelected = collisionPrimitives3DCache[0];
 
@@ -198,24 +215,43 @@ namespace Corium3DGI
             collisionPrimitive2DSelected = collisionPrimitives2DCache[0];
         }         
 
-        private void onCubeColliderCenterChanged(object center, PropertyChangedEventArgs e)
+        private void onCollisionCubeCenterChanged(object center, PropertyChangedEventArgs e)
         {
             CollisionBoxCenterChanged?.Invoke((Vector3D)((Utils.ObservablePoint3D)center).Point3DCpy);
         }
 
-        private void onCubeColliderScaleChanged(object scale, PropertyChangedEventArgs e)
+        private void onCollisionCubeScaleChanged(object scale, PropertyChangedEventArgs e)
         {
             CollisionBoxScaleChanged?.Invoke((Vector3D)((Utils.ObservablePoint3D)scale).Point3DCpy);
         }
 
-        private void OnSphereTransform(Point3D center, float radius)
+        private void onCollisionSphereCenterChanged(object center, PropertyChangedEventArgs e)
         {
-
+            CollisionSphereCenterChanged?.Invoke((Vector3D)((Utils.ObservablePoint3D)center).Point3DCpy);
         }
 
-        private void OnCapsuleTransform(Point3D center, Point3D axisVec, float height, float radius)
+        private void onCollisionSphereChanged(object collisionSphere, PropertyChangedEventArgs e)
         {
+            if (e.PropertyName == "Radius")
+                CollisionSphereRadiusChanged?.Invoke(((CollisionSphere)collisionSphere).Radius);
+        }
 
+        private void onCollisionCapsuleCenterChanged(object center, PropertyChangedEventArgs e)
+        {
+            CollisionCapsuleCenterChanged?.Invoke((CollisionCapsule)collisionPrimitive3DSelected);
+        }
+
+        private void onCollisionCapsuleAxisVecChanged(object axisVec, PropertyChangedEventArgs e)
+        {
+            CollisionCapsuleAxisVecChanged?.Invoke((CollisionCapsule)collisionPrimitive3DSelected);
+        }
+
+        private void onCollisionCapsuleChanged(object collisionCapsule, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "Height")
+                CollisionCapsuleHeightChanged?.Invoke((CollisionCapsule)collisionCapsule);
+            else if (e.PropertyName == "Radius")
+                CollisionCapsuleRadiusChanged?.Invoke((CollisionCapsule)collisionCapsule);
         }
 
         virtual public void Dispose()

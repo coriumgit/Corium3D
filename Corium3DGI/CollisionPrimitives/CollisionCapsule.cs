@@ -13,9 +13,10 @@ namespace Corium3DGI
 {
     public class CollisionCapsule : CollisionPrimitive3D
     {
+        private const double EPSILON = 1E-6;
         private const string NAME_CACHE = "Capsule";        
         private static Model3DCollection avatars3DCache;
-        private static List<uint> dxModelIds;                
+        private static uint[] dxModelIDs;                
 
         private ObservablePoint3D center;
         public ObservablePoint3D Center
@@ -82,7 +83,9 @@ namespace Corium3DGI
 
         public static void Init(DxVisualizer dxVisualizer)
         {
-            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 255, G = 255, B = 0, A = 255 }, out avatars3DCache, dxVisualizer, out dxModelIds);
+            List<uint> dxModelIdContainer = new List<uint>(3);
+            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 255, G = 255, B = 0, A = 255 }, out avatars3DCache, dxVisualizer, out dxModelIdContainer);
+            dxModelIDs = dxModelIdContainer.ToArray();
         }
 
         public CollisionCapsule(Point3D center, Vector3D axisVec, float height, float radius)
@@ -130,7 +133,26 @@ namespace Corium3DGI
 
             Center.X = center.X; Center.Y = center.Y; Center.Z = center.Z;
             AxisVec.X = axisVec.X; AxisVec.Y = axisVec.Y; AxisVec.Z = axisVec.Z;
-        }          
+        }
+
+        public override DxVisualizer.IScene.ISceneModelInstance[] createDxInstances(SceneM sceneM, Vector3D instanceTranslate, Vector3D instanceScale, Vector3D instanceRotAx, float instanceRotAng)
+        {
+            Quaternion quatProd = new Quaternion(instanceRotAx, instanceRotAng) * axisVecToQuat();            
+            return new DxVisualizer.IScene.ISceneModelInstance[] {
+                sceneM.createDxModelInstance(dxModelIDs[0], Color.FromArgb(50, 255, 255, 0),
+                                             (Vector3D)center.Point3DCpy + instanceTranslate,
+                                             new Vector3D(radius * instanceScale.X, height * instanceScale.Y, radius * instanceScale.Z),
+                                             quatProd.Axis, (float)quatProd.Angle, null),
+                sceneM.createDxModelInstance(dxModelIDs[1], Color.FromArgb(50, 255, 255, 0),
+                                             (Vector3D)center.Point3DCpy + (0.5f * height * axisVec.Vector3DCpy) + instanceTranslate,
+                                             new Vector3D(radius * instanceScale.X, radius * instanceScale.Y, radius * instanceScale.Z),
+                                             quatProd.Axis, (float)quatProd.Angle, null),
+                sceneM.createDxModelInstance(dxModelIDs[2], Color.FromArgb(50, 255, 255, 0),
+                                             (Vector3D)center.Point3DCpy - (0.5f * height * axisVec.Vector3DCpy) + instanceTranslate,
+                                             new Vector3D(radius * instanceScale.X, radius * instanceScale.Y, radius * instanceScale.Z),
+                                             quatProd.Axis, (float)quatProd.Angle, null)
+            };
+        }
 
         private void bindAvatar3DTransforms(ScaleTransform3D scaleTransform3DShaft, 
                                             ScaleTransform3D scaleTransform3DDemiSphere1, 
@@ -173,27 +195,26 @@ namespace Corium3DGI
 
         private void OnAxisVecUpdated(object sender, PropertyChangedEventArgs e)
         {
-            const double EPSILON = 1E-6;
-
-            Vector3D axisVecCpy = axisVec.Vector3DCpy;
-            if (axisVecCpy.LengthSquared > 1)
+            if (axisVec.Vector3DCpy.LengthSquared < EPSILON)
                 return;
-                          
+
+            ((QuaternionRotation3D)((RotateTransform3D)((Transform3DGroup)Avatars3D[0].Transform).Children[1]).Rotation).Quaternion = axisVecToQuat();
+        }        
+
+        private Quaternion axisVecToQuat()
+        {           
+            Vector3D axisVecCpy = axisVec.Vector3DCpy;            
             Vector3D upVector = new Vector3D(0, 1, 0);
-            
-            Vector3D rotationAxis = Vector3D.CrossProduct(upVector, axisVecCpy);
-            Quaternion rotationQuat;
+            Vector3D rotationAxis = Vector3D.CrossProduct(upVector, axisVecCpy);            
             if (rotationAxis.LengthSquared > EPSILON)
             {
                 rotationAxis.Normalize();
-                double rotationAng = System.Math.Acos(Vector3D.DotProduct(upVector, axisVecCpy)) * 180.0 / System.Math.PI;                                
-                rotationQuat = new Quaternion(rotationAxis, rotationAng);
+                double rotationAng = Math.Acos(Vector3D.DotProduct(upVector, axisVecCpy)) * 180.0 / Math.PI;
+                return new Quaternion(rotationAxis, rotationAng);
             }
             else
-                rotationQuat = Quaternion.Identity;
-
-            ((QuaternionRotation3D)((RotateTransform3D)((Transform3DGroup)Avatars3D[0].Transform).Children[1]).Rotation).Quaternion = rotationQuat;
-        }        
+                return Quaternion.Identity;
+        }
 
         private class HalfTheFloat : IValueConverter
         {

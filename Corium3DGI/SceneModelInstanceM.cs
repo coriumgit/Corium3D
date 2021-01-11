@@ -17,8 +17,8 @@ namespace Corium3DGI
         private AssetsGen.ISceneAssetGen.ISceneModelData.ISceneModelInstanceData sceneModelInstanceAssetData;
         private DxVisualizer.IScene.ISceneModelInstance iDxSceneModelInstance;
 
-        private List<DxVisualizer.IScene.ISceneModelInstance> iDxSceneModelInstanceCollider3D = null;
-        public List<DxVisualizer.IScene.ISceneModelInstance> IDxSceneModelInstanceCollider3D
+        private DxVisualizer.IScene.ISceneModelInstance[] iDxSceneModelInstanceCollider3D = null;
+        public DxVisualizer.IScene.ISceneModelInstance[] IDxSceneModelInstanceCollider3D
         {
             get { return iDxSceneModelInstanceCollider3D; }
             set
