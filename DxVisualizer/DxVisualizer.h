@@ -32,6 +32,13 @@ namespace CoriumDirectX {
 				void unparent();
 			};								
 
+			
+			interface class IConstrainedScaleInstance : ISceneModelInstance {
+				enum class Constraint { MaxDimGrp, FollowMaxDimGrp, Ignore, None };
+
+				void setDimsConstraints(Constraint xConstraint, Constraint yConstraint, Constraint zConstraint);
+			};
+
 			enum class TransformReferenceFrame { Local, World };
 
 			delegate void TranslationHandler(float x, float y, float z);
@@ -46,6 +53,7 @@ namespace CoriumDirectX {
 
 			void activate();
 			ISceneModelInstance^ createModelInstance(unsigned int modelID, Media::Color instanceColorMask, Media3D::Vector3D^ translationInit, Media3D::Vector3D^ scaleFactorInit, Media3D::Vector3D^ rotAxInit, float rotAngInit, ISceneModelInstance::SelectionHandler^ selectionHandler);
+			IConstrainedScaleInstance^ createConstrainedScaleInstance(unsigned int modelID, Media::Color instanceColorMask, Media3D::Vector3D^ translationInit, Media3D::Vector3D^ scaleFactorInit, Media3D::Vector3D^ rotAxInit, float rotAngInit, ISceneModelInstance::SelectionHandler^ selectionHandler);
 			void transformGrpTranslate(Media3D::Vector3D^ translation, TransformReferenceFrame referenceFrame);
 			void transformGrpSetTranslation(Media3D::Vector3D^ translation, TransformReferenceFrame referenceFrame);
 			void transformGrpScale(Media3D::Vector3D^ scaleFactorQ, TransformReferenceFrame referenceFrame);
@@ -108,11 +116,26 @@ namespace CoriumDirectX {
 				bool isDisposed = false;
 			};
 			
+			ref class ConstrainedScaleInstance : public DxVisualizer::Scene::SceneModelInstance, IScene::IConstrainedScaleInstance {
+			public:
+				ConstrainedScaleInstance(DxRenderer::Scene::ConstrainedScaleInstance* constrainedScaleRef);
+				~ConstrainedScaleInstance();
+				!ConstrainedScaleInstance();
+				virtual void setDimsConstraints(IScene::IConstrainedScaleInstance::Constraint xConstraint, 
+												IScene::IConstrainedScaleInstance::Constraint yConstraint, 
+												IScene::IConstrainedScaleInstance::Constraint zConstraint) = IConstrainedScaleInstance::setDimsConstraints;
+
+			private:
+				DxRenderer::Scene::ConstrainedScaleInstance* constrainedScalelInstanceRef;
+				bool isDisposed = false;
+			};
+			
 			Scene(DxRenderer* renderer, DxRenderer::Scene::TransformCallbackHandlers const& transformCallbackHandlers, [System::Runtime::InteropServices::Out] DxVisualizer::MouseCallbacks^% mouseCallbacks);
 			~Scene();
 			!Scene();
 			virtual void activate() = IScene::activate;
 			virtual IScene::ISceneModelInstance^ createModelInstance(unsigned int modelID, Media::Color instanceColorMask, Media3D::Vector3D^ translationInit, Media3D::Vector3D^ scaleFactorInit, Media3D::Vector3D^ rotAxInit, float rotAngInit, IScene::ISceneModelInstance::SelectionHandler^ selectionHandler) = IScene::createModelInstance;
+			virtual IScene::IConstrainedScaleInstance^ createConstrainedScaleInstance(unsigned int modelID, Media::Color instanceColorMask, Media3D::Vector3D^ translationInit, Media3D::Vector3D^ scaleFactorInit, Media3D::Vector3D^ rotAxInit, float rotAngInit, IScene::ISceneModelInstance::SelectionHandler^ selectionHandler) = IScene::createConstrainedScaleInstance;
 			virtual void transformGrpTranslate(Media3D::Vector3D^ translation, IScene::TransformReferenceFrame referenceFrame) = IScene::transformGrpTranslate;
 			virtual void transformGrpSetTranslation(Media3D::Vector3D^ translation, IScene::TransformReferenceFrame referenceFrame) = IScene::transformGrpSetTranslation;
 			virtual void transformGrpScale(Media3D::Vector3D^ scaleFactorQ, IScene::TransformReferenceFrame referenceFrame) = IScene::transformGrpScale;

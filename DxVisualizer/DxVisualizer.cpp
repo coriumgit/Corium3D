@@ -29,6 +29,20 @@ namespace CoriumDirectX {
 		}
 	}
 
+	
+	inline DxRenderer::Scene::ConstrainedScaleInstance::Constraint marshalConstraint(DxVisualizer::IScene::IConstrainedScaleInstance::Constraint constraint) {
+		switch (constraint) {			
+			case DxVisualizer::IScene::IConstrainedScaleInstance::Constraint::None:
+				return DxRenderer::Scene::ConstrainedScaleInstance::Constraint::None;
+			case DxVisualizer::IScene::IConstrainedScaleInstance::Constraint::Ignore:
+				return DxRenderer::Scene::ConstrainedScaleInstance::Constraint::Ignore;
+			case DxVisualizer::IScene::IConstrainedScaleInstance::Constraint::MaxDimGrp:
+				return DxRenderer::Scene::ConstrainedScaleInstance::Constraint::MaxDimGrp;
+			case DxVisualizer::IScene::IConstrainedScaleInstance::Constraint::FollowMaxDimGrp:
+				return DxRenderer::Scene::ConstrainedScaleInstance::Constraint::FollowMaxDimGrp;
+		}
+	}
+	
 	/*
 	DxVisualizer::Scene::SceneModelInstance::SceneModelInstance(DxRenderer::Scene* sceneRef, unsigned int modelID, DxRenderer::Transform const& transformInit, IScene::SelectionHandler^ selectionHandler) {					
 		DxRenderer::Scene::SceneModelInstance::SelectionHandler selectionHandlerMarshaled;
@@ -99,6 +113,31 @@ namespace CoriumDirectX {
 	void DxVisualizer::Scene::SceneModelInstance::unparent() {
 		sceneModelInstanceRef->unparent();
 	}
+		
+	DxVisualizer::Scene::ConstrainedScaleInstance::ConstrainedScaleInstance(DxRenderer::Scene::ConstrainedScaleInstance* _constrainedScalelInstanceRef) :
+		DxVisualizer::Scene::SceneModelInstance(_constrainedScalelInstanceRef), constrainedScalelInstanceRef(_constrainedScalelInstanceRef) {}
+
+	DxVisualizer::Scene::ConstrainedScaleInstance::~ConstrainedScaleInstance()
+	{
+		if (isDisposed)
+			return;
+
+		this->!ConstrainedScaleInstance();
+		isDisposed = true;
+	}
+
+	DxVisualizer::Scene::ConstrainedScaleInstance::!ConstrainedScaleInstance()
+	{
+		constrainedScalelInstanceRef->release();
+	}
+
+	void DxVisualizer::Scene::ConstrainedScaleInstance::setDimsConstraints(
+		IScene::IConstrainedScaleInstance::Constraint xConstraint,
+		IScene::IConstrainedScaleInstance::Constraint yConstraint,
+		IScene::IConstrainedScaleInstance::Constraint zConstraint)
+	{
+		constrainedScalelInstanceRef->setDimsConstraints(marshalConstraint(xConstraint), marshalConstraint(yConstraint), marshalConstraint(zConstraint));
+	}
 	
 	DxVisualizer::Scene::Scene(DxRenderer* dxRenderer, DxRenderer::Scene::TransformCallbackHandlers const& transformCallbackHandlers, [System::Runtime::InteropServices::Out] DxVisualizer::MouseCallbacks^% mouseCallbacksManaged) :
 			sceneRef(dxRenderer->createScene(transformCallbackHandlers, *(mouseCallbacksNative = new DxRenderer::MouseCallbacks))) {
@@ -123,13 +162,20 @@ namespace CoriumDirectX {
 	void DxVisualizer::Scene::activate() {
 		sceneRef->activate();
 	}
-
+	
 	DxVisualizer::IScene::ISceneModelInstance^ DxVisualizer::Scene::createModelInstance(unsigned int modelID, Media::Color instanceColorMask, Vector3D^ translationInit, Vector3D^ scaleFactorInit, Vector3D^ rotAxInit, float rotAngInit, IScene::ISceneModelInstance::SelectionHandler^ selectionHandler) {
 		DxRenderer::Transform transform = { marshalVector3D(translationInit), marshalVector3D(scaleFactorInit), marshalVector3D(rotAxInit), rotAngInit };
 		DxRenderer::Scene::SceneModelInstance::SelectionHandler selectionHandlerMarshaled =
 			selectionHandler ? static_cast<DxRenderer::Scene::SceneModelInstance::SelectionHandler>(Marshal::GetFunctionPointerForDelegate(selectionHandler).ToPointer()) : NULL;
 		return gcnew SceneModelInstance(sceneRef->createModelInstance(modelID, marshalColor(instanceColorMask), transform, selectionHandlerMarshaled));
 	}	
+
+	DxVisualizer::IScene::IConstrainedScaleInstance^ DxVisualizer::Scene::createConstrainedScaleInstance(unsigned int modelID, Media::Color instanceColorMask, Media3D::Vector3D^ translationInit, Media3D::Vector3D^ scaleFactorInit, Media3D::Vector3D^ rotAxInit, float rotAngInit, DxVisualizer::IScene::ISceneModelInstance::SelectionHandler^ selectionHandler) {
+		DxRenderer::Transform transform = { marshalVector3D(translationInit), marshalVector3D(scaleFactorInit), marshalVector3D(rotAxInit), rotAngInit };
+		DxRenderer::Scene::SceneModelInstance::SelectionHandler selectionHandlerMarshaled =
+			selectionHandler ? static_cast<DxRenderer::Scene::SceneModelInstance::SelectionHandler>(Marshal::GetFunctionPointerForDelegate(selectionHandler).ToPointer()) : NULL;
+		return gcnew ConstrainedScaleInstance(sceneRef->createConstrainedScaleInstance(modelID, marshalColor(instanceColorMask), transform, selectionHandlerMarshaled));
+	}
 
 	void DxVisualizer::Scene::transformGrpTranslate(Media3D::Vector3D^ translation, IScene::TransformReferenceFrame referenceFrame)
 	{

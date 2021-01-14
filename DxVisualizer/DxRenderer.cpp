@@ -25,7 +25,7 @@ namespace CoriumDirectX {
         return 1.0f / sqrtf(XM_2PI * rho * rho) * expf(-(x * x + y * y) / (2 * rho * rho));
     }
 
-    inline std::array<float, 3> float3ToArr(XMFLOAT3 const& float3) {
+    inline std::array<float, 3> float3ToArr(DirectX::XMFLOAT3 const& float3) {
         return std::array<float, 3>{float3.x, float3.y, float3.z};
     }
 
@@ -1559,6 +1559,59 @@ namespace CoriumDirectX {
 
         return false;
     }
+    
+    inline float constraintToFactorCoord(DxRenderer::Scene::ConstrainedScaleInstance::Constraint constraint, float globalScaleFactorCoord, float scaleFactorCoordMaxOverMaxDimGrp) {
+        return constraint == DxRenderer::Scene::ConstrainedScaleInstance::Constraint::None ? 1.0f : 
+               constraint == DxRenderer::Scene::ConstrainedScaleInstance::Constraint::Ignore ? 1.0f / globalScaleFactorCoord : 
+               scaleFactorCoordMaxOverMaxDimGrp / globalScaleFactorCoord;
+    }
+
+    void DxRenderer::Scene::ConstrainedScaleInstance::setDimsConstraints(Constraint xConstraint, Constraint yConstraint, Constraint zConstraint)
+    {
+        this->xConstraint = xConstraint;
+        this->yConstraint = yConstraint;
+        this->zConstraint = zConstraint;
+        recompWorldTransformat();
+    }
+
+    DxRenderer::Scene::ConstrainedScaleInstance::ConstrainedScaleInstance(Scene& scene, UINT modelID, CXMVECTOR instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler) :
+        SceneModelInstance(scene, modelID, instanceColorMask, transformInit, selectionHandler) {}    
+
+    void DxRenderer::Scene::ConstrainedScaleInstance::recompWorldTransformat()
+    {
+        if (parent)
+            worldTransformat = XMMatrixMultiply(localTransformat, parent->worldTransformat);
+        else
+            worldTransformat = localTransformat;
+
+        XMVECTOR globalScale, unusedRot, unusedTranslate;
+        if (parent)
+            XMMatrixDecompose(&globalScale, &unusedRot, &unusedTranslate, worldTransformat);
+        else
+            globalScale = scaleFactor;
+
+        XMFLOAT3 _globalScale;
+        XMStoreFloat3(&_globalScale, globalScale);
+        float scaleFactorCoordMaxOverMaxDimGrp = -(std::numeric_limits<float>::max)();
+        if (xConstraint == Constraint::MaxDimGrp)
+            scaleFactorCoordMaxOverMaxDimGrp = _globalScale.x;
+        if (yConstraint == Constraint::MaxDimGrp)
+            scaleFactorCoordMaxOverMaxDimGrp = _globalScale.y > scaleFactorCoordMaxOverMaxDimGrp ? _globalScale.y : scaleFactorCoordMaxOverMaxDimGrp;
+        if (zConstraint == Constraint::MaxDimGrp)
+            scaleFactorCoordMaxOverMaxDimGrp = _globalScale.z > scaleFactorCoordMaxOverMaxDimGrp ? _globalScale.z : scaleFactorCoordMaxOverMaxDimGrp;
+
+        XMMATRIX scaleRectifier = XMMatrixScaling(constraintToFactorCoord(xConstraint, _globalScale.x, scaleFactorCoordMaxOverMaxDimGrp),
+                                                  constraintToFactorCoord(yConstraint, _globalScale.y, scaleFactorCoordMaxOverMaxDimGrp),
+                                                  constraintToFactorCoord(zConstraint, _globalScale.z, scaleFactorCoordMaxOverMaxDimGrp));
+
+        worldTransformat = XMMatrixMultiply(scaleRectifier, worldTransformat);
+
+        for (SceneModelInstance* child : children)
+            child->recompWorldTransformat();
+
+        updateKdTreeNode();
+        updateBuffers();
+    }
 
     void DxRenderer::Scene::activate() {  
         if (renderer.activeScene)
@@ -1568,10 +1621,17 @@ namespace CoriumDirectX {
         loadVisibleInstancesDataToBuffers();
         renderer.activeScene = this;
     }
-
+    
     DxRenderer::Scene::SceneModelInstance* DxRenderer::Scene::createModelInstance(unsigned int modelID, DirectX::XMFLOAT4 const& instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler) {
         return new SceneModelInstance(*this, modelID, XMLoadFloat4(&instanceColorMask), transformInit, selectionHandler);
-    }   
+    }
+
+    
+    DxRenderer::Scene::ConstrainedScaleInstance* DxRenderer::Scene::createConstrainedScaleInstance(unsigned int modelID, DirectX::XMFLOAT4 const& instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler)
+    {
+        return new ConstrainedScaleInstance(*this, modelID, XMLoadFloat4(&instanceColorMask), transformInit, selectionHandler);
+    }
+    
 
     void DxRenderer::Scene::transformGrpTranslate(DirectX::XMFLOAT3 const& translation, TransformReferenceFrame referenceFrame) {
         transformGrpTranslateEXE(XMLoadFloat3(&translation), referenceFrame, TransformSrc::Outside);

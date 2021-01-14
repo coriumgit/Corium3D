@@ -367,9 +367,9 @@ namespace Corium3DGI
                 SceneModelInstanceM.EventHandlers eventHandlers = new SceneModelInstanceM.EventHandlers
                 {
                     onThisInstanceSelection = onSceneModelInstanceSelected,
-                    transformPanelTranslationEditHander = onTransformPanelTranslationEdited,
-                    transformPanelScaleEditHander = onTransformPanelScaleEdited,
-                    transformPanelRotEditHander = onTransformPanelRotEdited
+                    transformPanelTranslationEditHandler = onTransformPanelTranslationEdited,
+                    transformPanelScaleEditHandler = onTransformPanelScaleEdited,
+                    transformPanelRotEditHandler = onTransformPanelRotEdited
                 };
 
                 SelectedSceneModelInstance = draggedSceneModelInstance = SelectedSceneModel.addSceneModelInstance(
@@ -413,9 +413,9 @@ namespace Corium3DGI
         {            
             SceneModelInstanceM.EventHandlers eventHandlers = new SceneModelInstanceM.EventHandlers {
                 onThisInstanceSelection = onSceneModelInstanceSelected,
-                transformPanelTranslationEditHander = onTransformPanelTranslationEdited,
-                transformPanelScaleEditHander = onTransformPanelScaleEdited,
-                transformPanelRotEditHander = onTransformPanelRotEdited
+                transformPanelTranslationEditHandler = onTransformPanelTranslationEdited,
+                transformPanelScaleEditHandler = onTransformPanelScaleEdited,
+                transformPanelRotEditHandler = onTransformPanelRotEdited
             };
 
             SelectedSceneModelInstance = SelectedSceneModel.addSceneModelInstance(new Vector3D(0, 0, 0), new Vector3D(1, 1, 1), new Vector3D(1, 0, 0), 0, eventHandlers);            
@@ -427,31 +427,37 @@ namespace Corium3DGI
             SelectedSceneModelInstance = selectedSceneModelInstanceM;            
         }
 
+        // wpf -> dx
         private void onTransformPanelTranslationEdited(object sender, PropertyChangedEventArgs e)
         {
             SelectedScene.transformGrpSetTranslation(SelectedSceneModelInstance.Translate.Vector3DCpy, DxVisualizer.IScene.TransformReferenceFrame.World);
         }
 
+        // wpf -> dx
         private void onTransformPanelScaleEdited(object sender, PropertyChangedEventArgs e)
         {
             SelectedScene.transformGrpSetScale(SelectedSceneModelInstance.Scale.Vector3DCpy, DxVisualizer.IScene.TransformReferenceFrame.World);
         }
 
+        // wpf -> dx
         private void onTransformPanelRotEdited(object sender, PropertyChangedEventArgs e)
         {
             SelectedScene.transformGrpSetRotation(SelectedSceneModelInstance.RotQuat.Axis, SelectedSceneModelInstance.RotQuat.Angle, DxVisualizer.IScene.TransformReferenceFrame.World);            
         }
 
+        // dx -> wpf
         private void onTransformGrpTranslated(float x, float y, float z)
         {
             SelectedSceneModelInstance.translateDisplayedTranslation(x, y, z);            
         }
 
+        // dx -> wpf
         private void onTransformGrpScaled(float x, float y, float z)
         {
             SelectedSceneModelInstance.scaleDisplayedScale(x, y, z);
         }
 
+        // dx -> wpf
         private void onTransformGrpRotated(float axX, float axY, float axZ, float ang)
         {
             SelectedSceneModelInstance.rotateDisplayedRotation(axX, axY, axZ, ang);            

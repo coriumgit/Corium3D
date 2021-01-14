@@ -113,6 +113,11 @@ namespace Corium3DGI
             return iDxScene.createModelInstance(dxModelID, colorMask, translate, scale, rotAx, rotAng, selectionHandler);
         }
 
+        public DxVisualizer.IScene.IConstrainedScaleInstance createDxConstrainedScaleInstance(uint dxModelID, Color colorMask, Vector3D translate, Vector3D scale, Vector3D rotAx, float rotAng, DxVisualizer.IScene.ISceneModelInstance.SelectionHandler selectionHandler)
+        {
+            return iDxScene.createConstrainedScaleInstance(dxModelID, colorMask, translate, scale, rotAx, rotAng, selectionHandler);
+        }
+
         public void syncDxVisualsWithModelsUpdate()
         {
             //foreach (SceneModelM sceneModel in SceneModelMs)

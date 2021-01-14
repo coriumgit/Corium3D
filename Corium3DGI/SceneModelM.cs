@@ -218,6 +218,20 @@ namespace Corium3DGI
             removeColliderDxModelsFromTransformGrp();
 
             resetPosDxCapsuleHemispheres(capsule);
+
+            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
+            {
+                DxVisualizer.IScene.IConstrainedScaleInstance[] dxCapsuleModels = (DxVisualizer.IScene.IConstrainedScaleInstance[])instance.IDxSceneModelInstanceCollider3D;
+                dxCapsuleModels[0].setDimsConstraints(axisVec.X > 0.0f ? DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.Ignore : DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.MaxDimGrp,
+                                                      axisVec.Y > 0.0f ? DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.Ignore : DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.MaxDimGrp,
+                                                      axisVec.Z > 0.0f ? DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.Ignore : DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.MaxDimGrp);
+                dxCapsuleModels[1].setDimsConstraints(axisVec.X > 0.0f ? DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.None : DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.MaxDimGrp,
+                                                      axisVec.Y > 0.0f ? DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.None : DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.MaxDimGrp,
+                                                      axisVec.Z > 0.0f ? DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.None : DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.MaxDimGrp);
+                dxCapsuleModels[2].setDimsConstraints(axisVec.X > 0.0f ? DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.Ignore : DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.MaxDimGrp,
+                                                      axisVec.Y > 0.0f ? DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.Ignore : DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.MaxDimGrp,
+                                                      axisVec.Z > 0.0f ? DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.Ignore : DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.MaxDimGrp);
+            }            
         }
 
         private void onCollisionCapsuleHeightChanged(CollisionCapsule capsule)
@@ -275,7 +289,7 @@ namespace Corium3DGI
             SceneMRef.transformGrpSetTranslation(center - 0.5f * height * axisVec, DxVisualizer.IScene.TransformReferenceFrame.Local);
 
             foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-                instance.IDxSceneModelInstanceCollider3D[2].removeFromTransformGrp();
+                instance.IDxSceneModelInstanceCollider3D[2].removeFromTransformGrp();            
         }
 
         private void addColliderDxModelsToTransformGrp()

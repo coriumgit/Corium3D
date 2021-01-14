@@ -62,8 +62,19 @@ namespace CoriumDirectX {
                 void hide();
                 // retrun value: false if parent is a descendant of this SceneModelInstance, true otherwise				
                 bool assignParent(SceneModelInstance* parent);
-                void unparent();
+                void unparent();                
                 void release();
+
+            protected:
+                SceneModelInstance(Scene& scene, UINT modelID, DirectX::CXMVECTOR _instanceColorMask, Transform const& transformInit, SelectionHandler callbackHandlers);
+                ~SceneModelInstance();
+                virtual void recompWorldTransformat();
+
+                DirectX::XMVECTOR scaleFactor;
+                DirectX::XMVECTOR pos;
+                DirectX::XMVECTOR rot;
+                DirectX::XMMATRIX localTransformat;
+                DirectX::XMMATRIX worldTransformat;
 
             private:
                 class KDTreeDataNodeHolder;
@@ -71,12 +82,7 @@ namespace CoriumDirectX {
                 Scene& scene;
                 unsigned int modelID;
                 UINT instanceIdx;
-                DirectX::XMVECTOR instanceColorMask;
-                DirectX::XMVECTOR pos;
-                DirectX::XMVECTOR scaleFactor;
-                DirectX::XMVECTOR rot;                
-                DirectX::XMMATRIX localTransformat;
-                DirectX::XMMATRIX worldTransformat;
+                DirectX::XMVECTOR instanceColorMask;                
                 KDTreeDataNodeHolder& kdtreeDataNodeHolder;
                 SelectionHandler selectionHandler;
                 bool isShown = true;
@@ -86,9 +92,7 @@ namespace CoriumDirectX {
 
                 SceneModelInstance* parent = NULL;
                 std::list<SceneModelInstance*> children = std::list<SceneModelInstance*>();
-
-                SceneModelInstance(Scene& Scene, UINT modelID, DirectX::CXMVECTOR _instanceColorMask, Transform const& transformInit, SelectionHandler callbackHandlers);
-                ~SceneModelInstance();
+                
                 void addInstanceToKdtree();                
                 void translate(DirectX::CXMVECTOR translation, TransformReferenceFrame referenceFrame);
                 void setTranslation(DirectX::CXMVECTOR translation, TransformReferenceFrame referenceFrame);
@@ -105,20 +109,41 @@ namespace CoriumDirectX {
                 void loadInstanceTransformatToBuffer();
                 void unloadInstanceTransformatFromBuffer();
                 void updateInstanceTransformatInBuffer();
-                void updateBuffers();
-                void recompWorldTransformat();
+                void updateBuffers();                
                 void recompLocalTransformat();                
                 bool isInstanceDescendant(SceneModelInstance* instance);
             };            
 
+            
+            class ConstrainedScaleInstance : public DxRenderer::Scene::SceneModelInstance {
+            public:
+                friend Scene;
+
+                enum class Constraint {MaxDimGrp, FollowMaxDimGrp, Ignore, None};
+
+                void setDimsConstraints(Constraint xConstraint, Constraint yConstraint, Constraint zConstraint);
+                
+            private:
+                ConstrainedScaleInstance(Scene& scene, UINT modelID, DirectX::CXMVECTOR instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler);                                
+                ~ConstrainedScaleInstance() {}
+                void recompWorldTransformat() override;
+
+                //DirectX::XMMATRIX scaleRectifier = DirectX::XMMatrixIdentity();
+                Constraint xConstraint = Constraint::None;
+                Constraint yConstraint = Constraint::None;
+                Constraint zConstraint = Constraint::None;
+            };
+            
             struct TransformCallbackHandlers {			            
                 void(*translationHandler)(float x, float y, float z);
                 void(*scaleHandler)(float x, float y, float z);
                 void(*rotationHandler)(float axX, float axY, float axZ, float ang);
             };
+            
 
             void activate();
-            SceneModelInstance* createModelInstance(unsigned int modelID, DirectX::XMFLOAT4 const& instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler);            
+			SceneModelInstance* createModelInstance(unsigned int modelID, DirectX::XMFLOAT4 const& instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler);
+            ConstrainedScaleInstance* createConstrainedScaleInstance(unsigned int modelID, DirectX::XMFLOAT4 const& instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler);
             void transformGrpTranslate(DirectX::XMFLOAT3 const& translation, TransformReferenceFrame referenceFrame);
             void transformGrpSetTranslation(DirectX::XMFLOAT3 const& translation, TransformReferenceFrame referenceFrame);
             void transformGrpScale(DirectX::XMFLOAT3 const& scaleFactorQ, TransformReferenceFrame referenceFrame);

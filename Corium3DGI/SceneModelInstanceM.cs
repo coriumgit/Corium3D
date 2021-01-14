@@ -108,9 +108,9 @@ namespace Corium3DGI
         public struct EventHandlers
         {
             public OnThisInstanceSelection onThisInstanceSelection;
-            public PropertyChangedEventHandler transformPanelTranslationEditHander;
-            public PropertyChangedEventHandler transformPanelScaleEditHander;
-            public PropertyChangedEventHandler transformPanelRotEditHander;
+            public PropertyChangedEventHandler transformPanelTranslationEditHandler;
+            public PropertyChangedEventHandler transformPanelScaleEditHandler;
+            public PropertyChangedEventHandler transformPanelRotEditHandler;
         }
 
         protected SceneModelInstanceM(SceneModelM sceneModel, int instanceIdx, Vector3D translate, Vector3D scale, Vector3D rotAx, float rotAng, EventHandlers eventHandlers)
@@ -120,10 +120,10 @@ namespace Corium3DGI
             InstanceIdx = instanceIdx;            
             this.eventHandlers = eventHandlers;                        
             Translate = new ObservableVector3D(translate);
-            Translate.PropertyChanged += this.eventHandlers.transformPanelTranslationEditHander;
+            Translate.PropertyChanged += this.eventHandlers.transformPanelTranslationEditHandler;
             Translate.PropertyChanged += updateAssetDataTranslation;
             Scale = new ObservableVector3D(scale);
-            Scale.PropertyChanged += this.eventHandlers.transformPanelScaleEditHander;
+            Scale.PropertyChanged += this.eventHandlers.transformPanelScaleEditHandler;
             Scale.PropertyChanged += updateAssetDataScale;
             RotQuat = new Quaternion(rotAx, rotAng);
             RotEueler = new ObservableVector3D(RotQuat.toEuler());
@@ -136,13 +136,14 @@ namespace Corium3DGI
             iDxSceneModelInstance = sceneModel.SceneMRef.createDxModelInstance(sceneModel.ModelMRef.DxModelID, Color.FromArgb(0, 0, 0, 0), translate, scale, rotAx, rotAng, selectionHandler);
         }                        
 
+        // dx -> wpf
         public void setDisplayedTranslation(Vector3D translation)
         {
-            Translate.PropertyChanged -= eventHandlers.transformPanelTranslationEditHander;
+            Translate.PropertyChanged -= eventHandlers.transformPanelTranslationEditHandler;
             Translate.X = translation.X;
             Translate.Y = translation.Y;
             Translate.Z = translation.Z;
-            Translate.PropertyChanged += eventHandlers.transformPanelTranslationEditHander;
+            Translate.PropertyChanged += eventHandlers.transformPanelTranslationEditHandler;
             //onTranslatePropertyChanged(null, null);
             /*
             iDxSceneModelInstance.setTranslation(translation);
@@ -159,13 +160,14 @@ namespace Corium3DGI
             setDisplayedTranslation(Translate.Vector3DCpy + new Vector3D(x, y, z));
         }
 
+        // dx -> wpf
         public void setDisplayedScale(Vector3D scale)
         {
-            Scale.PropertyChanged -= eventHandlers.transformPanelScaleEditHander;
+            Scale.PropertyChanged -= eventHandlers.transformPanelScaleEditHandler;
             Scale.X = scale.X;
             Scale.Y = scale.Y;
             Scale.Z = scale.Z;
-            Scale.PropertyChanged += eventHandlers.transformPanelScaleEditHander;
+            Scale.PropertyChanged += eventHandlers.transformPanelScaleEditHandler;
             //onScalePropertyChanged(null, null);
             /*
             iDxSceneModelInstance.setScale(scale);
@@ -182,6 +184,7 @@ namespace Corium3DGI
             setDisplayedScale(Scale.Vector3DCpy + new Vector3D(x, y, z));            
         }
 
+        // dx -> wpf
         public void setDisplayedRotation(Quaternion rot)
         {                        
             Vector3D rotEuler = rot.toEuler();
@@ -253,10 +256,11 @@ namespace Corium3DGI
             eventHandlers.onThisInstanceSelection(this);
         }
 
+        // wpf -> dx (scale and translate go directly to event handlers given in SceneModelInstanceM ctor
         private void onInstanceRotated(object sender, PropertyChangedEventArgs e)
         {
             RotQuat = RotEueler.Vector3DCpy.asEulerToQuaternion();            
-            eventHandlers.transformPanelRotEditHander(sender, e);
+            eventHandlers.transformPanelRotEditHandler(sender, e);
         }
 
         private void updateAssetDataTranslation(object sender, PropertyChangedEventArgs e)

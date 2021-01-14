@@ -75,13 +75,17 @@ namespace Corium3DGI
         }
 
         public override DxVisualizer.IScene.ISceneModelInstance[] createDxInstances(SceneM sceneM, Vector3D instanceTranslate, Vector3D instanceScale, Vector3D instanceRotAx, float instanceRotAng)
-        {          
-            return new DxVisualizer.IScene.ISceneModelInstance[] {
-                sceneM.createDxModelInstance(dxModelID, Color.FromArgb(50, 0, 0, 255),
-                                             (Vector3D)center.Point3DCpy + instanceTranslate,
-                                             new Vector3D(radius * instanceScale.X, radius * instanceScale.Y, radius * instanceScale.Z),
-                                             instanceRotAx, instanceRotAng, null)
-            };          
+        {
+            DxVisualizer.IScene.IConstrainedScaleInstance sphereDxInstance = 
+                sceneM.createDxConstrainedScaleInstance(dxModelID, Color.FromArgb(50, 0, 0, 255),
+                                                        (Vector3D)center.Point3DCpy + instanceTranslate,
+                                                        new Vector3D(radius * instanceScale.X, radius * instanceScale.Y, radius * instanceScale.Z),
+                                                        instanceRotAx, instanceRotAng, null);
+            sphereDxInstance.setDimsConstraints(DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.MaxDimGrp,
+                                                DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.MaxDimGrp,
+                                                DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.MaxDimGrp);
+
+            return new DxVisualizer.IScene.ISceneModelInstance[] { sphereDxInstance };            
         }
 
         private void bindRadiusToScaleTransform(ScaleTransform3D scaleTransform3D)
