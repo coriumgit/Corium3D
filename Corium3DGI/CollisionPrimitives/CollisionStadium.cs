@@ -13,10 +13,10 @@ namespace Corium3DGI
 {
     public class CollisionStadium : CollisionPrimitive2D
     {
-        private const string NAME_CACHE = "Stadium";
-        
+        private const double EPSILON = 1E-6;
+        private const string NAME_CACHE = "Stadium";        
         private static Model3DCollection avatars3DCache;
-        private static List<uint> dxModelIds;
+        private static uint[] dxModelIDs;
 
         private ObservablePoint center;
         public ObservablePoint Center
@@ -49,8 +49,8 @@ namespace Corium3DGI
             }
         }
 
-        private double height;
-        public double Height
+        private float height;
+        public float Height
         {
             get { return height; }
 
@@ -80,8 +80,10 @@ namespace Corium3DGI
         }
 
         public static void Init(DxVisualizer dxVisualizer)
-        {            
-            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 255, G = 128, B = 0, A = 255 }, out avatars3DCache, dxVisualizer, out dxModelIds);
+        {
+            List<uint> dxModelIdContainer;
+            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 255, G = 128, B = 0, A = 255 }, out avatars3DCache, dxVisualizer, out dxModelIdContainer);
+            dxModelIDs = dxModelIdContainer.ToArray();
         }
 
         public CollisionStadium(Point center, Vector axisVec, float height, float radius) {
@@ -145,6 +147,36 @@ namespace Corium3DGI
                                    (TranslateTransform3D)((Transform3DGroup)Avatars3D[0].Transform).Children[2]);
         }
 
+        public override DxVisualizer.IScene.ISceneModelInstance[] createDxInstances(SceneM sceneM, Vector3D instanceTranslate, Vector3D instanceScale, Vector3D instanceRotAx, float instanceRotAng)
+        {
+            // TODO: extract rotation round Z and replace instanceRotAx with it
+            Quaternion quatProd = new Quaternion(instanceRotAx, instanceRotAng) * axisVecToQuat();
+            Vector3D center3D = new Vector3D(center.PointCpy.X, center.PointCpy.Y, 0.0f);
+            Vector3D axisVec3D = new Vector3D(axisVec.VectorCpy.X, axisVec.VectorCpy.Y, 0.0f);
+            DxVisualizer.IScene.IConstrainedTransform2dInstance cylinderDxInstance =
+                sceneM.createDxConstrained2dInstance(dxModelIDs[0], Color.FromArgb(50, 255, 255, 0),
+                                                     new Vector3D(center.PointCpy.X, center.PointCpy.Y, 0.0f) + instanceTranslate,
+                                                     new Vector3D(radius * instanceScale.X, height * instanceScale.Y, 1.0f),
+                                                     quatProd.Axis, (float)quatProd.Angle, null);
+            cylinderDxInstance.setScaleConstraints(DxVisualizer.IScene.TransformScaleConstraint.None, DxVisualizer.IScene.TransformScaleConstraint.None);
+
+            DxVisualizer.IScene.IConstrainedTransform2dInstance topSemicircleDxInstance =
+                sceneM.createDxConstrained2dInstance(dxModelIDs[1], Color.FromArgb(50, 255, 255, 0),
+                                                     center3D + (0.5f * height * axisVec3D) + instanceTranslate,
+                                                     new Vector3D(radius * instanceScale.X, radius * instanceScale.Y, 1.0f),
+                                                     quatProd.Axis, (float)quatProd.Angle, null);
+            topSemicircleDxInstance.setScaleConstraints(DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp, DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp);
+
+            DxVisualizer.IScene.IConstrainedTransform2dInstance bottomSemicircleDxInstance =
+                sceneM.createDxConstrained2dInstance(dxModelIDs[2], Color.FromArgb(50, 255, 255, 0),
+                                                     center3D - (0.5f * height * axisVec3D) + instanceTranslate,
+                                                     new Vector3D(radius * instanceScale.X, radius * instanceScale.Y, 1.0f),
+                                                     quatProd.Axis, (float)quatProd.Angle, null);
+            bottomSemicircleDxInstance.setScaleConstraints(DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp, DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp);
+            
+            return new DxVisualizer.IScene.ISceneModelInstance[] { cylinderDxInstance, topSemicircleDxInstance, bottomSemicircleDxInstance };
+        }
+
         public override CollisionPrimitive clone()
         {
             return new CollisionStadium(this);
@@ -161,10 +193,10 @@ namespace Corium3DGI
             TwoWayUpdateOnChangedBinder.bindObjsProperties(this, "Height", scaleTransform3DShaft, ScaleTransform3D.ScaleYProperty, null);
 
             bindRadiusToScaleTransform(scaleTransform3DDemiSphere1);
-            TwoWayUpdateOnChangedBinder.bindObjsProperties(this, "Height", translateTransform3DDemiSphere1PerHeight, TranslateTransform3D.OffsetYProperty, null);
+            TwoWayUpdateOnChangedBinder.bindObjsProperties(this, "Height", translateTransform3DDemiSphere1PerHeight, TranslateTransform3D.OffsetYProperty, new HalfTheDouble());
 
             bindRadiusToScaleTransform(scaleTransform3DDemiSphere2);
-            TwoWayUpdateOnChangedBinder.bindObjsProperties(this, "Height", translateTransform3DDemiSphere2PerHeight, TranslateTransform3D.OffsetYProperty, new MinusTheDouble());
+            TwoWayUpdateOnChangedBinder.bindObjsProperties(this, "Height", translateTransform3DDemiSphere2PerHeight, TranslateTransform3D.OffsetYProperty, new MinusHalfTheDouble());
 
             axisVec.PropertyChanged += OnAxisVecUpdated;
 
@@ -199,18 +231,33 @@ namespace Corium3DGI
                 rotationQuat = Quaternion.Identity;
 
             ((QuaternionRotation3D)((RotateTransform3D)((Transform3DGroup)Avatars3D[0].Transform).Children[1]).Rotation).Quaternion = rotationQuat;
-        }        
+        }
+
+        private Quaternion axisVecToQuat()
+        {
+            Vector3D axisVecCpy = new Vector3D(axisVec.VectorCpy.X, axisVec.VectorCpy.Y, 1.0f);
+            Vector3D upVector = new Vector3D(0, 1, 0);
+            Vector3D rotationAxis = Vector3D.CrossProduct(upVector, axisVecCpy);
+            if (rotationAxis.LengthSquared > EPSILON)
+            {
+                rotationAxis.Normalize();
+                double rotationAng = Math.Acos(Vector3D.DotProduct(upVector, axisVecCpy)) * 180.0 / Math.PI;
+                return new Quaternion(rotationAxis, rotationAng);
+            }
+            else
+                return Quaternion.Identity;
+        }
 
         private class HalfTheDouble : IValueConverter
         {
             public object Convert(object value, Type targetType, object paramter, System.Globalization.CultureInfo culture)
             {
-                return 0.5 * (double)value;
+                return 0.5 * (float)value;
             }
 
             public object ConvertBack(object value, Type targetType, object paramter, System.Globalization.CultureInfo culture)
             {
-                return 2 * (double)value;
+                return 2 * (float)value;
             }
         }
 
@@ -218,12 +265,12 @@ namespace Corium3DGI
         {
             public object Convert(object value, Type targetType, object paramter, System.Globalization.CultureInfo culture)
             {
-                return -0.5 * (double)value;
+                return -0.5 * (float)value;
             }
 
             public object ConvertBack(object value, Type targetType, object paramter, System.Globalization.CultureInfo culture)
             {
-                return -2 * (double)value;
+                return -2 * (float)value;
             }
         }
         
@@ -231,12 +278,12 @@ namespace Corium3DGI
         {
             public object Convert(object value, Type targetType, object paramter, System.Globalization.CultureInfo culture)
             {
-                return -(double)value;
+                return -(float)value;
             }
 
             public object ConvertBack(object value, Type targetType, object paramter, System.Globalization.CultureInfo culture)
             {
-                return -(double)value;
+                return -(float)value;
             }
         }
     }
