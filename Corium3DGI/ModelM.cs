@@ -15,7 +15,8 @@ namespace Corium3DGI
         private static readonly string RESOURCES_PATHS_XML_PATH = Path.Combine("Resources", "ResourcesPaths.xml");
         private static AssetsGen.ManagedImportedData nullModelData;
 
-        private DxVisualizer dxVisualizer;                                
+        private DxVisualizer dxVisualizer;
+        private bool isDisposed = false;
 
         public AssetsGen.IModelAssetGen ModelAssetGen { get; private set; }
 
@@ -124,7 +125,7 @@ namespace Corium3DGI
                 if (collisionPrimitive2DSelected != value)
                 {
                     collisionPrimitive2DSelected = value;
-                    collisionPrimitive3DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
+                    collisionPrimitive2DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
                     CollisionPrimitive2dChanged?.Invoke();              
                     OnPropertyChanged("CollisionPrimitive2DSelected");
                 }
@@ -156,6 +157,25 @@ namespace Corium3DGI
         public delegate void OnCollisionPrimitive2dChanged();        
         public event OnCollisionPrimitive2dChanged CollisionPrimitive2dChanged;
 
+        public delegate void OnCollisionRectCenterChanged(Vector center);
+        public event OnCollisionRectCenterChanged CollisionRectCenterChanged;
+        public delegate void OnCollisionRectScaleChanged(Vector ceneter);
+        public event OnCollisionRectScaleChanged CollisionRectScaleChanged;
+        
+        public delegate void OnCollisionCircleCenterChanged(Vector center);
+        public event OnCollisionCircleCenterChanged CollisionCircleCenterChanged;
+        public delegate void OnCollisionCircleRadiusChanged(float radius);
+        public event OnCollisionCircleRadiusChanged CollisionCircleRadiusChanged;
+        
+        public delegate void OnCollisionStadiumCenterChanged(CollisionStadium stadium);
+        public event OnCollisionStadiumCenterChanged CollisionStadiumCenterChanged;
+        public delegate void OnCollisionStadiumAxisVecChanged(CollisionStadium stadium);
+        public event OnCollisionStadiumAxisVecChanged CollisionStadiumAxisVecChanged;
+        public delegate void OnCollisionStadiumHeightChanged(CollisionStadium stadium);
+        public event OnCollisionStadiumHeightChanged CollisionStadiumHeightChanged;
+        public delegate void OnCollisionStadiumRadiusChanged(CollisionStadium stadium);
+        public event OnCollisionStadiumRadiusChanged CollisionStadiumRadiusChanged;
+        
         static ModelM()
         {
             string nullModelAvatarPath = XDocument.Load(RESOURCES_PATHS_XML_PATH).Root.Element("NullModelAvatar").Value;
@@ -204,14 +224,28 @@ namespace Corium3DGI
             collisionPrimitives3DCache.Add(collisionCapsule);            
 
             collisionPrimitive3DSelected = collisionPrimitives3DCache[0];
-
+            
             collisionPrimitives2DCache.Add(new CollisionPrimitive2D());
-            collisionPrimitives2DCache.Add(new CollisionRect(new Point(modelData.boundingBoxCenter.X, modelData.boundingBoxCenter.Y), new Point(modelData.boundingBoxScale.X, modelData.boundingBoxScale.Y)));
-            collisionPrimitives2DCache.Add(new CollisionCircle(new Point(modelData.boundingSphereCenter.X, modelData.boundingSphereCenter.Y), modelData.boundingSphereRadius));
-            collisionPrimitives2DCache.Add(new CollisionStadium(new Point(modelData.boundingCapsuleCenter.X, modelData.boundingCapsuleCenter.Y),
-                                                                new Vector(modelData.boundingCapsuleAxisVec.X, modelData.boundingCapsuleAxisVec.Y),
-                                                                modelData.boundingCapsuleHeight,
-                                                                modelData.boundingCapsuleRadius));
+
+            CollisionRect collisionRect = new CollisionRect(new Point(modelData.boundingBoxCenter.X, modelData.boundingBoxCenter.Y), new Point(modelData.boundingBoxScale.X, modelData.boundingBoxScale.Y));
+            collisionRect.Center.PropertyChanged += onCollisionRectCenterChanged;
+            collisionRect.Scale.PropertyChanged += onCollisionRectScaleChanged;
+            collisionPrimitives2DCache.Add(collisionRect);
+
+            CollisionCircle collisionCircle = new CollisionCircle(new Point(modelData.boundingSphereCenter.X, modelData.boundingSphereCenter.Y), modelData.boundingSphereRadius);
+            collisionCircle.Center.PropertyChanged += onCollisionCircleCenterChanged;
+            collisionCircle.PropertyChanged += onCollisionCircleChanged;
+            collisionPrimitives2DCache.Add(collisionCircle);
+
+            CollisionStadium collisionStadium = new CollisionStadium(new Point(modelData.boundingCapsuleCenter.X, modelData.boundingCapsuleCenter.Y),
+                                                                     new Vector(0.0f, 1.0f),
+                                                                     modelData.boundingCapsuleHeight,
+                                                                     modelData.boundingCapsuleRadius);
+            collisionStadium.Center.PropertyChanged += onCollisionStadiumCenterChanged;
+            collisionStadium.AxisVec.PropertyChanged += onCollisionStadiumAxisVecChanged;
+            collisionStadium.PropertyChanged += onCollisionStadiumChanged;            
+            collisionPrimitives2DCache.Add(collisionStadium);
+
             collisionPrimitive2DSelected = collisionPrimitives2DCache[0];
         }         
 
@@ -245,7 +279,7 @@ namespace Corium3DGI
         {
             CollisionCapsuleAxisVecChanged?.Invoke((CollisionCapsule)collisionPrimitive3DSelected);
         }
-
+        
         private void onCollisionCapsuleChanged(object collisionCapsule, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == "Height")
@@ -254,10 +288,54 @@ namespace Corium3DGI
                 CollisionCapsuleRadiusChanged?.Invoke((CollisionCapsule)collisionCapsule);
         }
 
+        private void onCollisionRectCenterChanged(object center, PropertyChangedEventArgs e)
+        {
+            CollisionRectCenterChanged?.Invoke((Vector)((Utils.ObservablePoint)center).PointCpy);
+        }
+
+        private void onCollisionRectScaleChanged(object scale, PropertyChangedEventArgs e)
+        {
+            CollisionRectScaleChanged?.Invoke((Vector)((Utils.ObservablePoint)scale).PointCpy);
+        }
+
+        private void onCollisionCircleCenterChanged(object center, PropertyChangedEventArgs e)
+        {
+            CollisionCircleCenterChanged?.Invoke((Vector)((Utils.ObservablePoint)center).PointCpy);
+        }
+
+        private void onCollisionCircleChanged(object collisionCircle, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "Radius")
+                CollisionCircleRadiusChanged?.Invoke(((CollisionCircle)collisionCircle).Radius);
+        }
+
+        private void onCollisionStadiumCenterChanged(object center, PropertyChangedEventArgs e)
+        {
+            CollisionStadiumCenterChanged?.Invoke((CollisionStadium)collisionPrimitive2DSelected);
+        }
+
+        private void onCollisionStadiumAxisVecChanged(object axisVec, PropertyChangedEventArgs e)
+        {
+            CollisionStadiumAxisVecChanged?.Invoke((CollisionStadium)collisionPrimitive2DSelected);
+        }
+
+        private void onCollisionStadiumChanged(object collisionStadium, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "Height")
+                CollisionStadiumHeightChanged?.Invoke((CollisionStadium)collisionStadium);
+            else if (e.PropertyName == "Radius")
+                CollisionStadiumRadiusChanged?.Invoke((CollisionStadium)collisionStadium);
+        }
+
         virtual public void Dispose()
         {
+            if (isDisposed)
+                return;
+
             dxVisualizer.removeModel(DxModelID);
-            ModelAssetGen.Dispose();            
+            ModelAssetGen.Dispose();
+
+            isDisposed = true;
         }
     }
 }

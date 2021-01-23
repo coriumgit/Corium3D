@@ -49,7 +49,7 @@ namespace Corium3DGI
         public delegate void OnTransform(Point3D center, float radius);
         public static void Init(DxVisualizer dxVisualizer)
         {
-            List<uint> dxModelIdContainer = new List<uint>(1);
+            List<uint> dxModelIdContainer;
             cacheAvatarsAssets(NAME_CACHE, new Color() { R = 0, G = 0, B = 255, A = 255 }, out avatars3DCache, dxVisualizer, out dxModelIdContainer);
             dxModelID = dxModelIdContainer[0];
         }
@@ -76,14 +76,14 @@ namespace Corium3DGI
 
         public override DxVisualizer.IScene.ISceneModelInstance[] createDxInstances(SceneM sceneM, Vector3D instanceTranslate, Vector3D instanceScale, Vector3D instanceRotAx, float instanceRotAng)
         {
-            DxVisualizer.IScene.IConstrainedScaleInstance sphereDxInstance = 
-                sceneM.createDxConstrainedScaleInstance(dxModelID, Color.FromArgb(50, 0, 0, 255),
+            DxVisualizer.IScene.IConstrainedTransformInstance sphereDxInstance = 
+                sceneM.createDxConstrainedTransformInstance(dxModelID, Color.FromArgb(50, 0, 0, 255),
                                                         (Vector3D)center.Point3DCpy + instanceTranslate,
                                                         new Vector3D(radius * instanceScale.X, radius * instanceScale.Y, radius * instanceScale.Z),
                                                         instanceRotAx, instanceRotAng, null);
-            sphereDxInstance.setDimsConstraints(DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.MaxDimGrp,
-                                                DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.MaxDimGrp,
-                                                DxVisualizer.IScene.IConstrainedScaleInstance.Constraint.MaxDimGrp);
+            sphereDxInstance.setScaleConstraints(DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp,
+                                                DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp,
+                                                DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp);
 
             return new DxVisualizer.IScene.ISceneModelInstance[] { sphereDxInstance };            
         }

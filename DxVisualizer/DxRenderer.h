@@ -113,37 +113,58 @@ namespace CoriumDirectX {
                 void recompLocalTransformat();                
                 bool isInstanceDescendant(SceneModelInstance* instance);
             };            
-
             
-            class ConstrainedScaleInstance : public DxRenderer::Scene::SceneModelInstance {
+            enum class TransformScaleConstraint { MaxDimGrp, FollowMaxDimGrp, Ignore, None };
+            enum class TransformRotConstraint { Ignore, None };
+
+            class ConstrainedTransformInstance : public DxRenderer::Scene::SceneModelInstance {
             public:
-                friend Scene;
-
-                enum class Constraint {MaxDimGrp, FollowMaxDimGrp, Ignore, None};
-
-                void setDimsConstraints(Constraint xConstraint, Constraint yConstraint, Constraint zConstraint);
+                friend Scene;                
                 
+                void setScaleConstraints(TransformScaleConstraint xScaleConstraint, TransformScaleConstraint yScaleConstraint, TransformScaleConstraint zScaleConstraint);
+                void setRotConstraints(TransformRotConstraint rotConstraint);
+                //void setRotConstraints(TransformRotConstraint xRotConstraint, TransformRotConstraint yRotConstraint, TransformRotConstraint zRotConstraint);                
+
             private:
-                ConstrainedScaleInstance(Scene& scene, UINT modelID, DirectX::CXMVECTOR instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler);                                
-                ~ConstrainedScaleInstance() {}
+                ConstrainedTransformInstance(Scene& scene, UINT modelID, DirectX::CXMVECTOR instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler);                                
+                ~ConstrainedTransformInstance() {}
                 void recompWorldTransformat() override;
 
-                //DirectX::XMMATRIX scaleRectifier = DirectX::XMMatrixIdentity();
-                Constraint xConstraint = Constraint::None;
-                Constraint yConstraint = Constraint::None;
-                Constraint zConstraint = Constraint::None;
+                
+                TransformScaleConstraint xScaleConstraint = TransformScaleConstraint::None;
+                TransformScaleConstraint yScaleConstraint = TransformScaleConstraint::None;
+                TransformScaleConstraint zScaleConstraint = TransformScaleConstraint::None;
+                TransformRotConstraint rotConstraint = TransformRotConstraint::None;
+                //TransformRotConstraint xRotConstraint = TransformRotConstraint::None;
+                //TransformRotConstraint yRotConstraint = TransformRotConstraint::None;
+                //TransformRotConstraint zRotConstraint = TransformRotConstraint::None;
             };
             
+            class ConstrainedTransform2dInstance : public DxRenderer::Scene::SceneModelInstance {
+            public:
+                friend Scene;                
+
+                void setScaleConstraints(TransformScaleConstraint xScaleConstraint, TransformScaleConstraint yScaleConstraint);                
+
+            private:
+                ConstrainedTransform2dInstance(Scene& scene, UINT modelID, DirectX::CXMVECTOR instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler);
+                ~ConstrainedTransform2dInstance() {}
+                void recompWorldTransformat() override;
+
+                TransformScaleConstraint xScaleConstraint = TransformScaleConstraint::None;
+                TransformScaleConstraint yScaleConstraint = TransformScaleConstraint::None;                
+            };
+
             struct TransformCallbackHandlers {			            
                 void(*translationHandler)(float x, float y, float z);
                 void(*scaleHandler)(float x, float y, float z);
                 void(*rotationHandler)(float axX, float axY, float axZ, float ang);
             };
             
-
             void activate();
 			SceneModelInstance* createModelInstance(unsigned int modelID, DirectX::XMFLOAT4 const& instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler);
-            ConstrainedScaleInstance* createConstrainedScaleInstance(unsigned int modelID, DirectX::XMFLOAT4 const& instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler);
+            ConstrainedTransformInstance* createConstrainedTransformInstance(unsigned int modelID, DirectX::XMFLOAT4 const& instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler);
+            ConstrainedTransform2dInstance* createConstrainedTransform2dInstance(unsigned int modelID, DirectX::XMFLOAT4 const& instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler);
             void transformGrpTranslate(DirectX::XMFLOAT3 const& translation, TransformReferenceFrame referenceFrame);
             void transformGrpSetTranslation(DirectX::XMFLOAT3 const& translation, TransformReferenceFrame referenceFrame);
             void transformGrpScale(DirectX::XMFLOAT3 const& scaleFactorQ, TransformReferenceFrame referenceFrame);

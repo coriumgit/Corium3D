@@ -16,6 +16,7 @@ namespace Corium3DGI
         private DxVisualizer.IScene.ISceneModelInstance.SelectionHandler selectionHandler;
         private AssetsGen.ISceneAssetGen.ISceneModelData.ISceneModelInstanceData sceneModelInstanceAssetData;
         private DxVisualizer.IScene.ISceneModelInstance iDxSceneModelInstance;
+        private bool isDisposed = false;
 
         private DxVisualizer.IScene.ISceneModelInstance[] iDxSceneModelInstanceCollider3D = null;
         public DxVisualizer.IScene.ISceneModelInstance[] IDxSceneModelInstanceCollider3D
@@ -23,11 +24,7 @@ namespace Corium3DGI
             get { return iDxSceneModelInstanceCollider3D; }
             set
             {
-                if (iDxSceneModelInstanceCollider3D != null)
-                {
-                    foreach (DxVisualizer.IScene.ISceneModelInstance instance in iDxSceneModelInstanceCollider3D)
-                        instance.Dispose();
-                }
+                disposeDxSceneModelInstanceCollider3D();
 
                 iDxSceneModelInstanceCollider3D = value;
 
@@ -39,17 +36,13 @@ namespace Corium3DGI
             }
         }
 
-        private List<DxVisualizer.IScene.ISceneModelInstance> iDxSceneModelInstanceCollider2D = null;
-        public List<DxVisualizer.IScene.ISceneModelInstance> IDxSceneModelInstanceCollider2D
+        private DxVisualizer.IScene.ISceneModelInstance[] iDxSceneModelInstanceCollider2D = null;
+        public DxVisualizer.IScene.ISceneModelInstance[] IDxSceneModelInstanceCollider2D
         {
             get { return iDxSceneModelInstanceCollider2D; }
             set
             {
-                if (iDxSceneModelInstanceCollider2D != null)
-                {
-                    foreach (DxVisualizer.IScene.ISceneModelInstance instance in iDxSceneModelInstanceCollider2D)
-                        instance.Dispose();
-                }
+                disposeDxSceneModelInstanceCollider2D();
 
                 iDxSceneModelInstanceCollider2D = value;
 
@@ -226,9 +219,34 @@ namespace Corium3DGI
         }        
 
         public void Dispose()
-        {                       
+        {
+            if (isDisposed)
+                return;
+
             sceneModelInstanceAssetData.Dispose();
-            iDxSceneModelInstance.Dispose();            
+            iDxSceneModelInstance.Dispose();
+            disposeDxSceneModelInstanceCollider3D();
+            disposeDxSceneModelInstanceCollider2D();
+
+            isDisposed = true;
+        }
+
+        public void disposeDxSceneModelInstanceCollider3D()
+        {
+            if (iDxSceneModelInstanceCollider3D == null)
+                return;
+
+            foreach (DxVisualizer.IScene.ISceneModelInstance instance in iDxSceneModelInstanceCollider3D)
+                instance.Dispose();
+        }
+
+        public void disposeDxSceneModelInstanceCollider2D()
+        {
+            if (iDxSceneModelInstanceCollider2D == null)
+                return;
+
+            foreach (DxVisualizer.IScene.ISceneModelInstance instance in iDxSceneModelInstanceCollider2D)
+                instance.Dispose();
         }
 
         public void highlight()
@@ -256,7 +274,7 @@ namespace Corium3DGI
             eventHandlers.onThisInstanceSelection(this);
         }
 
-        // wpf -> dx (scale and translate go directly to event handlers given in SceneModelInstanceM ctor
+        // wpf -> dx (translate and scale go directly to event handlers given in SceneModelInstanceM ctor
         private void onInstanceRotated(object sender, PropertyChangedEventArgs e)
         {
             RotQuat = RotEueler.Vector3DCpy.asEulerToQuaternion();            

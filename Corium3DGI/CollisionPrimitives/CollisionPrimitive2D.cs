@@ -8,11 +8,6 @@ namespace Corium3DGI
 {
     public class CollisionPrimitive2D : CollisionPrimitive
     {
-        public virtual List<DxVisualizer.IScene.ISceneModelInstance> createDxInstances(SceneM sceneM, Vector instanceTranslate, Vector instanceScale, float instanceRotAng)
-        {
-            return null;
-        }
-
         public override void asssignPrimitiveDataInModelAssetGen(AssetsGen.IModelAssetGen modelAssetGen)
         {
             modelAssetGen.clearCollisionPrimitive2D();

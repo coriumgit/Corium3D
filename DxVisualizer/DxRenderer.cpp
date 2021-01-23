@@ -1383,10 +1383,8 @@ namespace CoriumDirectX {
         if (parent)
             parent->children.remove(this);
 
-        for (SceneModelInstance* child : children) {
-            child->parent = NULL;
-            child->release();
-        }
+        for (SceneModelInstance* child : children)
+            child->parent = NULL;                    
 
         // TODO: if (kdtreeDataNodeHolder)
         scene.kdtree->destroy(kdtreeDataNodeHolder);
@@ -1531,9 +1529,10 @@ namespace CoriumDirectX {
 
     // modelTransformat = XMMatrixAffineTransformation(scaleFactor, XMVectorZero(), rot, pos);
     void DxRenderer::Scene::SceneModelInstance::recompLocalTransformat() {
-        localTransformat = XMMatrixTranslationFromVector(pos);        
-        localTransformat = XMMatrixMultiply(XMMatrixRotationQuaternion(rot) , localTransformat);
-        localTransformat = XMMatrixMultiply(XMMatrixScalingFromVector(scaleFactor), localTransformat);   
+        localTransformat = XMMatrixScalingFromVector(scaleFactor);
+        localTransformat = XMMatrixMultiply(localTransformat, XMMatrixRotationQuaternion(rot));                
+        localTransformat = XMMatrixMultiply(localTransformat, XMMatrixTranslationFromVector(pos));
+
         recompWorldTransformat();
     }
 
@@ -1560,51 +1559,148 @@ namespace CoriumDirectX {
         return false;
     }
     
-    inline float constraintToFactorCoord(DxRenderer::Scene::ConstrainedScaleInstance::Constraint constraint, float globalScaleFactorCoord, float scaleFactorCoordMaxOverMaxDimGrp) {
-        return constraint == DxRenderer::Scene::ConstrainedScaleInstance::Constraint::None ? 1.0f : 
-               constraint == DxRenderer::Scene::ConstrainedScaleInstance::Constraint::Ignore ? 1.0f / globalScaleFactorCoord : 
+    inline float scaleConstraintToFactorCoord(DxRenderer::Scene::TransformScaleConstraint scaleConstraint, float globalScaleFactorCoord, float scaleFactorCoordMaxOverMaxDimGrp) {
+        return scaleConstraint == DxRenderer::Scene::TransformScaleConstraint::None ? 1.0f : 
+               scaleConstraint == DxRenderer::Scene::TransformScaleConstraint::Ignore ? 1.0f / globalScaleFactorCoord : 
                scaleFactorCoordMaxOverMaxDimGrp / globalScaleFactorCoord;
     }
 
-    void DxRenderer::Scene::ConstrainedScaleInstance::setDimsConstraints(Constraint xConstraint, Constraint yConstraint, Constraint zConstraint)
+    void DxRenderer::Scene::ConstrainedTransformInstance::setScaleConstraints(TransformScaleConstraint xScaleConstraint, TransformScaleConstraint yScaleConstraint, TransformScaleConstraint zScaleConstraint)
     {
-        this->xConstraint = xConstraint;
-        this->yConstraint = yConstraint;
-        this->zConstraint = zConstraint;
+        this->xScaleConstraint = xScaleConstraint;
+        this->yScaleConstraint = yScaleConstraint;
+        this->zScaleConstraint = zScaleConstraint;
         recompWorldTransformat();
     }
 
-    DxRenderer::Scene::ConstrainedScaleInstance::ConstrainedScaleInstance(Scene& scene, UINT modelID, CXMVECTOR instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler) :
+    void DxRenderer::Scene::ConstrainedTransformInstance::setRotConstraints(TransformRotConstraint rotConstraint)
+    {
+        this->rotConstraint = rotConstraint;        
+        recompWorldTransformat();
+    }
+
+    DxRenderer::Scene::ConstrainedTransformInstance::ConstrainedTransformInstance(Scene& scene, UINT modelID, CXMVECTOR instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler) :
         SceneModelInstance(scene, modelID, instanceColorMask, transformInit, selectionHandler) {}    
 
-    void DxRenderer::Scene::ConstrainedScaleInstance::recompWorldTransformat()
-    {
+    void DxRenderer::Scene::ConstrainedTransformInstance::recompWorldTransformat()
+    {         
         if (parent)
             worldTransformat = XMMatrixMultiply(localTransformat, parent->worldTransformat);
         else
-            worldTransformat = localTransformat;
+            worldTransformat = localTransformat;        
 
-        XMVECTOR globalScale, unusedRot, unusedTranslate;
+        XMVECTOR globalScale, globalRot, unusedTranslate;
         if (parent)
-            XMMatrixDecompose(&globalScale, &unusedRot, &unusedTranslate, worldTransformat);
-        else
+            XMMatrixDecompose(&globalScale, &globalRot, &unusedTranslate, worldTransformat);
+        else 
+        {
             globalScale = scaleFactor;
+            globalRot = rot;
+        }
 
         XMFLOAT3 _globalScale;
         XMStoreFloat3(&_globalScale, globalScale);
         float scaleFactorCoordMaxOverMaxDimGrp = -(std::numeric_limits<float>::max)();
-        if (xConstraint == Constraint::MaxDimGrp)
+        if (xScaleConstraint == TransformScaleConstraint::MaxDimGrp)
             scaleFactorCoordMaxOverMaxDimGrp = _globalScale.x;
-        if (yConstraint == Constraint::MaxDimGrp)
+        if (yScaleConstraint == TransformScaleConstraint::MaxDimGrp)
             scaleFactorCoordMaxOverMaxDimGrp = _globalScale.y > scaleFactorCoordMaxOverMaxDimGrp ? _globalScale.y : scaleFactorCoordMaxOverMaxDimGrp;
-        if (zConstraint == Constraint::MaxDimGrp)
+        if (zScaleConstraint == TransformScaleConstraint::MaxDimGrp)
             scaleFactorCoordMaxOverMaxDimGrp = _globalScale.z > scaleFactorCoordMaxOverMaxDimGrp ? _globalScale.z : scaleFactorCoordMaxOverMaxDimGrp;
 
-        XMMATRIX scaleRectifier = XMMatrixScaling(constraintToFactorCoord(xConstraint, _globalScale.x, scaleFactorCoordMaxOverMaxDimGrp),
-                                                  constraintToFactorCoord(yConstraint, _globalScale.y, scaleFactorCoordMaxOverMaxDimGrp),
-                                                  constraintToFactorCoord(zConstraint, _globalScale.z, scaleFactorCoordMaxOverMaxDimGrp));
+        XMMATRIX transformRectifier = XMMatrixScaling(scaleConstraintToFactorCoord(xScaleConstraint, _globalScale.x, scaleFactorCoordMaxOverMaxDimGrp),
+                                                      scaleConstraintToFactorCoord(yScaleConstraint, _globalScale.y, scaleFactorCoordMaxOverMaxDimGrp),
+                                                      scaleConstraintToFactorCoord(zScaleConstraint, _globalScale.z, scaleFactorCoordMaxOverMaxDimGrp));
+        
+        if (rotConstraint == TransformRotConstraint::Ignore) {
+            transformRectifier = XMMatrixMultiply(transformRectifier, XMMatrixScalingFromVector(scaleFactor));
+            transformRectifier = XMMatrixMultiply(transformRectifier, XMMatrixRotationQuaternion(XMQuaternionInverse(globalRot)));
+            transformRectifier = XMMatrixMultiply(transformRectifier, XMMatrixScalingFromVector(XMVectorReciprocal(scaleFactor)));
+        }                    
 
-        worldTransformat = XMMatrixMultiply(scaleRectifier, worldTransformat);
+        worldTransformat = XMMatrixMultiply(transformRectifier, worldTransformat);
+
+        for (SceneModelInstance* child : children)
+            child->recompWorldTransformat();
+
+        updateKdTreeNode();
+        updateBuffers();
+    }
+
+    void DxRenderer::Scene::ConstrainedTransform2dInstance::setScaleConstraints(TransformScaleConstraint xScaleConstraint, TransformScaleConstraint yScaleConstraint)
+    {
+        this->xScaleConstraint = xScaleConstraint;
+        this->yScaleConstraint = yScaleConstraint;
+        recompWorldTransformat();
+    }
+
+    DxRenderer::Scene::ConstrainedTransform2dInstance::ConstrainedTransform2dInstance(Scene& scene, UINT modelID, DirectX::CXMVECTOR instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler) :
+        SceneModelInstance(scene, modelID, instanceColorMask, transformInit, selectionHandler) {}
+
+    void DxRenderer::Scene::ConstrainedTransform2dInstance::recompWorldTransformat()
+    {
+        if (parent)
+        {           
+            XMVECTOR globalScale, globalRot, globalTranslate;        
+            XMMatrixDecompose(&globalScale, &globalRot, &globalTranslate, parent->worldTransformat);
+        
+            /*
+            XMMATRIX proj{ {1.0f, 0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f, 0.0f} , {0.0f, 0.0f, 0.0f, 0.0f} , {0.0f, 0.0f, XMVectorGetZ(globalTranslate), 1.0f} };
+            worldTransformat = XMMatrixMultiply(worldTransformat, proj);
+            XMMatrixDecompose(&globalScale, &globalRot, &globalTranslate, worldTransformat);
+
+            XMFLOAT3 _globalScale;
+            XMStoreFloat3(&_globalScale, XMVectorAbs(globalScale));
+            float scaleFactorCoordMaxOverMaxDimGrp = -(std::numeric_limits<float>::max)();
+            if (xScaleConstraint == TransformScaleConstraint::MaxDimGrp)
+                scaleFactorCoordMaxOverMaxDimGrp = _globalScale.x;
+            if (yScaleConstraint == TransformScaleConstraint::MaxDimGrp)
+                scaleFactorCoordMaxOverMaxDimGrp = _globalScale.y > scaleFactorCoordMaxOverMaxDimGrp ? _globalScale.y : scaleFactorCoordMaxOverMaxDimGrp;
+
+            XMMATRIX transformRectifier = XMMatrixScaling(scaleConstraintToFactorCoord(xScaleConstraint, _globalScale.x, scaleFactorCoordMaxOverMaxDimGrp),
+                                                          scaleConstraintToFactorCoord(yScaleConstraint, _globalScale.y, scaleFactorCoordMaxOverMaxDimGrp),
+                                                          0.0f);
+
+            worldTransformat = XMMatrixMultiply(transformRectifier, worldTransformat);
+
+            std::cout << "(" << _globalScale.x << ", " << _globalScale.y << ", " << _globalScale.z << ")" << std::endl;
+            
+
+            XMVECTOR posTransformed;
+            XMVECTOR posTransformedProj;
+            if (parent) {
+                posTransformedProj = posTransformed = XMVector3Transform(pos, parent->worldTransformat);
+                XMVectorSetZ(posTransformedProj, XMVectorGetZ(parent->pos));
+            }
+            else
+                posTransformedProj = posTransformed = pos;
+            */
+
+            XMFLOAT3 _globalScale;
+            XMStoreFloat3(&_globalScale, XMVectorAbs(XMVector3Rotate(globalScale, XMQuaternionInverse(rot))));
+            float scaleFactorCoordMaxOverMaxDimGrp = -(std::numeric_limits<float>::max)();
+            if (xScaleConstraint == TransformScaleConstraint::MaxDimGrp)
+                scaleFactorCoordMaxOverMaxDimGrp = _globalScale.x;
+            if (yScaleConstraint == TransformScaleConstraint::MaxDimGrp)
+                scaleFactorCoordMaxOverMaxDimGrp = _globalScale.y > scaleFactorCoordMaxOverMaxDimGrp ? _globalScale.y : scaleFactorCoordMaxOverMaxDimGrp;
+            XMMATRIX scaleRectifier = XMMatrixScaling(scaleConstraintToFactorCoord(xScaleConstraint, _globalScale.x, scaleFactorCoordMaxOverMaxDimGrp),
+                                                      scaleConstraintToFactorCoord(yScaleConstraint, _globalScale.y, scaleFactorCoordMaxOverMaxDimGrp),
+                                                      1.0f);
+
+            XMVECTOR xAxRotated = XMVector3Rotate(XMVectorSet(1.0f, 0.0f, 0.0f, 1.0f), globalRot);
+            float rotAngRoundZ = std::atan2(XMVectorGetY(xAxRotated), XMVectorGetX(xAxRotated));
+            XMVECTOR zAxRotated = XMVector3Rotate(XMVectorSet(0.0f, 0.0f, 1.0f, 1.0f), globalRot);
+            if (XMVectorGetZ(zAxRotated) < 0.0f)
+                rotAngRoundZ += XM_PI;
+            XMMATRIX xRotRoundZ = XMMatrixRotationNormal(XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), rotAngRoundZ);
+            
+            worldTransformat = XMMatrixMultiply(scaleRectifier, localTransformat);
+            worldTransformat = XMMatrixMultiply(worldTransformat, XMMatrixScalingFromVector(globalScale));
+            worldTransformat = XMMatrixMultiply(worldTransformat, xRotRoundZ);
+            worldTransformat = XMMatrixMultiply(worldTransformat, XMMatrixTranslationFromVector(globalTranslate));
+        }
+        else
+            worldTransformat = localTransformat;
 
         for (SceneModelInstance* child : children)
             child->recompWorldTransformat();
@@ -1622,16 +1718,20 @@ namespace CoriumDirectX {
         renderer.activeScene = this;
     }
     
-    DxRenderer::Scene::SceneModelInstance* DxRenderer::Scene::createModelInstance(unsigned int modelID, DirectX::XMFLOAT4 const& instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler) {
+    DxRenderer::Scene::SceneModelInstance* DxRenderer::Scene::createModelInstance(unsigned int modelID, DirectX::XMFLOAT4 const& instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler) 
+    {
         return new SceneModelInstance(*this, modelID, XMLoadFloat4(&instanceColorMask), transformInit, selectionHandler);
     }
-
     
-    DxRenderer::Scene::ConstrainedScaleInstance* DxRenderer::Scene::createConstrainedScaleInstance(unsigned int modelID, DirectX::XMFLOAT4 const& instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler)
+    DxRenderer::Scene::ConstrainedTransformInstance* DxRenderer::Scene::createConstrainedTransformInstance(unsigned int modelID, DirectX::XMFLOAT4 const& instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler)
     {
-        return new ConstrainedScaleInstance(*this, modelID, XMLoadFloat4(&instanceColorMask), transformInit, selectionHandler);
+        return new ConstrainedTransformInstance(*this, modelID, XMLoadFloat4(&instanceColorMask), transformInit, selectionHandler);
     }
     
+    DxRenderer::Scene::ConstrainedTransform2dInstance* DxRenderer::Scene::createConstrainedTransform2dInstance(unsigned int modelID, DirectX::XMFLOAT4 const& instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler)
+    {
+        return new ConstrainedTransform2dInstance(*this, modelID, XMLoadFloat4(&instanceColorMask), transformInit, selectionHandler);
+    }
 
     void DxRenderer::Scene::transformGrpTranslate(DirectX::XMFLOAT3 const& translation, TransformReferenceFrame referenceFrame) {
         transformGrpTranslateEXE(XMLoadFloat3(&translation), referenceFrame, TransformSrc::Outside);
@@ -2452,5 +2552,7 @@ namespace CoriumDirectX {
     inline void DxRenderer::Scene::SceneModelInstanceManipulator::recompTransformat() {
         transformat = XMMatrixTranspose(XMMatrixMultiply(XMMatrixScalingFromVector(scale), XMMatrixTranslationFromVector(pos)));
     }
+
+    
 }
     

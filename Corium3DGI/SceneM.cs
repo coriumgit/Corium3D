@@ -19,7 +19,7 @@ namespace Corium3DGI
         }
 
         private DxVisualizer.IScene.ISceneModelInstance gridDxInstance;
-
+        private bool isDisposed = false;
         public AssetsGen.ISceneAssetGen SceneAssetGen { get; private set; }
 
         private DxVisualizer.IScene iDxScene;
@@ -61,12 +61,17 @@ namespace Corium3DGI
 
         public void Dispose()
         {
+            if (isDisposed)
+                return;
+
             gridDxInstance.Dispose();
             foreach (SceneModelM sceneModel in SceneModelMs)
                 sceneModel.Dispose();
             iDxScene.Dispose();
 
             SceneAssetGen.Dispose();
+
+            isDisposed = true;
         }
 
         public SceneModelM addSceneModel(ModelM modelM)
@@ -89,8 +94,9 @@ namespace Corium3DGI
             {
                 if (sceneModel.ModelMRef == modelM)
                 {
-                    sceneModel.Dispose();
                     SceneModelMs.Remove(sceneModel);
+                    sceneModel.Dispose();
+                    
                     return;
                 }
             }
@@ -102,8 +108,9 @@ namespace Corium3DGI
             {
                 if (sceneModel == sceneModelM)
                 {
-                    sceneModel.Dispose();
                     SceneModelMs.Remove(sceneModel);
+                    sceneModel.Dispose();
+                    
                     return;
                 }
             }
@@ -113,9 +120,14 @@ namespace Corium3DGI
             return iDxScene.createModelInstance(dxModelID, colorMask, translate, scale, rotAx, rotAng, selectionHandler);
         }
 
-        public DxVisualizer.IScene.IConstrainedScaleInstance createDxConstrainedScaleInstance(uint dxModelID, Color colorMask, Vector3D translate, Vector3D scale, Vector3D rotAx, float rotAng, DxVisualizer.IScene.ISceneModelInstance.SelectionHandler selectionHandler)
+        public DxVisualizer.IScene.IConstrainedTransformInstance createDxConstrainedTransformInstance(uint dxModelID, Color colorMask, Vector3D translate, Vector3D scale, Vector3D rotAx, float rotAng, DxVisualizer.IScene.ISceneModelInstance.SelectionHandler selectionHandler)
         {
-            return iDxScene.createConstrainedScaleInstance(dxModelID, colorMask, translate, scale, rotAx, rotAng, selectionHandler);
+            return iDxScene.createConstrainedTransformInstance(dxModelID, colorMask, translate, scale, rotAx, rotAng, selectionHandler);
+        }
+
+        public DxVisualizer.IScene.IConstrainedTransform2dInstance createDxConstrained2dInstance(uint dxModelID, Color colorMask, Vector3D translate, Vector3D scale, Vector3D rotAx, float rotAng, DxVisualizer.IScene.ISceneModelInstance.SelectionHandler selectionHandler)
+        {
+            return iDxScene.createConstrainedTransform2dInstance(dxModelID, colorMask, translate, scale, rotAx, rotAng, selectionHandler);
         }
 
         public void syncDxVisualsWithModelsUpdate()

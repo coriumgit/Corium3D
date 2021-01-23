@@ -49,7 +49,7 @@ namespace Corium3DGI
 
         public static void Init(DxVisualizer dxVisualizer)
         {
-            List<uint> dxModelIdContainer = new List<uint>(1);
+            List<uint> dxModelIdContainer;
             cacheAvatarsAssets(NAME_CACHE, new Color() { R = 0, G = 255, B = 0, A = 255 }, out avatars3DCache, dxVisualizer, out dxModelIdContainer);
             dxModelID = dxModelIdContainer[0];
         }

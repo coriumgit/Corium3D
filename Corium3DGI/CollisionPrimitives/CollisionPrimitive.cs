@@ -47,7 +47,12 @@ namespace Corium3DGI
             return (CollisionPrimitive)this.MemberwiseClone();
         }
 
-        public abstract void asssignPrimitiveDataInModelAssetGen(AssetsGen.IModelAssetGen modelAssetGen);        
+        public abstract void asssignPrimitiveDataInModelAssetGen(AssetsGen.IModelAssetGen modelAssetGen);
+
+        public virtual DxVisualizer.IScene.ISceneModelInstance[] createDxInstances(SceneM sceneM, Vector3D instanceTranslate, Vector3D instanceScale, Vector3D instanceRotAx, float instanceRotAng)
+        {
+            return null;
+        }
 
         protected static void cacheAvatarsAssets(string primitiveName, Color primitiveColor, out Model3DCollection avatars3D, DxVisualizer dxVisualizer, out List<uint> dxModelIDs)
         {

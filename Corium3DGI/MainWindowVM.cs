@@ -329,7 +329,9 @@ namespace Corium3DGI
         }
 
         private void removeScene()
-        {        
+        {
+            SelectedSceneModelInstance = null;
+            SelectedSceneModel = null;
             SelectedScene.Dispose();
             SceneMs.Remove(SelectedScene);
         }

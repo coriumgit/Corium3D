@@ -14,7 +14,7 @@ namespace Corium3DGI
         private const string NAME_CACHE = "Rect";
         
         private static Model3DCollection avatars3DCache;
-        private static List<uint> dxModelIds;
+        private static uint dxModelID;
 
         private ObservablePoint center;
         public ObservablePoint Center
@@ -48,8 +48,10 @@ namespace Corium3DGI
         }
 
         public static void Init(DxVisualizer dxVisualizer)
-        {            
-            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 0, G = 196, B = 80, A = 255 }, out avatars3DCache, dxVisualizer, out dxModelIds);
+        {
+            List<uint> dxModelIdContainer;
+            cacheAvatarsAssets(NAME_CACHE, new Color() { R = 0, G = 196, B = 80, A = 255 }, out avatars3DCache, dxVisualizer, out dxModelIdContainer);
+            dxModelID = dxModelIdContainer[0];
         }
 
         public CollisionRect(Point center, Point scale) {
@@ -71,7 +73,17 @@ namespace Corium3DGI
 
             Center.X = center.X; Center.Y = center.Y;
             Scale.X = scale.X; Scale.Y = scale.Y;
-        }       
+        }
+
+        public override DxVisualizer.IScene.ISceneModelInstance[] createDxInstances(SceneM sceneM, Vector3D instanceTranslate, Vector3D instanceScale, Vector3D instanceRotAx, float instanceRotAng)
+        {
+            return new DxVisualizer.IScene.ISceneModelInstance[] {
+                sceneM.createDxConstrained2dInstance(dxModelID, Color.FromArgb(50, 0, 255, 0),
+                                                     new Vector3D(center.PointCpy.X, center.PointCpy.Y, 0.0f) + instanceTranslate,
+                                                     new Vector3D(scale.PointCpy.X * instanceScale.X, scale.PointCpy.Y * instanceScale.Y, 1.0f),
+                                                     instanceRotAx, instanceRotAng, null)
+            };
+        }
 
         private void bindScaleToScaleTransform(ScaleTransform3D scaleTransform)
         {
