@@ -74,13 +74,13 @@ namespace Corium3DGI
             Center.X = center.X; Center.Y = center.Y;
         }
 
-        public override DxVisualizer.IScene.ISceneModelInstance[] createDxInstances(SceneM sceneM, Vector3D instanceTranslate, Vector3D instanceScale, Vector3D instanceRotAx, float instanceRotAng)
+        public override DxVisualizer.IScene.ISceneModelInstance[] createDxInstances(SceneM sceneM)
         {
             DxVisualizer.IScene.IConstrainedTransform2dInstance circleDxInstance =
                 sceneM.createDxConstrained2dInstance(dxModelID, Color.FromArgb(50, 0, 0, 255),
-                                                     new Vector3D(center.PointCpy.X, center.PointCpy.Y, 0.0f) + instanceTranslate,
-                                                     new Vector3D(radius * instanceScale.X, radius * instanceScale.Y, 1.0f),
-                                                     instanceRotAx, instanceRotAng, null);
+                                                     new Vector3D(center.PointCpy.X, center.PointCpy.Y, 0.0f),
+                                                     new Vector3D(radius, radius, 1.0f),
+                                                     new Vector3D(0.0f, 0.0f, 1.0f), 0.0f, null);
             circleDxInstance.setScaleConstraints(DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp,
                                                  DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp);
 

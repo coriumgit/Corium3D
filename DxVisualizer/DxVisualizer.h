@@ -28,7 +28,7 @@ namespace CoriumDirectX {
 				void dim();
 				void show();
 				void hide();
-				void assignParent(ISceneModelInstance^ parent);
+				void assignParent(ISceneModelInstance^ parent, bool keepWorldTransform);
 				void unparent();
 			};								
 
@@ -115,7 +115,7 @@ namespace CoriumDirectX {
 				virtual void hide() = ISceneModelInstance::hide;				
 				virtual void addToTransformGrp() = ISceneModelInstance::addToTransformGrp;
 				virtual void removeFromTransformGrp() = ISceneModelInstance::removeFromTransformGrp;				
-				virtual void assignParent(IScene::ISceneModelInstance^ parent) = ISceneModelInstance::assignParent;
+				virtual void assignParent(IScene::ISceneModelInstance^ parent, bool keepWorldTransform) = ISceneModelInstance::assignParent;
 				virtual void unparent() = ISceneModelInstance::unparent;
 
 			protected:								

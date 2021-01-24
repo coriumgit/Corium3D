@@ -1351,19 +1351,23 @@ namespace CoriumDirectX {
         updateBuffers();
     }
 
-    bool DxRenderer::Scene::SceneModelInstance::assignParent(SceneModelInstance* parent)
+    bool DxRenderer::Scene::SceneModelInstance::assignParent(SceneModelInstance* parent, bool keepWorldTransform)
     {
         if (isInstanceDescendant(parent))
             return false;
         
         unparent();
-        this->parent = parent;
+        this->parent = parent;        
         parent->children.push_back(this);                
-        pos -= parent->pos;
-        scaleFactor = XMVectorDivide(scaleFactor, parent->scaleFactor); // TODO: Address division by zero
-        rot = XMQuaternionMultiply(rot, XMQuaternionInverse(parent->rot));
-        localTransformat = XMMatrixMultiply(worldTransformat, XMMatrixInverse(NULL, parent->worldTransformat));
-        
+        if (keepWorldTransform) {
+            pos -= parent->pos;
+            scaleFactor = XMVectorDivide(scaleFactor, parent->scaleFactor); // TODO: Address division by zero        
+            rot = XMQuaternionMultiply(rot, XMQuaternionInverse(parent->rot));
+            localTransformat = XMMatrixMultiply(worldTransformat, XMMatrixInverse(NULL, parent->worldTransformat));
+        }
+        else
+            recompWorldTransformat();
+
         return true;
     }
 
@@ -1877,6 +1881,9 @@ namespace CoriumDirectX {
             
         kdtree->initVisibleNodesIt();     
         while (SceneModelInstance* visibleInstance = kdtree->getNextVisibleNodeData()) {
+            if (!visibleInstance->isShown)
+                continue;
+
             ModelRenderData& modelRenderData = renderer.modelsRenderData[visibleInstance->modelID];
             if (!visibleInstance->isHighlighted) {
                 modelRenderData.visibleInstancesIdxs[modelRenderData.visibleInstancesNr] = visibleInstance->instanceIdx;

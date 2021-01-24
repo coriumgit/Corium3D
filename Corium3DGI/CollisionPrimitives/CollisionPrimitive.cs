@@ -49,7 +49,7 @@ namespace Corium3DGI
 
         public abstract void asssignPrimitiveDataInModelAssetGen(AssetsGen.IModelAssetGen modelAssetGen);
 
-        public virtual DxVisualizer.IScene.ISceneModelInstance[] createDxInstances(SceneM sceneM, Vector3D instanceTranslate, Vector3D instanceScale, Vector3D instanceRotAx, float instanceRotAng)
+        public virtual DxVisualizer.IScene.ISceneModelInstance[] createDxInstances(SceneM sceneM)
         {
             return null;
         }

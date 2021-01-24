@@ -114,9 +114,9 @@ namespace CoriumDirectX {
 		sceneModelInstanceRef->removeFromTransformGrp();
 	}
 
-	void DxVisualizer::Scene::SceneModelInstance::assignParent(IScene::ISceneModelInstance^ parent)
+	void DxVisualizer::Scene::SceneModelInstance::assignParent(IScene::ISceneModelInstance^ parent, bool keepWorldTransform)
 	{
-		sceneModelInstanceRef->assignParent(((SceneModelInstance^)parent)->sceneModelInstanceRef);
+		sceneModelInstanceRef->assignParent(((SceneModelInstance^)parent)->sceneModelInstanceRef, keepWorldTransform);
 	}
 
 	void DxVisualizer::Scene::SceneModelInstance::unparent() {

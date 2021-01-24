@@ -61,7 +61,7 @@ namespace CoriumDirectX {
                 void show();
                 void hide();
                 // retrun value: false if parent is a descendant of this SceneModelInstance, true otherwise				
-                bool assignParent(SceneModelInstance* parent);
+                bool assignParent(SceneModelInstance* parent, bool keepWorldTransform);
                 void unparent();                
                 void release();
 

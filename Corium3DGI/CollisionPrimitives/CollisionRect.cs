@@ -75,13 +75,13 @@ namespace Corium3DGI
             Scale.X = scale.X; Scale.Y = scale.Y;
         }
 
-        public override DxVisualizer.IScene.ISceneModelInstance[] createDxInstances(SceneM sceneM, Vector3D instanceTranslate, Vector3D instanceScale, Vector3D instanceRotAx, float instanceRotAng)
+        public override DxVisualizer.IScene.ISceneModelInstance[] createDxInstances(SceneM sceneM)
         {
             return new DxVisualizer.IScene.ISceneModelInstance[] {
                 sceneM.createDxConstrained2dInstance(dxModelID, Color.FromArgb(50, 0, 255, 0),
-                                                     new Vector3D(center.PointCpy.X, center.PointCpy.Y, 0.0f) + instanceTranslate,
-                                                     new Vector3D(scale.PointCpy.X * instanceScale.X, scale.PointCpy.Y * instanceScale.Y, 1.0f),
-                                                     instanceRotAx, instanceRotAng, null)
+                                                     new Vector3D(center.PointCpy.X, center.PointCpy.Y, 0.0f),
+                                                     new Vector3D(scale.PointCpy.X, scale.PointCpy.Y, 1.0f),
+                                                     new Vector3D(0.0f, 0.0f, 1.0f), 0.0f, null)
             };
         }
 

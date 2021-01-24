@@ -174,14 +174,12 @@ namespace Corium3DGI
 
         private void assignCollisionPrimitive3dDxInstances(SceneModelInstanceM instance)
         {
-            instance.IDxSceneModelInstanceCollider3D = ModelMRef.CollisionPrimitive3DSelected.createDxInstances(
-                SceneMRef, instance.Translate.Vector3DCpy, instance.Scale.Vector3DCpy, instance.RotQuat.Axis, (float)instance.RotQuat.Angle);
+            instance.IDxSceneModelInstanceCollider3D = ModelMRef.CollisionPrimitive3DSelected.createDxInstances(SceneMRef);
         }
 
         private void assignCollisionPrimitive2dDxInstances(SceneModelInstanceM instance)
         {
-            instance.IDxSceneModelInstanceCollider2D = ModelMRef.CollisionPrimitive2DSelected.createDxInstances(
-                SceneMRef, instance.Translate.Vector3DCpy, instance.Scale.Vector3DCpy, instance.RotQuat.Axis, (float)instance.RotQuat.Angle);
+            instance.IDxSceneModelInstanceCollider2D = ModelMRef.CollisionPrimitive2DSelected.createDxInstances(SceneMRef);
         }
 
         private void onCollisionBoxCenterChanged(Vector3D center)

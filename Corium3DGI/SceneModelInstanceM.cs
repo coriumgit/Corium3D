@@ -31,7 +31,11 @@ namespace Corium3DGI
                 if (iDxSceneModelInstanceCollider3D != null)
                 {
                     foreach (DxVisualizer.IScene.ISceneModelInstance instance in iDxSceneModelInstanceCollider3D)
-                        instance.assignParent(iDxSceneModelInstance);
+                    {
+                        instance.assignParent(iDxSceneModelInstance, false);
+                        if (!isShown)
+                            instance.hide();
+                    }
                 }
             }
         }
@@ -49,7 +53,11 @@ namespace Corium3DGI
                 if (iDxSceneModelInstanceCollider2D != null)
                 {
                     foreach (DxVisualizer.IScene.ISceneModelInstance instance in iDxSceneModelInstanceCollider2D)
-                        instance.assignParent(iDxSceneModelInstance);
+                    {
+                        instance.assignParent(iDxSceneModelInstance, false);
+                        if (!isShown)
+                            instance.hide();
+                    }
                 }
             }
         }
@@ -264,9 +272,33 @@ namespace Corium3DGI
             IsShown = !IsShown;
 
             if (IsShown)
+            {
                 iDxSceneModelInstance.show();
+                if (iDxSceneModelInstanceCollider3D != null)
+                {
+                    foreach (DxVisualizer.IScene.ISceneModelInstance instance in iDxSceneModelInstanceCollider3D)
+                        instance.show();
+                }
+                if (iDxSceneModelInstanceCollider2D != null)
+                {
+                    foreach (DxVisualizer.IScene.ISceneModelInstance instance in iDxSceneModelInstanceCollider2D)
+                        instance.show();
+                }
+            }
             else
-                iDxSceneModelInstance.hide();            
+            {
+                iDxSceneModelInstance.hide();
+                if (iDxSceneModelInstanceCollider3D != null)
+                {
+                    foreach (DxVisualizer.IScene.ISceneModelInstance instance in iDxSceneModelInstanceCollider3D)
+                        instance.hide();
+                }
+                if (iDxSceneModelInstanceCollider2D != null)
+                {
+                    foreach (DxVisualizer.IScene.ISceneModelInstance instance in iDxSceneModelInstanceCollider2D)
+                        instance.hide();
+                }
+            }
         }       
         
         private void onInstanceSelected(float x, float y)

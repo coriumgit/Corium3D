@@ -147,33 +147,32 @@ namespace Corium3DGI
                                    (TranslateTransform3D)((Transform3DGroup)Avatars3D[0].Transform).Children[2]);
         }
 
-        public override DxVisualizer.IScene.ISceneModelInstance[] createDxInstances(SceneM sceneM, Vector3D instanceTranslate, Vector3D instanceScale, Vector3D instanceRotAx, float instanceRotAng)
-        {
-            // TODO: extract rotation round Z and replace instanceRotAx with it
-            Quaternion quatProd = new Quaternion(instanceRotAx, instanceRotAng) * axisVecToQuat();
+        public override DxVisualizer.IScene.ISceneModelInstance[] createDxInstances(SceneM sceneM)
+        {            
+            Quaternion axisVecQuat = axisVecToQuat();
             Vector3D center3D = new Vector3D(center.PointCpy.X, center.PointCpy.Y, 0.0f);
             Vector3D axisVec3D = new Vector3D(axisVec.VectorCpy.X, axisVec.VectorCpy.Y, 0.0f);
             DxVisualizer.IScene.IConstrainedTransform2dInstance cylinderDxInstance =
                 sceneM.createDxConstrained2dInstance(dxModelIDs[0], Color.FromArgb(50, 255, 255, 0),
-                                                     new Vector3D(center.PointCpy.X, center.PointCpy.Y, 0.0f) + instanceTranslate,
-                                                     new Vector3D(radius * instanceScale.X, height * instanceScale.Y, 1.0f),
-                                                     quatProd.Axis, (float)quatProd.Angle, null);
+                                                     center3D,
+                                                     new Vector3D(radius, height, 1.0f),
+                                                     axisVecQuat.Axis, (float)axisVecQuat.Angle, null);
             cylinderDxInstance.setScaleConstraints(DxVisualizer.IScene.TransformScaleConstraint.None, 
                                                    DxVisualizer.IScene.TransformScaleConstraint.None);
 
             DxVisualizer.IScene.IConstrainedTransform2dInstance topSemicircleDxInstance =
                 sceneM.createDxConstrained2dInstance(dxModelIDs[1], Color.FromArgb(50, 255, 255, 0),
-                                                     center3D + (0.5f * height * axisVec3D) + instanceTranslate,
-                                                     new Vector3D(radius * instanceScale.X, radius * instanceScale.Y, 1.0f),
-                                                     quatProd.Axis, (float)quatProd.Angle, null);
+                                                     center3D + (0.5f * height * axisVec3D),
+                                                     new Vector3D(radius, radius, 1.0f),
+                                                     axisVecQuat.Axis, (float)axisVecQuat.Angle, null);
             topSemicircleDxInstance.setScaleConstraints(DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp, 
                                                         DxVisualizer.IScene.TransformScaleConstraint.FollowMaxDimGrp);
 
             DxVisualizer.IScene.IConstrainedTransform2dInstance bottomSemicircleDxInstance =
                 sceneM.createDxConstrained2dInstance(dxModelIDs[2], Color.FromArgb(50, 255, 255, 0),
-                                                     center3D - (0.5f * height * axisVec3D) + instanceTranslate,
-                                                     new Vector3D(radius * instanceScale.X, radius * instanceScale.Y, 1.0f),
-                                                     quatProd.Axis, (float)quatProd.Angle, null);
+                                                     center3D - (0.5f * height * axisVec3D),
+                                                     new Vector3D(radius, radius, 1.0f),
+                                                     axisVecQuat.Axis, (float)axisVecQuat.Angle, null);
             bottomSemicircleDxInstance.setScaleConstraints(DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp, 
                                                            DxVisualizer.IScene.TransformScaleConstraint.FollowMaxDimGrp);
             
@@ -238,7 +237,7 @@ namespace Corium3DGI
 
         private Quaternion axisVecToQuat()
         {
-            Vector3D axisVecCpy = new Vector3D(axisVec.VectorCpy.X, axisVec.VectorCpy.Y, 1.0f);
+            Vector3D axisVecCpy = new Vector3D(axisVec.VectorCpy.X, axisVec.VectorCpy.Y, 0.0f);
             Vector3D upVector = new Vector3D(0, 1, 0);
             Vector3D rotationAxis = Vector3D.CrossProduct(upVector, axisVecCpy);
             if (rotationAxis.LengthSquared > EPSILON)
