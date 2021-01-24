@@ -29,6 +29,7 @@ namespace Corium3DGI
         private DxVisualizer dxVisualizer;
         private UIElement modelViewportContainer;
         private UIElement sceneViewportContainer;
+        private CustomCtrls.ToggableIsEditableComboBox sceneNameTxtBox;
         private uint gridDxModelId;        
         private CameraAction cameraAction = CameraAction.REST;
         private bool isModelTransforming = false;
@@ -157,6 +158,7 @@ namespace Corium3DGI
         public ICommand GenAssetsFileCmd { get; }
         public ICommand AddSceneCmd { get; }
         public ICommand RenameSceneCmd { get; }
+        public ICommand OnSceneNameTextBoxLostFocus { get; }        
         public ICommand RemoveSceneCmd { get; }
         public ICommand AddSceneModelCmd { get; }
         public ICommand RemoveSceneModelCmd { get; }
@@ -194,6 +196,7 @@ namespace Corium3DGI
             GenAssetsFileCmd = new RelayCommand(p => genAssetsFile(), p => ModelMs.Count > 0);
             AddSceneCmd = new RelayCommand(p => addScene((KeyboardFocusChangedEventArgs)p));
             RenameSceneCmd = new RelayCommand(p => renameSceneCmd(), p => SelectedScene != null);
+            OnSceneNameTextBoxLostFocus = new RelayCommand(p => onSceneNameTextBoxLostFocus());
             RemoveSceneCmd = new RelayCommand(p => removeScene(), p => SelectedScene != null);
             AddSceneModelCmd = new RelayCommand(p => addSceneModel(), p => SelectedModel != null && SelectedScene != null);
             RemoveSceneModelCmd = new RelayCommand(p => removeSceneModel(), p => SelectedSceneModel != null);
@@ -230,6 +233,7 @@ namespace Corium3DGI
             ICorium3DGIView view = (ICorium3DGIView)sender;
             modelViewportContainer = view.ModelViewportContainer;
             sceneViewportContainer = view.SceneViewportContainer;
+            sceneNameTxtBox = view.SceneNameTxtBox;
         }
 
         private void onDxVisualizerRendererInit()
@@ -286,9 +290,10 @@ namespace Corium3DGI
             };
             
             if (dlg.ShowDialog() == true)
-            {
+            {                
                 foreach (string model3dDatalFilePath in dlg.FileNames)                                                                                          
-                    ModelMs.Add(new MeshModelM(model3dDatalFilePath, dxVisualizer));                
+                    ModelMs.Add(new MeshModelM(model3dDatalFilePath, dxVisualizer));
+                SelectedModel = ModelMs[ModelMs.Count - 1];
             }
         }
 
@@ -318,14 +323,20 @@ namespace Corium3DGI
 
         private void addScene(KeyboardFocusChangedEventArgs e)
         {
-            SceneM addedSceneM = new SceneM(((TextBox)e.Source).Text, dxVisualizer, gridDxModelId, transformGrpCallbackHandlers);            
+            SceneM addedSceneM = new SceneM(string.Empty, dxVisualizer, gridDxModelId, transformGrpCallbackHandlers);            
             SceneMs.Add(addedSceneM);            
-            SelectedScene = addedSceneM;                        
+            SelectedScene = addedSceneM;
+            renameSceneCmd();
         }
 
         private void renameSceneCmd()
         {
-            // TODO: implement this
+            sceneNameTxtBox.IsEditable = true;
+        }
+
+        public void onSceneNameTextBoxLostFocus()
+        {
+            SelectedScene.Name = sceneNameTxtBox.Text;
         }
 
         private void removeScene()

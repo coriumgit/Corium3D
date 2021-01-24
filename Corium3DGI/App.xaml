@@ -11,7 +11,9 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="CustomControls/CustomControlsResources.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-            
+
+            <SolidColorBrush x:Key="PanelBkgColor" Color="#FFF8F8F8"/>
+
             <ControlTemplate x:Key="HeaderTemplate" TargetType="Label">
                 <Border Background="LightGray">
                     <Label FontWeight="Bold" Padding="0" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" FontSize="{TemplateBinding FontSize}" Content="{TemplateBinding Content}"/>

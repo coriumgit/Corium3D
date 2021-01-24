@@ -8,6 +8,7 @@ namespace Corium3DGI
         DxVisualizer DxVisualizerRef { get; }
         UIElement ModelViewportContainer { get; }
         UIElement SceneViewportContainer { get; }
+        CustomCtrls.ToggableIsEditableComboBox SceneNameTxtBox { get; }
 
         event RoutedEventHandler UIElementsLoaded;
     }

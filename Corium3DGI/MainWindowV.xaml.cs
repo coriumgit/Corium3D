@@ -22,6 +22,7 @@ namespace Corium3DGI
         public DxVisualizer DxVisualizerRef { get; private set; }
         public UIElement ModelViewportContainer { get; private set; }
         public UIElement SceneViewportContainer { get; private set; }
+        public CustomCtrls.ToggableIsEditableComboBox SceneNameTxtBox { get; private set; }
 
         public event RoutedEventHandler UIElementsLoaded;
 
@@ -40,6 +41,7 @@ namespace Corium3DGI
         {
             ModelViewportContainer = modelViewportContainer;
             SceneViewportContainer = sceneViewportContainer;
+            SceneNameTxtBox = sceneComboBox;
             UIElementsLoaded.Invoke(this, e);
         }
 
@@ -106,11 +108,6 @@ namespace Corium3DGI
                 sceneViewport.RequestRender();
                 prevRenderTime = args.RenderingTime;
             }
-        }
-
-        private void SetScenesComboBoxEditable(object sender, RoutedEventArgs e)
-        {
-            sceneComboBox.IsEditable = true;            
         }
 
         private void OnSceneModelIsStaticGotFocus(object sender, RoutedEventArgs e)

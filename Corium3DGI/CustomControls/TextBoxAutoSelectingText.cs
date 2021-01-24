@@ -8,8 +8,11 @@ namespace Corium3DGI.CustomCtrls
     {  
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
+            bool wasPreviouslyFocused = IsFocused;
             base.OnMouseDown(e);
-            SelectAll();
+
+            if (!wasPreviouslyFocused)
+                SelectAll();
         }
     }
 }

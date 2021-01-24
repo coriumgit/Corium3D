@@ -16,7 +16,7 @@
         Title="MainWindow" WindowStartupLocation="CenterScreen" Width="1400" Height="800">
     <Window.Resources>
        <!-- <local:IsEnabledToTextColor x:Key="IsEnabledToTextColor"/>-->
-        <sys:String x:Key="scenesComboBoxOptionAddItemLabel">&lt;&lt;&lt;ADD SCENE&gt;&gt;&gt;</sys:String>
+        <sys:String x:Key="scenesComboBoxEnterNamePrompt">&lt;&lt;&lt;ENTER SCENE NAME&gt;&gt;&gt;</sys:String>
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -97,6 +97,7 @@
                                       DockPanel.Dock="Top" 
                                       ItemsSource="{Binding Path=ModelMs}"
                                       SelectedItem="{Binding Path=SelectedModel, Mode=TwoWay}"
+                                      Background="{StaticResource PanelBkgColor}"
                                       HeadersVisibility="Column"
                                       AutoGenerateColumns="False"                                                
                                       SelectionMode="Extended"                                                 
@@ -206,10 +207,12 @@
                                 <DataTemplate DataType="{x:Type local:CollisionPrimitive}"/>
 
                                 <DataTemplate DataType="{x:Type local:CollisionBox}">
-                                    <StackPanel Orientation="Vertical">
-                                        <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
-                                        <cc:LabeledContentControl Margin="2 0 2 0" Key="Scale:" Content="{Binding Path=Scale}"/>
-                                    </StackPanel>
+                                    <Border>
+                                        <StackPanel Orientation="Vertical">
+                                            <cc:LabeledContentControl Margin="2 5 2 5" Key="Center:" Content="{Binding Path=Center}"/>
+                                            <cc:LabeledContentControl Margin="2 0 2 0" Key="Scale:" Content="{Binding Path=Scale}"/>
+                                        </StackPanel>
+                                    </Border>
                                 </DataTemplate>
 
                                 <DataTemplate DataType="{x:Type local:CollisionSphere}">
@@ -282,8 +285,10 @@
                                             </ComboBox>
                                         </DockPanel>
                                     </Border>
-                                
-                                    <ContentPresenter DockPanel.Dock="Bottom" Content="{Binding Path=SelectedModel.CollisionPrimitive3DSelected}"/>
+
+                                    <Border Background="{StaticResource PanelBkgColor}">
+                                        <ContentPresenter DockPanel.Dock="Bottom" Content="{Binding Path=SelectedModel.CollisionPrimitive3DSelected}"/>
+                                    </Border>
                                 </DockPanel>
                             </Border>
                             <!-- collision primitive 2D pane -->
@@ -300,8 +305,10 @@
                                             </ComboBox>
                                         </DockPanel>
                                     </Border>
-                                
-                                    <ContentPresenter DockPanel.Dock="Bottom" Content="{Binding Path=SelectedModel.CollisionPrimitive2DSelected}"/>
+
+                                    <Border Background="{StaticResource PanelBkgColor}">
+                                        <ContentPresenter DockPanel.Dock="Bottom" Content="{Binding Path=SelectedModel.CollisionPrimitive2DSelected}"/>
+                                    </Border>
                                 </DockPanel>
                             </Border>
                         </Grid>
@@ -359,15 +366,15 @@
                                                         Source="Resources\Imgs\GreenPlus.png"
                                                         Width="20"
                                                         Height="20"
-                                                        Click="SetScenesComboBoxEditable"/>
-
+                                                        Command="{Binding Path=AddSceneCmd}"/>
+                                        
                                         <cc:ToggableIsEditableComboBox x:Name="sceneComboBox" 
                                                                        VerticalContentAlignment="Center" 
                                                                        IsTextSearchEnabled="False"
-                                                                       OnTextBoxLostFocus="{Binding Path=AddSceneCmd}"
+                                                                       OnTextBoxLostFocus="{Binding Path=OnSceneNameTextBoxLostFocus}"
                                                                        ItemsSource="{Binding Path=SceneMs}"
                                                                        SelectedItem="{Binding Path=SelectedScene}"
-                                                                       DefaultTextBoxText="&lt;&lt;&lt;ENTER NEW SCENE NAME&gt;&gt;&gt;">
+                                                                       DefaultTextBoxText="{StaticResource scenesComboBoxEnterNamePrompt}">
                                             <ComboBox.ItemTemplate>
                                                 <DataTemplate DataType="{x:Type local:SceneM}">
                                                     <Label Content="{Binding Path=Name}" Style="{StaticResource DetailPropertyHeader}"/>
@@ -381,6 +388,7 @@
                                 <DataGrid x:Name="sceneModelsTable"
                                           ItemsSource="{Binding Path=SelectedScene.SceneModelMs}"
                                           SelectedItem="{Binding Path=SelectedSceneModel, Mode=TwoWay}"
+                                          Background="{StaticResource PanelBkgColor}"
                                           HeadersVisibility="Column"
                                           AutoGenerateColumns="False"                                                
                                           SelectionMode="Single"                                                         
@@ -526,18 +534,20 @@
                                     </DockPanel>
                                 </Border>
 
-                                <ContentPresenter DockPanel.Dock="Bottom" Content="{Binding Path=SelectedSceneModelInstance}">
-                                    <ContentPresenter.Resources>
-                                        <DataTemplate DataType="{x:Type local:SceneModelInstanceM}">
-                                            <StackPanel Orientation="Vertical">
-                                                <cc:LabeledContentControl Margin="2 5 2 5" Key="Name:" Content="{Binding Path=Name}"/>
-                                                <cc:LabeledContentControl Margin="2 5 2 5" Key="Translate:" Content="{Binding Path=Translate}"/>
-                                                <cc:LabeledContentControl Margin="2 5 2 5" Key="Scale:" Content="{Binding Path=Scale}"/>
-                                                <cc:LabeledContentControl Margin="2 5 2 5" Key="Rotation:" Content="{Binding Path=RotEueler}"/>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </ContentPresenter.Resources>
-                                </ContentPresenter>
+                                <Border Background="{StaticResource PanelBkgColor}">
+                                    <ContentPresenter DockPanel.Dock="Bottom" Content="{Binding Path=SelectedSceneModelInstance}">
+                                        <ContentPresenter.Resources>
+                                            <DataTemplate DataType="{x:Type local:SceneModelInstanceM}">
+                                                <StackPanel Orientation="Vertical">
+                                                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Name:" Content="{Binding Path=Name}"/>
+                                                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Translate:" Content="{Binding Path=Translate}"/>
+                                                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Scale:" Content="{Binding Path=Scale}"/>
+                                                    <cc:LabeledContentControl Margin="2 5 2 5" Key="Rotation:" Content="{Binding Path=RotEueler}"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ContentPresenter.Resources>
+                                    </ContentPresenter>
+                                </Border>
                             </DockPanel>
                         </Border>
                     </Grid>
