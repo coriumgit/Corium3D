@@ -252,79 +252,107 @@ namespace Corium3DGI
         private void onCollisionCubeCenterChanged(object center, PropertyChangedEventArgs e)
         {
             CollisionBoxCenterChanged?.Invoke((Vector3D)((Utils.ObservablePoint3D)center).Point3DCpy);
+            collisionPrimitive3DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
         }
 
         private void onCollisionCubeScaleChanged(object scale, PropertyChangedEventArgs e)
         {
             CollisionBoxScaleChanged?.Invoke((Vector3D)((Utils.ObservablePoint3D)scale).Point3DCpy);
+            collisionPrimitive3DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
         }
 
         private void onCollisionSphereCenterChanged(object center, PropertyChangedEventArgs e)
         {
             CollisionSphereCenterChanged?.Invoke((Vector3D)((Utils.ObservablePoint3D)center).Point3DCpy);
+            collisionPrimitive3DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
         }
 
         private void onCollisionSphereChanged(object collisionSphere, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == "Radius")
+            {
                 CollisionSphereRadiusChanged?.Invoke(((CollisionSphere)collisionSphere).Radius);
+                collisionPrimitive3DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
+            }
         }
 
         private void onCollisionCapsuleCenterChanged(object center, PropertyChangedEventArgs e)
         {
             CollisionCapsuleCenterChanged?.Invoke((CollisionCapsule)collisionPrimitive3DSelected);
+            collisionPrimitive3DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
         }
 
         private void onCollisionCapsuleAxisVecChanged(object axisVec, PropertyChangedEventArgs e)
         {
             CollisionCapsuleAxisVecChanged?.Invoke((CollisionCapsule)collisionPrimitive3DSelected);
+            collisionPrimitive3DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
         }
         
         private void onCollisionCapsuleChanged(object collisionCapsule, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == "Height")
+            {
                 CollisionCapsuleHeightChanged?.Invoke((CollisionCapsule)collisionCapsule);
+                collisionPrimitive3DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
+            }
             else if (e.PropertyName == "Radius")
+            {
                 CollisionCapsuleRadiusChanged?.Invoke((CollisionCapsule)collisionCapsule);
+                collisionPrimitive3DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
+            }
         }
 
         private void onCollisionRectCenterChanged(object center, PropertyChangedEventArgs e)
         {
             CollisionRectCenterChanged?.Invoke((Vector)((Utils.ObservablePoint)center).PointCpy);
+            collisionPrimitive2DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
         }
 
         private void onCollisionRectScaleChanged(object scale, PropertyChangedEventArgs e)
         {
             CollisionRectScaleChanged?.Invoke((Vector)((Utils.ObservablePoint)scale).PointCpy);
+            collisionPrimitive2DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
         }
 
         private void onCollisionCircleCenterChanged(object center, PropertyChangedEventArgs e)
         {
             CollisionCircleCenterChanged?.Invoke((Vector)((Utils.ObservablePoint)center).PointCpy);
+            collisionPrimitive2DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
         }
 
         private void onCollisionCircleChanged(object collisionCircle, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == "Radius")
+            {
                 CollisionCircleRadiusChanged?.Invoke(((CollisionCircle)collisionCircle).Radius);
+                collisionPrimitive2DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
+            }
         }
 
         private void onCollisionStadiumCenterChanged(object center, PropertyChangedEventArgs e)
         {
             CollisionStadiumCenterChanged?.Invoke((CollisionStadium)collisionPrimitive2DSelected);
+            collisionPrimitive2DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
         }
 
         private void onCollisionStadiumAxisVecChanged(object axisVec, PropertyChangedEventArgs e)
         {
             CollisionStadiumAxisVecChanged?.Invoke((CollisionStadium)collisionPrimitive2DSelected);
+            collisionPrimitive2DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
         }
 
         private void onCollisionStadiumChanged(object collisionStadium, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == "Height")
+            {
                 CollisionStadiumHeightChanged?.Invoke((CollisionStadium)collisionStadium);
+                collisionPrimitive2DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
+            }
             else if (e.PropertyName == "Radius")
+            {
                 CollisionStadiumRadiusChanged?.Invoke((CollisionStadium)collisionStadium);
+                collisionPrimitive2DSelected.asssignPrimitiveDataInModelAssetGen(ModelAssetGen);
+            }
         }
 
         virtual public void Dispose()

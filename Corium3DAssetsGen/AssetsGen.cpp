@@ -8,19 +8,37 @@
 
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <GLTFSDK/Deserialize.h>
+#include <GLTFSDK/GLBResourceReader.h>
 #include <filesystem>
 #include <windows.h>
-#include <fbxsdk.h>
-
-#define IMPORTER_FBX_SDK true
+#include <fstream>
 
 using namespace System::Runtime::InteropServices;
 using namespace System::Windows::Media::Media3D;
 using namespace System::Windows;
+using namespace Microsoft::glTF;
 
 //extern "C" __declspec(dllexport) bool PerformTest()
 
 namespace Corium3D {
+
+	class InStream : public IStreamReader
+	{
+	public:
+		InStream() :
+			m_stream(std::make_shared<std::stringstream>(std::ios_base::app | std::ios_base::binary | std::ios_base::in | std::ios_base::out))
+		{
+		}
+
+		std::shared_ptr<std::istream> GetInputStream(const  std::string&) const override
+		{
+			return std::static_pointer_cast<std::istream>(m_stream);
+		}
+
+	private:
+		std::shared_ptr<std::stringstream> m_stream;
+	};
 
 	void genNodesCountRecurse(aiNode* node, unsigned int depth, unsigned int& treeDepthMaxOut, unsigned int& nodesNrOut) {
 		treeDepthMaxOut = depth > treeDepthMaxOut ? depth : treeDepthMaxOut;
@@ -43,91 +61,33 @@ namespace Corium3D {
 			modelDesc->facesNr = 0;
 			modelDesc->progIdx = 0;
 
-#if IMPORTER_FBX_SDK
-			FbxManager* fbxManager = FbxManager::Create();
-			FbxIOSettings* ios = FbxIOSettings::Create(fbxManager, IOSROOT);
-			fbxManager->SetIOSettings(ios);
-			FbxImporter* fbxImporter = FbxImporter::Create(fbxManager, "");
-			if (!fbxImporter->Initialize(modelDesc->colladaPath.c_str(), -1, fbxManager->GetIOSettings())) {
-				OutputDebugStringA((std::string("Failed to import \"") + modelDesc->colladaPath + std::string("\": ") + fbxImporter->GetStatus().GetErrorString()).c_str());
-				throw std::exception();
-			}
-			else
-				OutputDebugStringA((std::string("Imported \"") + modelDesc->colladaPath + std::string("\"\n")).c_str());
+			if (System::IO::Path::GetExtension(modelPath) == gcnew System::String(".glb"))
+			{
+				std::shared_ptr<std::ifstream> glbStream = std::make_shared<std::ifstream>(modelDesc->colladaPath, std::ios::binary);
 
-			FbxScene* fbxScene = FbxScene::Create(fbxManager, "myScene");
-			fbxImporter->Import(fbxScene);
-			fbxImporter->Destroy();
+				GLBResourceReader reader(std::make_unique<InStream>(), glbStream);
 
-			FbxNode* fbxNodeRoot = fbxScene->GetRootNode();
-			for (int i = 0; i < fbxNodeRoot->GetChildCount(); i++) {
-				FbxNode* childNode = fbxNodeRoot->GetChild(i);
-				FbxMesh* mesh = childNode->GetMesh();
-				if (mesh) {
-					FbxGeometryElementNormal* lNormalElement = mesh->GetElementNormal();
-					if (lNormalElement)
+				// get json from GLB and deserialize into GLTFDocument
+				std::string json = reader.GetJson();
+				const Document gltfDoc = Deserialize(json);
+				std::vector poses = reader.ReadBinaryData<float>(gltfDoc, gltfDoc.accessors[0]);
+				std::vector normals = reader.ReadBinaryData<float>(gltfDoc, gltfDoc.accessors[1]);
+				std::vector texCoords = reader.ReadBinaryData<float>(gltfDoc, gltfDoc.accessors[2]);
+				std::vector idxs = reader.ReadBinaryData<unsigned short>(gltfDoc, gltfDoc.accessors[3]);
+				int numScenes = gltfDoc.scenes.Elements().size();
+
+				int sceneIdx = 0;
+				for (auto el : gltfDoc.scenes.Elements())
+				{
+					int level = 1;
+					for (auto node : el.nodes)
 					{
-						//mapping mode is by control points. The mesh should be smooth and soft.
-						//we can get normals by retrieving each control point
-						if (lNormalElement->GetMappingMode() == FbxGeometryElement::eByControlPoint)
-						{
-							//Let's get normals of each vertex, since the mapping mode of normal element is by control point
-							for (int lVertexIndex = 0; lVertexIndex < mesh->GetControlPointsCount(); lVertexIndex++)
-							{
-								int lNormalIndex = 0;
-								//reference mode is direct, the normal index is same as vertex index.
-								//get normals by the index of control vertex
-								if (lNormalElement->GetReferenceMode() == FbxGeometryElement::eDirect)
-									lNormalIndex = lVertexIndex;
-
-								//reference mode is index-to-direct, get normals by the index-to-direct
-								if (lNormalElement->GetReferenceMode() == FbxGeometryElement::eIndexToDirect)
-									lNormalIndex = lNormalElement->GetIndexArray().GetAt(lVertexIndex);
-
-								//Got normals of each vertex.
-								FbxVector4 lNormal = lNormalElement->GetDirectArray().GetAt(lNormalIndex);
-								//FBXSDK_printf("normals for vertex[%d]: %f %f %f %f \n", lVertexIndex, lNormal[0], lNormal[1], lNormal[2], lNormal[3]);
-								//add your custom code here, to output normals or get them into a list, such as KArrayTemplate<FbxVector4>
-								//. . .
-							}//end for lVertexIndex
-						}//end eByControlPoint
-						//mapping mode is by polygon-vertex.
-						//we can get normals by retrieving polygon-vertex.
-						else if (lNormalElement->GetMappingMode() == FbxGeometryElement::eByPolygonVertex)
-						{
-							int lIndexByPolygonVertex = 0;
-							//Let's get normals of each polygon, since the mapping mode of normal element is by polygon-vertex.
-							for (int lPolygonIndex = 0; lPolygonIndex < mesh->GetPolygonCount(); lPolygonIndex++)
-							{
-								//get polygon size, you know how many vertices in current polygon.
-								int lPolygonSize = mesh->GetPolygonSize(lPolygonIndex);
-								//retrieve each vertex of current polygon.
-								for (int i = 0; i < lPolygonSize; i++)
-								{
-									int lNormalIndex = 0;
-									//reference mode is direct, the normal index is same as lIndexByPolygonVertex.
-									if (lNormalElement->GetReferenceMode() == FbxGeometryElement::eDirect)
-										lNormalIndex = lIndexByPolygonVertex;
-
-									//reference mode is index-to-direct, get normals by the index-to-direct
-									if (lNormalElement->GetReferenceMode() == FbxGeometryElement::eIndexToDirect)
-										lNormalIndex = lNormalElement->GetIndexArray().GetAt(lIndexByPolygonVertex);
-
-									//Got normals of each polygon-vertex.
-									FbxVector4 lNormal = lNormalElement->GetDirectArray().GetAt(lNormalIndex);
-									//FBXSDK_printf("normals for polygon[%d]vertex[%d]: %f %f %f %f \n", lPolygonIndex, i, lNormal[0], lNormal[1], lNormal[2], lNormal[3]);
-									//add your custom code here, to output normals or get them into a list, such as KArrayTemplate<FbxVector4>
-									//. . .
-
-									lIndexByPolygonVertex++;
-								}//end for i //lPolygonSize
-							}//end for lPolygonIndex //PolygonCount
-
-						}//end eByPolygonVertex
+						auto nd = gltfDoc.nodes.Get(node);
+						int nm = gltfDoc.meshes.Elements().size();
+						int x = gltfDoc.animations.Elements().size();
 					}
 				}
 			}
-			//#elif
 
 			importer = new Assimp::Importer();
 			//importer->SetPropertyFloat("PP_GSN_MAX_SMOOTHING_ANGLE", 120);
@@ -482,7 +442,6 @@ namespace Corium3D {
 									
 		modelDesc->colliderData.collisionPrimitive3DType = CollisionPrimitive3DType::NO_3D_COLLIDER;
 		modelDesc->colliderData.collisionPrimitive2DType = CollisionPrimitive2DType::NO_2D_COLLIDER;		
-#endif
 	}
 
 	AssetsGen::ModelAssetGen::~ModelAssetGen()

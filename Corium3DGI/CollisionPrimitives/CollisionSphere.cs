@@ -1,4 +1,5 @@
-﻿using CoriumDirectX;
+﻿using Corium3D;
+using CoriumDirectX;
 
 using System.Windows;
 using System.Windows.Data;
@@ -45,8 +46,7 @@ namespace Corium3DGI
                 }
             }
         }
-
-        public delegate void OnTransform(Point3D center, float radius);
+        
         public static void Init(DxVisualizer dxVisualizer)
         {
             List<uint> dxModelIdContainer;
@@ -86,6 +86,11 @@ namespace Corium3DGI
                                                 DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp);
 
             return new DxVisualizer.IScene.ISceneModelInstance[] { sphereDxInstance };            
+        }
+
+        public override void asssignPrimitiveDataInModelAssetGen(AssetsGen.IModelAssetGen modelAssetGen)
+        {
+            modelAssetGen.assignCollisionSphere(center.Point3DCpy, radius);
         }
 
         private void bindRadiusToScaleTransform(ScaleTransform3D scaleTransform3D)

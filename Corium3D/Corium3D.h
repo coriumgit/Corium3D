@@ -36,8 +36,7 @@ namespace Corium3D {
 
 		struct AssetsFilesFullPaths {
 			std::string modelsScenesFullPath;
-			const char* txtTexAtlasPath; //const char* guisDescsPath
-			const char* scenesDescsPath;
+			const char* txtTexAtlasPath; //const char* guisDescsPath			
 			const char** vertexShadersFullPaths;
 			const char** fragShadersFullPaths;
 			unsigned int shadersNr;

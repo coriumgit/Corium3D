@@ -1,4 +1,5 @@
-﻿using CoriumDirectX;
+﻿using Corium3D;
+using CoriumDirectX;
 
 using System.Windows;
 using Corium3DGI.Utils;
@@ -85,6 +86,11 @@ namespace Corium3DGI
                                                  DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp);
 
             return new DxVisualizer.IScene.ISceneModelInstance[] { circleDxInstance };
+        }
+
+        public override void asssignPrimitiveDataInModelAssetGen(AssetsGen.IModelAssetGen modelAssetGen)
+        {
+            modelAssetGen.assignCollisionCircle(center.PointCpy, radius);
         }
 
         private void bindRadiusToScaleTransform(ScaleTransform3D scaleTransform3D)

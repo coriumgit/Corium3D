@@ -108,18 +108,17 @@ GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium
 	Corium3DEngine::GameLmnt::ProximityHandlingMethods coloringCallbacksBuffer[] =
 		{ coloringCallbacks, coloringCallbacks, coloringCallbacks, coloringCallbacks };
 
-
 	for (unsigned int lmntIdx = 0; lmntIdx < transformsInit[0].size(); lmntIdx++)
 		cubes[lmntIdx] = cubesPool.acquire(corium3DEngine, transformsInit[0][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);	
 
 	for (unsigned int lmntIdx = 0; lmntIdx < transformsInit[1].size(); lmntIdx++)
 		spheres[lmntIdx] = spheresPool.acquire(corium3DEngine, transformsInit[1][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);
 
-	for (unsigned int lmntIdx = 0; lmntIdx < transformsInit[3].size(); lmntIdx++)
-		capsules[lmntIdx] = capsulesPool.acquire(corium3DEngine, transformsInit[3][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);
-
 	for (unsigned int lmntIdx = 0; lmntIdx < transformsInit[2].size(); lmntIdx++)
-		cones[lmntIdx] = conesPool.acquire(corium3DEngine, transformsInit[2][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);
+		capsules[lmntIdx] = capsulesPool.acquire(corium3DEngine, transformsInit[2][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);
+
+	//for (unsigned int lmntIdx = 0; lmntIdx < transformsInit[3].size(); lmntIdx++)
+	//	cones[lmntIdx] = conesPool.acquire(corium3DEngine, transformsInit[3][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);
 
 	// PLAYER INSTANTIATION
 	Transform3D playerTransform({ glm::vec3(5.0f, 0.0f, 0.0), glm::vec3(1.0f, 1.0f, 1.0f), glm::quat(cos(0 / 6), sin(0 / 4), sin(0 / 4), sin(0 / 6)) });		

@@ -285,7 +285,7 @@ namespace Corium3DGI
             {
                 Title = "Import 3D Model",
                 DefaultExt = ".dae",
-                Filter = "Collada|*.dae;*.fbx",
+                Filter = "Collada|*.dae;*.fbx",//;*.glb",
                 Multiselect = true
             };
             

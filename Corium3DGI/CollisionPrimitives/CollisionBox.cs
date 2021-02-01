@@ -1,4 +1,5 @@
-﻿using CoriumDirectX;
+﻿using Corium3D;
+using CoriumDirectX;
 
 using System.Windows;
 using System.Windows.Data;
@@ -43,9 +44,7 @@ namespace Corium3DGI
                     OnPropertyChanged("Scale");
                 }          
             }
-        }
-
-        public delegate void OnTransform(Point3D center, Point3D scale);
+        }        
 
         public static void Init(DxVisualizer dxVisualizer)
         {
@@ -84,6 +83,12 @@ namespace Corium3DGI
                                              new Vector3D(0.0f, 0.0f, 1.0f), 0.0f, null)
             };            
         }
+
+        public override void asssignPrimitiveDataInModelAssetGen(AssetsGen.IModelAssetGen modelAssetGen)
+        {
+            modelAssetGen.assignCollisionBox(center.Point3DCpy, scale.Point3DCpy);
+        }
+        
 
         private void bindScaleToScaleTransform(ScaleTransform3D scaleTransform3D)
         {

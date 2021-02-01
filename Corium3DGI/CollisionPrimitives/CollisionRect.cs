@@ -1,4 +1,5 @@
-﻿using CoriumDirectX;
+﻿using Corium3D;
+using CoriumDirectX;
 
 using System.Windows;
 using Corium3DGI.Utils;
@@ -83,6 +84,11 @@ namespace Corium3DGI
                                                      new Vector3D(scale.PointCpy.X, scale.PointCpy.Y, 1.0f),
                                                      new Vector3D(0.0f, 0.0f, 1.0f), 0.0f, null)
             };
+        }
+
+        public override void asssignPrimitiveDataInModelAssetGen(AssetsGen.IModelAssetGen modelAssetGen)
+        {
+            modelAssetGen.assignCollisionRect(center.PointCpy, scale.PointCpy);
         }
 
         private void bindScaleToScaleTransform(ScaleTransform3D scaleTransform)

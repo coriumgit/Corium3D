@@ -1,4 +1,5 @@
-﻿using CoriumDirectX;
+﻿using Corium3D;
+using CoriumDirectX;
 
 using System.Windows;
 using Corium3DGI.Utils;
@@ -177,6 +178,11 @@ namespace Corium3DGI
                                                            DxVisualizer.IScene.TransformScaleConstraint.FollowMaxDimGrp);
             
             return new DxVisualizer.IScene.ISceneModelInstance[] { cylinderDxInstance, topSemicircleDxInstance, bottomSemicircleDxInstance };
+        }
+
+        public override void asssignPrimitiveDataInModelAssetGen(AssetsGen.IModelAssetGen modelAssetGen)
+        {
+            modelAssetGen.assignCollisionStadium(center.PointCpy, axisVec.VectorCpy, radius);
         }
 
         public override CollisionPrimitive clone()
