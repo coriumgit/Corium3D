@@ -520,16 +520,8 @@ namespace Corium3D {
 		glm::vec3 axisVecMarshaled = marshalVector3D(axisVec);
 		modelDesc->colliderData.collisionPrimitive3dData.collisionCapsuleData = { center1Marshaled, axisVecMarshaled, radius };
 
-		glm::vec3 aabbDiagonalVec;
-		if (axisVecMarshaled.x > 0.0f)
-			aabbDiagonalVec = glm::vec3(axisVecMarshaled.x, radius, radius);
-		else if (axisVecMarshaled.y > 0.0f)
-			aabbDiagonalVec = glm::vec3(radius, axisVecMarshaled.y, radius);
-		else // (axisVecMarshaled.z > 0.0f)
-			aabbDiagonalVec = glm::vec3(radius, radius, axisVecMarshaled.z);
-
-		modelDesc->colliderData.aabb3DMinVertex = center1Marshaled + aabbDiagonalVec;
-		modelDesc->colliderData.aabb3DMaxVertex = center1Marshaled - aabbDiagonalVec;
+		modelDesc->colliderData.aabb3DMinVertex = center1Marshaled + axisVecMarshaled + radius;
+		modelDesc->colliderData.aabb3DMaxVertex = center1Marshaled - radius;
 	}
 
 	void AssetsGen::ModelAssetGen::clearCollisionPrimitive2D()
@@ -564,16 +556,10 @@ namespace Corium3D {
 		modelDesc->colliderData.collisionPrimitive2DType = CollisionPrimitive2DType::STADIUM;
 		glm::vec2 center1Marshaled = marshalPoint(center1);
 		glm::vec2 axisVecMarshaled = marshalVector(axisVec);
-		modelDesc->colliderData.collisionPrimitive2dData.collisionStadiumData = { center1Marshaled, axisVecMarshaled, radius };
+		modelDesc->colliderData.collisionPrimitive2dData.collisionStadiumData = { center1Marshaled, axisVecMarshaled, radius };		
 
-		glm::vec2 aabbDiagonalVec;
-		if (axisVecMarshaled.x > 0.0f)
-			aabbDiagonalVec = glm::vec2(axisVecMarshaled.x, radius);
-		else // (axisVecMarshaled.y > 0.0f)
-			aabbDiagonalVec = glm::vec2(radius, axisVecMarshaled.y);
-
-		modelDesc->colliderData.aabb2DMinVertex = center1Marshaled + aabbDiagonalVec;
-		modelDesc->colliderData.aabb2DMaxVertex = center1Marshaled - aabbDiagonalVec;
+		modelDesc->colliderData.aabb2DMinVertex = center1Marshaled + axisVecMarshaled + radius;
+		modelDesc->colliderData.aabb2DMaxVertex = center1Marshaled - radius;
 	}
 
 	ModelDesc const* AssetsGen::ModelAssetGen::getAssetsFileReadyModelDesc(unsigned int modelIdx)

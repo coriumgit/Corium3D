@@ -31,7 +31,7 @@ namespace Corium3D {
 	constexpr GLfloat BKG_COLOR_G = 149.0f / 256;
 	constexpr GLfloat BKG_COLOR_B = 237.0f / 256;
 
-	constexpr GLfloat CAMERA_FOV_INIT = (float)M_PI / 2;
+	constexpr GLfloat CAMERA_FOV_INIT = (float)M_PI / 3;
 	const GLfloat FRUSTUM_NEAR_INIT = 1.0f;
 	const GLfloat FRUSTUM_FAR_INIT = 20.0f;
 

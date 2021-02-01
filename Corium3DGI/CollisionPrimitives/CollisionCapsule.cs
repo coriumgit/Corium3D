@@ -168,7 +168,7 @@ namespace Corium3DGI
 
         public override void asssignPrimitiveDataInModelAssetGen(AssetsGen.IModelAssetGen modelAssetGen)
         {
-            modelAssetGen.assignCollisionCapsule(center.Point3DCpy, axisVec.Vector3DCpy, radius);
+            modelAssetGen.assignCollisionCapsule(center.Point3DCpy - 0.5f * axisVec.Vector3DCpy * height, axisVec.Vector3DCpy * height, radius);
         }
 
         private void bindAvatar3DTransforms(ScaleTransform3D scaleTransform3DShaft, 

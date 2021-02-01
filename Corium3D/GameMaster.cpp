@@ -170,11 +170,11 @@ GameMaster::~GameMaster() {
 }
 
 void GameMaster::primitiveColoringCollisionCallback(Corium3DEngine::GameLmnt* primitive1, Corium3DEngine::GameLmnt* primitive2) {
-	primitive1->accessGraphicsAPI()->changeVerticesColors(0, 1);
+	//primitive1->accessGraphicsAPI()->changeVerticesColors(0, 1);
 }
 
 void GameMaster::primitiveColoringDetachmentCallback(Corium3DEngine::GameLmnt* primitive1, Corium3DEngine::GameLmnt* primitive2) {
-	primitive1->accessGraphicsAPI()->changeVerticesColors(0, 0);
+	//primitive1->accessGraphicsAPI()->changeVerticesColors(0, 0);
 }
 
 void GameMaster::removingCollisionCallbackCubeCube(Corium3DEngine::GameLmnt* cube1, Corium3DEngine::GameLmnt* cube2) {
@@ -183,12 +183,12 @@ void GameMaster::removingCollisionCallbackCubeCube(Corium3DEngine::GameLmnt* cub
 
 void GameMaster::playerCollisionCallback(Corium3DEngine::GameLmnt* cube, Corium3DEngine::GameLmnt* sphere) {
 	//objPool.release((TheCube*)cube2);
-	cube->accessGraphicsAPI()->changeVerticesColors(0, 1);
+	//cube->accessGraphicsAPI()->changeVerticesColors(0, 1);
 }
 
 void GameMaster::playerDetachmentCallback(Corium3DEngine::GameLmnt* cube, Corium3DEngine::GameLmnt* sphere) {
 	//objPool.release((TheCube*)cube2);
-	cube->accessGraphicsAPI()->changeVerticesColors(0, 0);
+	//cube->accessGraphicsAPI()->changeVerticesColors(0, 0);
 }
 
 void GameMaster::movePlayerLeft(double unused) {

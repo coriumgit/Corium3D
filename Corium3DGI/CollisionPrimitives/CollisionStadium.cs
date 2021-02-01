@@ -182,7 +182,7 @@ namespace Corium3DGI
 
         public override void asssignPrimitiveDataInModelAssetGen(AssetsGen.IModelAssetGen modelAssetGen)
         {
-            modelAssetGen.assignCollisionStadium(center.PointCpy, axisVec.VectorCpy, radius);
+            modelAssetGen.assignCollisionStadium(center.PointCpy - 0.5f * axisVec.VectorCpy * height, axisVec.VectorCpy * height, radius);
         }
 
         public override CollisionPrimitive clone()

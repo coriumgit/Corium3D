@@ -540,7 +540,9 @@ namespace Corium3D {
 		
 		//DEBUG RENDERING
 		glUseProgram(debugProg);
+		CHECK_GL_ERROR("glUseProgram");
 		glBindVertexArray(debugVAO);
+		CHECK_GL_ERROR("glBindVertexArray");
 		glBindBuffer(GL_ARRAY_BUFFER, debugVertexBuffer);	
 		CHECK_GL_ERROR("glBindBuffer");	
 		glUniformMatrix4fv(debugVpMatUniformLoc, 1, GL_FALSE, (float*)&(vpMat));
