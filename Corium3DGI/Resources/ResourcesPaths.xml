@@ -20,7 +20,7 @@
     </CollisionPrimitiveAvatars>
   
     <CollisionPrimitiveAvatars Primitive="Rect">      
-      <Model>Resources\Models3D\rectangle.dae</Model>
+      <Model>Resources\Models3D\square.dae</Model>
     </CollisionPrimitiveAvatars>
   
     <CollisionPrimitiveAvatars Primitive="Circle">      
