@@ -549,10 +549,12 @@ namespace Corium3D {
 		CHECK_GL_ERROR("glUniformMatrix4fv");
 		glm::vec3 debugBuffer3D[100];
 		glm::vec2 debugBuffer2D[100];
-		visibleNodesIt3D->init(bvh->getStaticNodes3DRoot());
+		std::string visibles("");
+		visibleNodesIt3D->init(bvh->getStaticNodes3DRoot());		
 		while (!visibleNodesIt3D->isDone()) {
 			// register leaf's model instance
 			BVH::DataNode3D* node = static_cast<BVH::DataNode3D*>(visibleNodesIt3D->getNext());
+			visibles += std::string("(") + std::string(std::to_string(node->getModelIdx())) + std::string(", ") + std::string(std::to_string(node->getInstanceIdx())) + std::string(")");
 			unsigned int modelIdx = node->getModelIdx();
 			unsigned int instanceIdx = node->getInstanceIdx();		
 			InstanceAnimator* instanceAnimator = instancesAnimators[modelIdx][instanceIdx];
@@ -646,12 +648,12 @@ namespace Corium3D {
 			}
 		}		
 
-		std::string visibles("");
+		
 		visibleNodesIt3D->init(bvh->getMobileNodes3DRoot());
 		while (!visibleNodesIt3D->isDone()) {
 			// register leaf's model instance
 			BVH::MobileGameLmntDataNode3D* node = static_cast<BVH::MobileGameLmntDataNode3D*>(visibleNodesIt3D->getNext());
-			visibles += std::string("(") + std::string(std::to_string(node->getModelIdx())) + std::string(", ") + std::string(std::to_string(node->getInstanceIdx())) + std::string(")");		
+			visibles += std::string("(") + std::string(std::to_string(node->getModelIdx())) + std::string(", ") + std::string(std::to_string(node->getInstanceIdx())) + std::string(")");
 			unsigned int mobileModelIdx = node->getModelIdx() - staticModelsNr;		
 			InstanceAnimator* instanceAnimator = instancesAnimators[node->getModelIdx()][node->getInstanceIdx()];
 			if (instanceAnimator) {

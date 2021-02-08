@@ -154,8 +154,8 @@ GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium
 	corium3DEngine.registerCursorInputCallback(CursorInputID::MIDDLE_DOWN, std::bind(&GameMaster::shootRay, this, std::placeholders::_1, std::placeholders::_2));
 	corium3DEngine.accessGuiAPI(0).show();
 	
-	corium3DEngine.accessCameraAPI().translate(glm::vec3(0.0f, 5.0, 5.0f));
-	corium3DEngine.accessCameraAPI().rotate(M_PI_4, glm::vec3(-1.0f, 0.0f, 0.0f));
+	corium3DEngine.accessCameraAPI().translate(glm::vec3(0.0f, 0, 12.0f));
+	corium3DEngine.accessCameraAPI().rotate(0, glm::vec3(-1.0f, 0.0f, 0.0f));
 }
 
 GameMaster::~GameMaster() {

@@ -13,7 +13,7 @@
 namespace Corium3D {
 
 	// TODO: check for fattening factor according to displacement prediction
-	const float FATTENING_FACTOR = 1.05f;
+	const float FATTENING_FACTOR = 1.00f;
 
 	//template <class T>
 	class BVH {
@@ -76,8 +76,8 @@ namespace Corium3D {
 			Node(Node const& node);
 			~Node() {}
 			virtual void refitBVs();
-			bool isLeftChild() const { return parent->children[0] == this; }
-			bool isRightChild() const { return parent->children[1] == this; }
+			bool isLeftChild() const { return !parent || parent->children[0] == this; }
+			bool isRightChild() const { return parent && parent->children[1] == this; }
 
 		private:
 			Node* children[2] = { NULL, NULL };
@@ -134,9 +134,9 @@ namespace Corium3D {
 			MobileGameLmntDataNode3D(AABB3DRotatable const& aabb, BoundingSphere const& boundingSphere, unsigned int modelIdx, unsigned int instanceIdx, CollisionVolume& collisionVolume, PhysicsEngine::MobilityInterface const& mobilityInterface);
 			MobileGameLmntDataNode3D(MobileGameLmntDataNode3D const& node);
 			~MobileGameLmntDataNode3D() {}
-			void updateBVs(Transform3D const& transformDelta);
+			void updateBVs(Transform3DUS const& transformDelta);
 			void translateBVs(glm::vec3 const& translate);
-			void scaleBVs(glm::vec3 const& scale);
+			void scaleBVs(float scaleFactor);
 			void rotateBVs(glm::quat const& rot);
 			void refitBVs() override;
 		};
@@ -174,9 +174,9 @@ namespace Corium3D {
 			MobileGameLmntDataNode2D(AABB2DRotatable const& aabb, unsigned int modelIdx, unsigned int instanceIdx, CollisionPerimeter& collisionPerimeter, PhysicsEngine::MobilityInterface const& mobilityInterface);
 			MobileGameLmntDataNode2D(MobileGameLmntDataNode2D const& node);
 			~MobileGameLmntDataNode2D() {}
-			void updateBPs(Transform2D const& transformDelta);
+			void updateBPs(Transform2DUS const& transformDelta);
 			void translateBPs(glm::vec2 const& translate);
-			void scaleBPs(glm::vec2 const& scale);
+			void scaleBPs(float scaleFactor);
 			void rotateBPs(std::complex<float> const& rot);
 			void refitBPs();
 		};
@@ -232,9 +232,9 @@ namespace Corium3D {
 		MobileGameLmntDataNode3D* insert(AABB3DRotatable const& aabb, BoundingSphere const& boundingSphere, unsigned int modelIdx, unsigned int instanceIdx, CollisionVolume& collisionVolume, PhysicsEngine::MobilityInterface const& mobilityInterface);
 		void remove(DataNode3D* node);
 		void remove(MobileGameLmntDataNode3D* node);
-		void updateNodeBPs(MobileGameLmntDataNode3D* node, Transform3D const& transformDelta) { node->updateBVs(transformDelta); }
+		void updateNodeBPs(MobileGameLmntDataNode3D* node, Transform3DUS const& transformDelta) { node->updateBVs(transformDelta); }
 		void translateNodeBPs(MobileGameLmntDataNode3D* node, glm::vec3 const& translate) { node->translateBVs(translate); }
-		void scaleNodeBPs(MobileGameLmntDataNode3D* node, glm::vec3 const& scale) { node->scaleBVs(scale); }
+		void scaleNodeBPs(MobileGameLmntDataNode3D* node, float scaleFactor) { node->scaleBVs(scaleFactor); }
 		void rotateNodeBPs(MobileGameLmntDataNode3D* node, glm::quat const& rot) { node->rotateBVs(rot); }
 		Node3D* getStaticNodes3DRoot() const { return staticNodes3DRoot; }
 		Node3D* getMobileNodes3DRoot() const { return mobileNodes3DRoot; }
@@ -247,9 +247,9 @@ namespace Corium3D {
 		MobileGameLmntDataNode2D* insert(AABB2DRotatable const& aabb, unsigned int modelIdx, unsigned int instanceIdx, CollisionPerimeter& collisionPerimeter, PhysicsEngine::MobilityInterface const& mobilityInterface);
 		void remove(DataNode2D* node);
 		void remove(MobileGameLmntDataNode2D* node);
-		void updateNodeBPs(MobileGameLmntDataNode2D* node, Transform2D const& transformDelta) { node->updateBPs(transformDelta); }
+		void updateNodeBPs(MobileGameLmntDataNode2D* node, Transform2DUS const& transformDelta) { node->updateBPs(transformDelta); }
 		void translateNodeBPs(MobileGameLmntDataNode2D* node, glm::vec2 const& translate) { node->translateBPs(translate); }
-		void scaleNodeBPs(MobileGameLmntDataNode2D* node, glm::vec2 const& scale) { node->scaleBPs(scale); }
+		void scaleNodeBPs(MobileGameLmntDataNode2D* node, float scaleFactor) { node->scaleBPs(scaleFactor); }
 		void rotateNodeBPs(MobileGameLmntDataNode2D* node, std::complex<float> const& rot) { node->rotateBPs(rot); }
 		Node2D* getStaticNodes2DRoot() const { return staticNodes2DRoot; }
 		Node2D* getMobileNodes2DRoot() const { return mobileNodes2DRoot; }

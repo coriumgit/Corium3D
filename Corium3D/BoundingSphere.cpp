@@ -5,14 +5,15 @@
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/fast_square_root.hpp>
 #include <math.h>
+#include <algorithm> 
 
 namespace Corium3D {
 
 	const float EPSILON = 1e-4f;
 
-	BoundingSphere::BoundingSphere() : c(0.0f, 0.0f, 0.0f), r(EPSILON) {}
+	BoundingSphere::BoundingSphere() : c(0.0f, 0.0f, 0.0f), r(EPSILON), offset(c) {}
 
-	BoundingSphere::BoundingSphere(glm::vec3 center, float radius) : c(center), r(radius) {}
+	BoundingSphere::BoundingSphere(glm::vec3 center, float radius) : c(center), r(radius), offset(c) {}
 
 	BoundingSphere::BoundingSphere(glm::vec3* p1) : c(*p1), r(EPSILON) {}
 
@@ -44,19 +45,36 @@ namespace Corium3D {
 		r = length(o) + EPSILON;
 	}
 
-	BoundingSphere& BoundingSphere::transform(glm::vec3 const& translate, glm::vec3 const& scale) {
-		c += translate;
-		r *= scale.x > scale.y ? (scale.x > scale.z ? scale.x : scale.z) : (scale.y > scale.z ? scale.y : scale.z);
+	BoundingSphere& BoundingSphere::transform(Transform3DUS const& transform) {
+		r *= transform.scale;
+		c -= offset;
+		offset = transform.rot * offset * transform.scale;
+		c += offset + transform.translate;		
+		
 		return *this;
 	}
 
 	BoundingSphere& BoundingSphere::translate(glm::vec3 const& translate) {
 		c += translate;
+
 		return *this;
 	}
 
-	BoundingSphere& BoundingSphere::scale(glm::vec3 const& scale) {
-		r *= scale.x > scale.y ? (scale.x > scale.z ? scale.x : scale.z) : (scale.y > scale.z ? scale.y : scale.z);
+	BoundingSphere& BoundingSphere::scale(float scaleFactor) {
+		r *= scaleFactor;
+		c -= offset;
+		offset *= scaleFactor;
+		c += offset;
+
+		return *this;
+	}
+		
+	BoundingSphere& BoundingSphere::rotate(glm::quat const& rot)
+	{		
+		c -= offset;
+		offset = rot * offset;
+		c += offset;
+
 		return *this;
 	}
 
@@ -172,9 +190,20 @@ namespace Corium3D {
 		return BoundingSphere(resC, resR);
 	}
 
-	BoundingSphere BoundingSphere::calcTransformedBoundingSphere(BoundingSphere const& original, glm::vec3 translate, glm::vec3 scale) {
+	BoundingSphere BoundingSphere::calcTransformedBoundingSphere(BoundingSphere const& original, Transform3DUS const& transform) {
 		BoundingSphere newBoundingSphere(original);
-		return newBoundingSphere.transform(translate, scale);
+		return newBoundingSphere.transform(transform);
+	}
+
+	BoundingSphere BoundingSphere::calcTransformedBoundingSphere(BoundingSphere const& original, Transform3D const& transform)
+	{
+		BoundingSphere newBoundingSphere(original);
+		newBoundingSphere.r *= std::max(std::max(transform.scale.x, transform.scale.y), transform.scale.z);
+		newBoundingSphere.c -= newBoundingSphere.offset;
+		newBoundingSphere.offset = transform.rot * (newBoundingSphere.offset * transform.scale);
+		newBoundingSphere.c += newBoundingSphere.offset + transform.translate;
+		
+		return newBoundingSphere;
 	}
 
 	BoundingSphere BoundingSphere::calcCombinedBoundingSphere(BoundingSphere const& sphere1, BoundingSphere const& sphere2) {

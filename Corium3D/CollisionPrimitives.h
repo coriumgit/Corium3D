@@ -100,19 +100,20 @@ namespace Corium3D {
 
 		virtual V supportMap(V const& vec) const = 0;
 		virtual V getArbitraryV() const = 0;
-		virtual CollisionPrimitive* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory) const = 0;
+		virtual CollisionPrimitive* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const = 0;
 		virtual void destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) = 0;
 		float gjkShallowPenetrationTest(CollisionPrimitive& other, float objsMarginsSum, GjkJohnsonsDistanceIterator& johnsonDistIt, GjkOut* gjkOut);
 		bool gjkIntersectionTest(CollisionPrimitive& other, GjkJohnsonsDistanceIterator& johnsonDistIt);
 		float gjkEpaHybridTest(CollisionPrimitive& other);
 	};
 
+	// Reminder: all input vectors are in parent's space
 	class CollisionPrimitivesFactory {
 	public:
 		CollisionPrimitivesFactory(unsigned int* primitive3DInstancesNrsMaxima, unsigned int* primitive2DInstancesNrsMaxima);
 		~CollisionPrimitivesFactory();
 		template <class V>
-		CollisionPrimitive<V>* genCollisionPrimitive(CollisionPrimitive<V> const& prototypeCollisionPrimitive);
+		CollisionPrimitive<V>* genCollisionPrimitive(CollisionPrimitive<V> const& prototypeCollisionPrimitive, Transform3D const& newCloneParentTransform);
 		//CollisionVolume* genCollisionVolume(CollisionVolume const& prototypeCollisionVolume);
 		//CollisionPerimeter* genCollisionPerimeter(CollisionPerimeter const& prototypeCollisionPerimeter);
 		CollisionBox* genCollisionBox(glm::vec3 const& center, glm::vec3 scale);
@@ -148,11 +149,10 @@ namespace Corium3D {
 
 		CollisionVolume() {}
 		virtual ~CollisionVolume() {}
-		virtual void translate(glm::vec3 const& translation) = 0;
-		virtual void scale(glm::vec3 const& scale) = 0;
-		virtual void scale(float scale) = 0;
+		virtual void translate(glm::vec3 const& translation) = 0;		
+		virtual void scale(float scaleFactor) = 0;
 		virtual void rotate(glm::quat const& rot) = 0;
-		virtual void transform(Transform3D const& transform) = 0;
+		virtual void transform(Transform3DUS const& transform) = 0;
 		virtual bool testSegCollision(glm::vec3 const& segOrigin, glm::vec3 const& segDest, float& segFactorOnCollisionOut) = 0;
 		virtual bool testSegCollision(glm::vec3 const& segOrigin, glm::vec3 const& segDest) = 0;
 
@@ -173,11 +173,10 @@ namespace Corium3D {
 		friend class CollisionPrimitivesFactory;
 		friend class Corium3DUtils::ObjPool<CollisionPolytope>;
 
-		void translate(glm::vec3 const& translation) override;
-		void scale(glm::vec3 const& scale) override;
+		void translate(glm::vec3 const& translation) override;		
 		void scale(float scale) override;
 		void rotate(glm::quat const& rot) override;
-		void transform(Transform3D const& transform) override;
+		void transform(Transform3DUS const& transform) override;
 		glm::vec3 supportMap(glm::vec3 const& vec) const override;
 		glm::vec3 getArbitraryV() const override;
 		virtual bool testSegCollision(glm::vec3 const& segOrigin, glm::vec3 const& segDest, float& segFactorOnCollisionOut) override;
@@ -216,11 +215,25 @@ namespace Corium3D {
 		friend class CollisionPrimitivesFactory;
 		friend class Corium3DUtils::ObjPool<CollisionBox>;
 
-		void translate(glm::vec3 const& translation) override { c += translation; }
-		void scale(glm::vec3 const& scale) override { s *= scale; }
-		void scale(float scale) override { s *= scale; }
-		void rotate(glm::quat const& rot) override { r = mat3_cast(rot) * r; }
-		void transform(Transform3D const& transform) override { scale(transform.scale); rotate(transform.rot); translate(transform.translate); }
+		void translate(glm::vec3 const& translation) override { c += translation; }		
+		void scale(float scaleFactor) override  
+		{ 
+			s *= scaleFactor;  
+			c -= offset; 
+			offset *= scaleFactor; 
+			c += offset;
+		}
+
+		void rotate(glm::quat const& rot) override 
+		{ 
+			glm::mat3 rotationMat = mat3_cast(rot); 
+			r = rotationMat * r; 
+			c -= offset; 
+			offset = rotationMat * offset; 
+			c += offset; 
+		}
+
+		void transform(Transform3DUS const& transform) override { scale(transform.scale); rotate(transform.rot); translate(transform.translate); }
 		glm::vec3 supportMap(glm::vec3 const& vec) const override;
 		glm::vec3 getArbitraryV() const override;
 		bool testSegCollision(glm::vec3 const& segOrigin, glm::vec3 const& segDest, float& segFactorOnCollisionOut) override;
@@ -249,16 +262,17 @@ namespace Corium3D {
 
 		glm::vec3 c; // center
 		glm::vec3 s; // scale
-		glm::mat3 r; // rotation matrix		
+		glm::mat3 r; // rotation matrix	
+		glm::vec3 offset; // offset translation from object center
 		bool wasLastFrameSeparated = true;
 		unsigned int lastCollisionResLmntIdx = 6; // lmnts [0,2] -> edges; lmnts [3,5] -> faces; 6 -> no collision
 		static unsigned int axIdxs1[3];
 		static unsigned int axIdxs2[3];
 
 		CollisionBox() {}
-		CollisionBox(glm::vec3 const& center, glm::vec3 scale);
+		CollisionBox(glm::vec3 const& center, glm::vec3 const& scale);
 		~CollisionBox() {}
-		CollisionVolume* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory) const override;
+		CollisionVolume* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const override;
 		void destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) override;
 
 		inline static void movePlaneAxIdxInBuffer(unsigned int idx);
@@ -266,7 +280,7 @@ namespace Corium3D {
 		inline static void revertPlaneIdxToBufferStart(unsigned int idx);
 		inline static void revertEdgesIdxsToBuffersStart(unsigned int idx1, unsigned int idx2);
 		inline glm::vec3 supportMapMinusDirection(glm::vec3 const& vec, unsigned int directionIdx);
-		inline void clipCapsuleVec(CollisionCapsule const* capsule, unsigned int facenAxIdx, glm::vec3 const& faceNormal, glm::vec3* clipPointsOut);
+		inline void clipCapsuleVec(CollisionCapsule const* capsule, unsigned int facenAxIdx, glm::vec3 const& faceNormal, glm::vec3* clipPointsOut);		
 		//inline bool getSegmentIntersectionPointWithFace(glm::vec3 const& segmentC, glm::vec3 const& segmentV, glm::vec3 const& faceNormal, glm::vec3 const& faceCenter, glm::vec3 const& faceVec1, float faceHalfSide1Len, glm::vec3 const& faceVec2, float faceHalfSide2Len, glm::vec3& intersectionPointOut);	
 
 		// Visitor pattern: visitors	
@@ -293,11 +307,23 @@ namespace Corium3D {
 		friend class CollisionPrimitivesFactory;
 		friend class Corium3DUtils::ObjPool<CollisionSphere>;
 
-		void translate(glm::vec3 const& translation) override { c += translation; }
-		void scale(glm::vec3 const& scale) override { r *= scale.x; }
-		void scale(float scale) override { r *= scale; }
-		void rotate(glm::quat const& rot) override {}
-		void transform(Transform3D const& transform) override { scale(transform.scale.x); translate(transform.translate); }
+		void translate(glm::vec3 const& translation) override { c += translation; }		
+		void scale(float scaleFactor) override 
+		{
+			r *= scaleFactor; 
+			c -= offset; 
+			offset *= scaleFactor; 
+			c += offset; 
+		}
+
+		void rotate(glm::quat const& rot) override 
+		{ 
+			c -= offset; 
+			offset = rot * offset; 
+			c += offset; 
+		}
+
+		void transform(Transform3DUS const& transform) override { scale(transform.scale); translate(transform.translate); }
 		glm::vec3 supportMap(glm::vec3 const& vec) const override { return c; }
 		glm::vec3 getArbitraryV() const override { return c; }
 		glm::vec3 const& getC() const { return c; }
@@ -312,12 +338,13 @@ namespace Corium3D {
 	private:
 		glm::vec3 c; // center
 		float r; // radius	
+		glm::vec3 offset; // offset translation from object center
 
 		CollisionSphere() {}
 		CollisionSphere(glm::vec3 const& center, float radius);
 		~CollisionSphere() {}
-		CollisionVolume* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory) const override;
-		void destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) override;
+		CollisionVolume* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const override;
+		void destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) override;		
 
 		// Visitor pattern: visitors
 		bool testCollision(CollisionBox* box) override { return false; }
@@ -339,19 +366,26 @@ namespace Corium3D {
 		friend class CollisionPrimitivesFactory;
 		friend class Corium3DUtils::ObjPool<CollisionCapsule>;
 
-		void translate(glm::vec3 const& translation) override { c1 += translation; }
-		void scale(glm::vec3 const& scale) override { v *= scale.x; c1 += 0.5f * (1 - scale.x) * v; r *= scale.y; }
-		void scale(float scale) override { v *= scale; c1 += 0.5f * v; r *= scale; }
-		void rotate(glm::quat const& rot) override {
-			glm::vec3 rotatedV = rot * v;
-			c1 += 0.5f * (v - rotatedV);
-			v = rotatedV;
+		void translate(glm::vec3 const& translation) override { c1 += translation; }		
+		void scale(float scaleFactor) override 
+		{ 
+			v *= scaleFactor; 
+			c1 -= offset; 
+			offset *= scaleFactor; 
+			c1 += 0.5f * (1 - scaleFactor) * v + offset; 
+			r *= scaleFactor; 
 		}
-		void transform(Transform3D const& transform) override {
-			scale(transform.scale);
-			rotate(transform.rot);
-			translate(transform.translate);
+
+		void rotate(glm::quat const& rot) override 
+		{ 
+			glm::vec3 rotatedV = rot * v; 
+			c1 -= offset; 
+			offset = rot * offset; 
+			c1 += 0.5f * (v - rotatedV) + offset; 
+			v = rotatedV; 
 		}
+
+		void transform(Transform3DUS const& transform) override { scale(transform.scale); rotate(transform.rot); translate(transform.translate); }
 		glm::vec3 supportMap(glm::vec3 const& vec) const override { return glm::dot(vec, v) > 0.0f ? c1 + v : c1; }
 		glm::vec3 getArbitraryV() const override { return c1; }
 		bool testSegCollision(glm::vec3 const& segOrigin, glm::vec3 const& segDest, float& segFactorOnCollisionOut) override;
@@ -369,11 +403,12 @@ namespace Corium3D {
 		glm::vec3 c1; // center 1
 		glm::vec3 v; // axis
 		float r; // radius	
+		glm::vec3 offset; // offset translation from object center
 
 		CollisionCapsule() {}
 		CollisionCapsule(glm::vec3 const& center1, glm::vec3 const& axisVec, float radius);
 		~CollisionCapsule() {}
-		CollisionVolume* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory) const override;
+		CollisionVolume* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const override;
 		void destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) override;
 
 		// Visitor pattern: visitors
@@ -396,11 +431,10 @@ namespace Corium3D {
 		friend class CollisionPrimitivesFactory;
 		friend class Corium3DUtils::ObjPool<CollisionCone>;
 
-		void translate(glm::vec3 const& translation) override;
-		void scale(glm::vec3 const& scale) override;
-		void scale(float scale) override;
+		void translate(glm::vec3 const& translation) override;		
+		void scale(float scaleFactor) override;
 		void rotate(glm::quat const& rot) override;
-		void transform(Transform3D const& transform) override;
+		void transform(Transform3DUS const& transform) override;
 		glm::vec3 supportMap(glm::vec3 const& vec) const override;
 		glm::vec3 getArbitraryV() const override;
 		bool testSegCollision(glm::vec3 const& segOrigin, glm::vec3 const& segDest, float& segFactorOnCollisionOut) override;
@@ -420,7 +454,7 @@ namespace Corium3D {
 		CollisionCone() {}
 		CollisionCone(glm::vec3 const& center, float baseRadius, float halfHeight, glm::vec3 const& axisVec);
 		~CollisionCone() {}
-		CollisionVolume* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory) const override;
+		CollisionVolume* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const override;
 		void destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) override;
 	};
 
@@ -429,11 +463,10 @@ namespace Corium3D {
 		friend class CollisionPrimitivesFactory;
 		friend class Corium3DUtils::ObjPool<CollisionCylinder>;
 
-		void translate(glm::vec3 const& translation) override;
-		void scale(glm::vec3 const& scale) override;
-		void scale(float scale) override;
+		void translate(glm::vec3 const& translation) override;		
+		void scale(float scaleFactor) override;
 		void rotate(glm::quat const& rot) override;
-		void transform(Transform3D const& transform) override;
+		void transform(Transform3DUS const& transform) override;
 		glm::vec3 supportMap(glm::vec3 const& vec) const override;
 		glm::vec3 getArbitraryV() const override;
 		bool testSegCollision(glm::vec3 const& segOrigin, glm::vec3 const& segDest, float& segFactorOnCollisionOut) override;
@@ -452,7 +485,7 @@ namespace Corium3D {
 		CollisionCylinder() {}
 		CollisionCylinder(glm::vec3 const& center, float radius, float halfHeight);
 		~CollisionCylinder() {}
-		CollisionVolume* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory) const override;
+		CollisionVolume* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const override;
 		void destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) override;
 	};
 
@@ -462,11 +495,10 @@ namespace Corium3D {
 
 		CollisionPerimeter() {}
 		virtual ~CollisionPerimeter() {}
-		virtual void translate(glm::vec2 const& translation) = 0;
-		virtual void scale(glm::vec2 const& scale) = 0;
-		virtual void scale(float scale) = 0;
+		virtual void translate(glm::vec2 const& translation) = 0;		
+		virtual void scale(float scaleFactor) = 0;
 		virtual void rotate(std::complex<float> const& rot) = 0;
-		virtual void transform(Transform2D const& transform) = 0;
+		virtual void transform(Transform2DUS const& transform) = 0;
 		virtual bool testSegCollision(glm::vec2 const& segOrigin, glm::vec2 const& segDest, float& segFactorOnCollisionOut) = 0;
 		virtual bool testSegCollision(glm::vec2 const& segOrigin, glm::vec2 const& segDest) = 0;
 
@@ -487,11 +519,10 @@ namespace Corium3D {
 		friend class CollisionPrimitivesFactory;
 		friend class Corium3DUtils::ObjPool<CollisionPolytope>;
 
-		void translate(glm::vec2 const& translation) override;
-		void scale(glm::vec2 const& scale) override;
+		void translate(glm::vec2 const& translation) override;		
 		void scale(float scale) override;
 		void rotate(std::complex<float> const& rot) override;
-		void transform(Transform2D const& transform) override;
+		void transform(Transform2DUS const& transform) override;
 		glm::vec2 supportMap(glm::vec2 const& vec) const override;
 		glm::vec2 getArbitraryV() const override;
 		virtual bool testSegCollision(glm::vec2 const& segOrigin, glm::vec2 const& segDest, float& segFactorOnCollisionOut) override;
@@ -530,15 +561,25 @@ namespace Corium3D {
 		friend class CollisionPrimitivesFactory;
 		friend class Corium3DUtils::ObjPool<CollisionRect>;
 
-		void translate(glm::vec2 const& translation) override { c += translation; }
-		void scale(glm::vec2 const& scale) override { s *= scale; }
-		void scale(float scale) override { s *= scale; }
-		void rotate(std::complex<float> const& rot) override { r = glm::mat2(rot.real(), rot.imag(), -rot.imag(), rot.real()) * r; }
-		void transform(Transform2D const& transform) override {
-			scale(transform.scale);
-			rotate(transform.rot);
-			translate(transform.translate);
+		void translate(glm::vec2 const& translation) override { c += translation; }		
+		void scale(float scaleFactor) override 
+		{ 
+			s *= scaleFactor;
+			c -= offset; 
+			offset *= scaleFactor; 
+			c += offset; 
 		}
+
+		void rotate(std::complex<float> const& rot) override 
+		{ 
+			glm::mat2 rotMat(rot.real(), rot.imag(), -rot.imag(), rot.real());
+			r = rotMat * r; 
+			c -= offset; 
+			offset = rotMat * offset; 
+			c += offset; 
+		}
+
+		void transform(Transform2DUS const& transform) override { scale(transform.scale); rotate(transform.rot); translate(transform.translate); }
 		glm::vec2 supportMap(glm::vec2 const& vec) const override;
 		glm::vec2 getArbitraryV() const override;
 		bool testSegCollision(glm::vec2 const& segOrigin, glm::vec2 const& segDest, float& segFactorOnCollisionOut) override;
@@ -562,14 +603,15 @@ namespace Corium3D {
 
 		glm::vec2 c; // center
 		glm::vec2 s; // scale
-		glm::mat2 r; // rotation matrix		
+		glm::mat2 r; // rotation matrix	
+		glm::vec2 offset; // offset translation from object center
 		bool wasLastFrameSeparated = true;
 		bool didOwnLastSeparationAx = false;
 
 		CollisionRect() {}
 		CollisionRect(glm::vec2 const& center, glm::vec2 extent);
 		~CollisionRect() {}
-		CollisionPerimeter* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory) const override;
+		CollisionPerimeter* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const override;
 		void destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) override;
 
 		inline void clipStadiumVec(CollisionStadium const* stadium, unsigned int sideAxIdx, glm::vec2 const& faceNormal, glm::vec2* clipPointsOut);
@@ -597,11 +639,24 @@ namespace Corium3D {
 		friend class CollisionPrimitivesFactory;
 		friend class Corium3DUtils::ObjPool<CollisionCircle>;
 
-		void translate(glm::vec2 const& translation) override { c += translation; }
-		void scale(glm::vec2 const& scale) override { r *= scale.x; }
-		void scale(float scale) override { r *= scale; }
-		void rotate(std::complex<float> const& rot) override {}
-		void transform(Transform2D const& transform) override { scale(transform.scale.x); translate(transform.translate); }
+		void translate(glm::vec2 const& translation) override { c += translation; }		
+		void scale(float scaleFactor) override
+		{ 
+			r *= scaleFactor; 
+			c -= offset; 
+			offset *= scaleFactor; 
+			c += offset; 
+		}
+
+		void rotate(std::complex<float> const& rot) override 
+		{
+			glm::mat2 rotationMat(rot.real(), rot.imag(), -rot.imag(), rot.real());
+			c -= offset;
+			offset = rotationMat * offset;
+			c += offset;
+		}
+
+		void transform(Transform2DUS const& transform) override { scale(transform.scale); translate(transform.translate); }
 		glm::vec2 supportMap(glm::vec2 const& vec) const override { return c; }
 		glm::vec2 getArbitraryV() const override { return c; }
 		bool testSegCollision(glm::vec2 const& segOrigin, glm::vec2 const& segDest, float& segFactorOnCollisionOut) override;
@@ -617,11 +672,12 @@ namespace Corium3D {
 	private:
 		glm::vec2 c; // center
 		float r; // radius	
+		glm::vec2 offset; // offset translation from object center
 
 		CollisionCircle() {}
 		CollisionCircle(glm::vec2 const& center, float radius);
 		~CollisionCircle() {}
-		CollisionPerimeter* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory) const override;
+		CollisionPerimeter* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const override;
 		void destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) override;
 
 		// Visitor pattern: visitors
@@ -644,19 +700,32 @@ namespace Corium3D {
 		friend class CollisionPrimitivesFactory;
 		friend class Corium3DUtils::ObjPool<CollisionStadium>;
 
-		void translate(glm::vec2 const& translation) override { c1 += translation; }
-		void scale(glm::vec2 const& scale) override { v *= scale.x; c1 += 0.5f * (1 - scale.x) * v; r *= scale.y; }
-		void scale(float scale) override { v *= scale; c1 += 0.5f * v; r *= scale; }
-		void rotate(std::complex<float> const& rot) override {
-			glm::vec2 rotatedV = { rot.real() * v.x - rot.imag() * v.y, rot.real() * v.y + rot.imag() * v.x };
-			c1 += 0.5f * (v - rotatedV);
+		void translate(glm::vec2 const& translation) override { c1 += translation; }		
+		void scale(float scaleFactor) override
+		{ 
+			v *= scaleFactor; 
+			c1 -= offset; 
+			offset *= scaleFactor; 
+			c1 += 0.5f * (1 - scaleFactor) * v + offset; 
+			r *= scaleFactor;			 
+		}
+
+		void rotate(std::complex<float> const& rot) override 
+		{
+			glm::mat2 rotationMat(rot.real(), rot.imag(), -rot.imag(), rot.real());			
+			glm::vec2 rotatedV = rotationMat * v;
+			c1 -= offset;
+			offset = rotationMat * offset;
+			c1 += 0.5f * (v - rotatedV) + offset;
 			v = rotatedV;
 		}
-		void transform(Transform2D const& transform) override {
+
+		void transform(Transform2DUS const& transform) override {
 			scale(transform.scale);
 			rotate(transform.rot);
 			translate(transform.translate);
 		}
+
 		glm::vec2 supportMap(glm::vec2 const& vec) const override { return glm::dot(vec, v) > 0.0f ? c1 + v : c1; }
 		glm::vec2 getArbitraryV() const override { return c1; }
 		bool testSegCollision(glm::vec2 const& segOrigin, glm::vec2 const& segDest, float& segFactorOnCollisionOut) override;
@@ -674,11 +743,12 @@ namespace Corium3D {
 		glm::vec2 c1; // center 1
 		glm::vec2 v; // axis
 		float r; // radius	
+		glm::vec2 offset; // offset translation from object center
 
 		CollisionStadium() {}
 		CollisionStadium(glm::vec2 const& center1, glm::vec2 const& axisVec, float radius);
 		~CollisionStadium() {}
-		CollisionPerimeter* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory) const override;
+		CollisionPerimeter* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const override;
 		void destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) override;
 
 		// Visitor pattern: visitors
@@ -697,8 +767,8 @@ namespace Corium3D {
 	};
 
 	template <class V>
-	CollisionPrimitive<V>* CollisionPrimitivesFactory::genCollisionPrimitive(CollisionPrimitive<V> const& prototypeCollisionPrimitive) {
-		return prototypeCollisionPrimitive.clone(*this);
+	CollisionPrimitive<V>* CollisionPrimitivesFactory::genCollisionPrimitive(CollisionPrimitive<V> const& prototypeCollisionPrimitive, Transform3D const& newCloneParentTransform) {
+		return prototypeCollisionPrimitive.clone(*this, newCloneParentTransform);
 	}
 
 	template <class V>

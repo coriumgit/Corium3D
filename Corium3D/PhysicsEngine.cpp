@@ -7,15 +7,18 @@ namespace Corium3D {
 	PhysicsEngine::PhysicsEngine(unsigned int mobilityInterfacesNrMax, float _secsPerUpdate) :
 		mobilityInterfacesPool(mobilityInterfacesNrMax), mobilityInterfacesIt(mobilityInterfacesPool), secsPerUpdate(_secsPerUpdate) {}
 
-	PhysicsEngine::MobilityInterface* PhysicsEngine::addMobileGameLmnt(Transform3D const& initTransform,
+	PhysicsEngine::MobilityInterface* PhysicsEngine::addMobileGameLmnt(
+		Transform3D const& initTransform,
 		OnMovementMadeCallback3D* listeners3D, unsigned int listeners3DNr,
 		std::complex<float> initTransform2DRot,
-		OnMovementMadeCallback2D* listeners2D, unsigned int listeners2DNr) {
+		OnMovementMadeCallback2D* listeners2D, unsigned int listeners2DNr) 
+	{
 		MobilityInterface* newMobilityInterface = mobilityInterfacesPool.acquire(initTransform, listeners3D, listeners3DNr, initTransform2DRot, listeners2D, listeners2DNr, secsPerUpdate);
 		return newMobilityInterface;
 	}
 
-	PhysicsEngine::MobilityInterface* PhysicsEngine::addMobileGameLmnt(Transform3D const& initTransform, OnMovementMadeCallback3D* listeners3D, unsigned int listeners3DNr) {
+	PhysicsEngine::MobilityInterface* PhysicsEngine::addMobileGameLmnt(Transform3D const& initTransform, OnMovementMadeCallback3D* listeners3D, unsigned int listeners3DNr) 
+	{
 		MobilityInterface* newMobilityInterface = mobilityInterfacesPool.acquire(initTransform, listeners3D, listeners3DNr, secsPerUpdate);
 		return newMobilityInterface;
 	}
@@ -76,7 +79,7 @@ namespace Corium3D {
 	}
 
 	void PhysicsEngine::MobilityInterface::update(float time) {
-		Transform3D transformDelta;
+		Transform3DUS transformDelta;
 		transformDelta.translate = 0.5f * (linVel + time * linAccel) * time + 0.5f * linAccel * time * time;
 		linVel += time * linAccel;
 		transformDelta.rot = glm::angleAxis(angVelMag * time, angVelAx);
@@ -87,7 +90,7 @@ namespace Corium3D {
 		for (unsigned int listener3DIdx = 0; listener3DIdx < listeners3DNr; listener3DIdx++)
 			listeners3D[listener3DIdx](transformDelta);
 		for (unsigned int listener2DIdx = 0; listener2DIdx < listeners2DNr; listener2DIdx++) {
-			listeners2D[listener2DIdx](Transform2D({ transformDelta.translate, transformDelta.scale, rot2DDelta }));
+			listeners2D[listener2DIdx](Transform2DUS({ transformDelta.translate, transformDelta.scale, rot2DDelta }));
 		}
 	}
 
@@ -99,7 +102,7 @@ namespace Corium3D {
 		for (unsigned int listener3DIdx = 0; listener3DIdx < listeners3DNr; listener3DIdx++)
 			listeners3D[listener3DIdx](transformDeltaPerUpdate);
 		for (unsigned int listener2DIdx = 0; listener2DIdx < listeners2DNr; listener2DIdx++)
-			listeners2D[listener2DIdx](Transform2D({ transformDeltaPerUpdate.translate, transformDeltaPerUpdate.scale, transform2DRotDeltaPerUpdate }));
+			listeners2D[listener2DIdx](Transform2DUS({ transformDeltaPerUpdate.translate, transformDeltaPerUpdate.scale, transform2DRotDeltaPerUpdate }));
 	}
 
 } // namespace Corium3D

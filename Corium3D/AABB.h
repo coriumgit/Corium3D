@@ -29,15 +29,17 @@ namespace Corium3D {
 		glm::vec3 calcExtents() const { return 0.5f*(maxVertex - minVertex); }
 		glm::vec3 calcSz() const { return (maxVertex - minVertex); }
 		float getSurface() const { return surface; }
-		AABB3D& transform(glm::vec3 const& translate, glm::vec3 const& scale);
+		AABB3D& transform(glm::vec3 const& translate, float scaleFactor);
 		AABB3D& translate(glm::vec3 const& translate);
-		AABB3D& scale(glm::vec3 const& scale);	
+		AABB3D& scale(float scaleFactor);			
 		bool isIntersectedBySeg(glm::vec3 const& segStart, glm::vec3 const& segEnd);
 	
 		static AABB3D calcAABB(glm::vec3 verticesArr[], size_t verticesNr);
-		static AABB3D calcTransformedAABB(AABB3D const& original, glm::vec3 const& translate, glm::vec3 const& scale);
+		static AABB3D calcTransformedAABB(AABB3D const& original, glm::vec3 const& translate, float scaleFactor);
+		static AABB3D calcTransformedAABB(AABB3D const& original, glm::vec3 const& translate, glm::vec3 const& scaleFactor);
 		static AABB3D calcTranslatedAABB(AABB3D const& original, glm::vec3 const& translate);
-		static AABB3D calcScaledAABB(AABB3D const& original, glm::vec3 const& scale);
+		static AABB3D calcScaledAABB(AABB3D const& original, float scaleFactor);
+		static AABB3D calcScaledAABB(AABB3D const& original, glm::vec3 const& scaleFactor);
 		static AABB3D calcCombinedAABB(AABB3D const& original, AABB3D const& other);
 
 		AABB3D& combine(AABB const& other) override;
@@ -48,6 +50,10 @@ namespace Corium3D {
 	protected:
 		glm::vec3 minVertex;
 		glm::vec3 maxVertex;
+		glm::vec3 offset;
+
+	private:
+		void scale(glm::vec3 const& scaleFactor);
 	};
 
 	// TODO: Fix combine & inherited getMin/MaxVertex, doesContain, doesIntersect 
@@ -55,16 +61,18 @@ namespace Corium3D {
 	public:
 		AABB3DRotatable() {}
 		AABB3DRotatable(glm::vec3 const&  minVertex, glm::vec3 const& maxVertex);
-		AABB3DRotatable& transform(glm::vec3 const& translate, glm::mat3& rotMat);
-		AABB3DRotatable& transform(Transform3D const& transformDelta);
+		//AABB3DRotatable& transform(glm::vec3 const& translate, glm::mat3& rotMat);
+		AABB3DRotatable& transform(Transform3DUS const& transform);
 		AABB3DRotatable& translate(glm::vec3 const& translate);
-		AABB3DRotatable& scale(glm::vec3 const& scale);
+		AABB3DRotatable& scale(float scaleFactor);
 		AABB3DRotatable& rotate(glm::quat const& rot);
 
 		static AABB3DRotatable calcAABB(glm::vec3 verticesArr[], size_t verticesNr);
+		static AABB3DRotatable calcTransformedAABB(AABB3DRotatable const& original, Transform3DUS const& transform);
 		static AABB3DRotatable calcTransformedAABB(AABB3DRotatable const& original, Transform3D const& transform);
 		static AABB3DRotatable calcTranslatedAABB(AABB3DRotatable const& original, glm::vec3 const& translate);
-		static AABB3DRotatable calcScaledAABB(AABB3DRotatable const& original, glm::vec3 const& scale);
+		static AABB3DRotatable calcScaledAABB(AABB3DRotatable const& original, float scaleFactor);
+		static AABB3DRotatable calcScaledAABB(AABB3DRotatable const& original, glm::vec3 const& scaleFactor);
 		static AABB3DRotatable calcRotatedAABB(AABB3DRotatable const& original, glm::quat const& rot);
 		static AABB3DRotatable calcCombinedAABB(AABB3DRotatable const& original, AABB3DRotatable const& other);
 
@@ -73,6 +81,10 @@ namespace Corium3D {
 	private:
 		glm::vec3 unrotatedHalfDims;
 		glm::quat rotQuat = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+
+		glm::vec3 compVecToMax();
+		void transform(Transform3D const& transform);
+		void scale(glm::vec3 const& scaleFactor);		
 	};
 
 	class AABB2D : public AABB {
@@ -85,14 +97,16 @@ namespace Corium3D {
 		glm::vec2 calcExtents() const { return 0.5f * (maxVertex - minVertex); }
 		glm::vec2 calcSz() const { return (maxVertex - minVertex); }
 		float getSurface() const { return surface; }
-		AABB2D& transform(glm::vec2 const& translate, glm::vec2 const& scale);
+		AABB2D& transform(glm::vec2 const& translate, float scaleFactor);
 		AABB2D& translate(glm::vec2 const& translate);
-		AABB2D& scale(glm::vec2 const& scale);
+		AABB2D& scale(float scaleFactor);
 
 		static AABB2D calcAABB(glm::vec3 verticesArr[], size_t verticesNr);
-		static AABB2D calcTransformedAABB(AABB2D const& original, glm::vec2 const& translate, glm::vec2 const& scale);
+		static AABB2D calcTransformedAABB(AABB2D const& original, glm::vec2 const& translate, float scaleFactor);
+		static AABB2D calcTransformedAABB(AABB2D const& original, glm::vec2 const& translate, glm::vec2 const& scaleFactor);
 		static AABB2D calcTranslatedAABB(AABB2D const& original, glm::vec2 const& translate);
-		static AABB2D calcScaledAABB(AABB2D const& original, glm::vec2 const& scale);
+		static AABB2D calcScaledAABB(AABB2D const& original, float scaleFactor);
+		static AABB2D calcScaledAABB(AABB2D const& original, glm::vec2 const& scaleFactor);
 		static AABB2D calcCombinedAABB(AABB2D const& aabb1, AABB2D const& aabb2);
 
 		AABB2D& combine(AABB const& other) override;
@@ -102,24 +116,30 @@ namespace Corium3D {
 		bool isValid() const { return minVertex.x < maxVertex.x; }
 
 	protected:
-		glm::vec2 minVertex = { 0.0f, 0.0f };
-		glm::vec2 maxVertex = { 0.0f, 0.0f };
+		glm::vec2 minVertex;
+		glm::vec2 maxVertex;
+		glm::vec2 offset;
+
+	private:
+		void scale(glm::vec2 const& scaleFactor);
 	};
 
 	class AABB2DRotatable : public AABB2D {
 	public:
 		AABB2DRotatable() {}
 		AABB2DRotatable(glm::vec2 const& minVertex, glm::vec2 const& maxVertex);
-		AABB2DRotatable& transform(glm::vec2 const& translate, glm::mat2 const& rotMat);
-		AABB2DRotatable& transform(Transform2D const& transformDelta);
+		//AABB2DRotatable& transform(glm::vec2 const& translate, glm::mat2 const& rotMat);
+		AABB2DRotatable& transform(Transform2DUS const& transform);
 		AABB2DRotatable& translate(glm::vec2 const& translate);
-		AABB2DRotatable& scale(glm::vec2 const& scale);
+		AABB2DRotatable& scale(float scaleFactor);
 		AABB2DRotatable& rotate(std::complex<float> const& rot);
 
 		static AABB2DRotatable calcAABB(glm::vec3 verticesArr[], size_t verticesNr);
+		static AABB2DRotatable calcTransformedAABB(AABB2DRotatable const& original, Transform2DUS const& transform);
 		static AABB2DRotatable calcTransformedAABB(AABB2DRotatable const& original, Transform2D const& transform);
 		static AABB2DRotatable calcTranslatedAABB(AABB2DRotatable const& original, glm::vec2 const& translate);
-		static AABB2DRotatable calcScaledAABB(AABB2DRotatable const& original, glm::vec2 const& scale);
+		static AABB2DRotatable calcScaledAABB(AABB2DRotatable const& original, float scaleFactor);
+		static AABB2DRotatable calcScaledAABB(AABB2DRotatable const& original, glm::vec2 const& scaleFactor);
 		static AABB2DRotatable calcRotatedAABB(AABB2DRotatable const& original, std::complex<float> rot);
 		static AABB2DRotatable calcCombinedAABB(AABB2DRotatable const& original, AABB2DRotatable const& other);
 
@@ -128,6 +148,10 @@ namespace Corium3D {
 	private:
 		glm::vec2 unrotatedHalfDims;
 		std::complex<float> rotComplex = std::complex<float>(1.0f, 0.0f);
+
+		glm::vec2 compVecToMax();
+		void transform(Transform2D const& transform);
+		void scale(glm::vec2 const& scaleFactor);
 	};
 
 } // namespace Corium3D

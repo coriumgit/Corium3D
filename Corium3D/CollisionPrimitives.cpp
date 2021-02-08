@@ -1,6 +1,7 @@
 #include "ServiceLocator.h"
 #include "CollisionPrimitives.h"
 #include "AssetsOps.h"
+#include <glm/gtc/epsilon.hpp>
 #include <string>
 #include <sstream>
 
@@ -578,11 +579,16 @@ namespace Corium3D {
 	}
 
 	// Reminder: crashed on a slow shallow penetration with a capsule when r[2] was initialized to {0.0f, EPSILON_ZERO, 1.0f} 
-	CollisionBox::CollisionBox(glm::vec3 const& center, glm::vec3 scale) :
-		c(center), r{ {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f} }, s{ abs(scale.x), abs(scale.y), abs(scale.z) } {}
+	CollisionBox::CollisionBox(glm::vec3 const& center, glm::vec3 const& scale) :
+		c(center), r{ {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f} }, s{ abs(scale.x), abs(scale.y), abs(scale.z) }, offset(center) {}
 
-	CollisionVolume* CollisionBox::clone(CollisionPrimitivesFactory& collisionPrimitivesFactory) const {
-		return collisionPrimitivesFactory.genCollisionBox(c, s);
+	CollisionVolume* CollisionBox::clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const 
+	{		
+		CollisionBox* collisionBoxCloned = collisionPrimitivesFactory.genCollisionBox(c * newCloneParentTransform.scale, s * newCloneParentTransform.scale);
+		collisionBoxCloned->rotate(newCloneParentTransform.rot);
+		collisionBoxCloned->translate(newCloneParentTransform.translate);
+
+		return collisionBoxCloned;
 	}
 
 	void CollisionBox::destroy(CollisionPrimitivesFactory& CollisionVolumesFactory) {
@@ -1190,15 +1196,21 @@ namespace Corium3D {
 		return false;
 	}
 
-	CollisionSphere::CollisionSphere(glm::vec3 const& center, float radius) : c(center), r(radius) {}
+	CollisionSphere::CollisionSphere(glm::vec3 const& center, float radius) : c(center), r(radius), offset(center) {}
 
-	CollisionVolume* CollisionSphere::clone(CollisionPrimitivesFactory& collisionPrimitivesFactory) const {
-		return collisionPrimitivesFactory.genCollisionSphere(c, r);
+	CollisionVolume* CollisionSphere::clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const
+	{		
+		CollisionSphere* collisionSphereCloned = collisionPrimitivesFactory.genCollisionSphere(
+			c * newCloneParentTransform.scale, r * std::max(newCloneParentTransform.scale.x, std::max(newCloneParentTransform.scale.y, newCloneParentTransform.scale.z)));
+		collisionSphereCloned->rotate(newCloneParentTransform.rot);
+		collisionSphereCloned->translate(newCloneParentTransform.translate);
+
+		return collisionSphereCloned;
 	}
 
 	void CollisionSphere::destroy(CollisionPrimitivesFactory& CollisionVolumesFactory) {
 		CollisionVolumesFactory.destroyCollisionSphere(this);
-	}
+	}	
 
 	bool CollisionSphere::testCollision(CollisionSphere* other, ContactManifold& manifoldOut) {
 		vec3 centersVec = other->c - c;
@@ -1394,10 +1406,35 @@ namespace Corium3D {
 		return false;
 	}
 
-	CollisionCapsule::CollisionCapsule(glm::vec3 const& center1, glm::vec3 const& axisVec, float radius) : c1(center1), v(axisVec), r(radius) {}
+	CollisionCapsule::CollisionCapsule(glm::vec3 const& center1, glm::vec3 const& axisVec, float radius) : c1(center1), v(axisVec), r(radius), offset(center1 + 0.5f * axisVec) {}
 
-	CollisionVolume* CollisionCapsule::clone(CollisionPrimitivesFactory& collisionPrimitivesFactory) const {
-		return collisionPrimitivesFactory.genCollisionCapsule(c1, v, r);
+	CollisionVolume* CollisionCapsule::clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const 
+	{		
+		glm::vec3 vecNotParalledToV;
+		if (glm::any(glm::epsilonNotEqual(v, glm::vec3(1.0f, 0.0f, 0.0f), EPSILON_ZERO)))
+			vecNotParalledToV = glm::vec3(1.0f, 0.0f, 0.0f);
+		else 
+			vecNotParalledToV = glm::vec3(0.0f, 1.0f, 0.0f);
+		
+		glm::vec3 radiiPlaneContainedAxis1 = glm::normalize(glm::cross(glm::cross(v, vecNotParalledToV), v));
+		glm::vec3 radiiPlaneContainedAxis2 = glm::normalize(glm::cross(radiiPlaneContainedAxis1, v));
+		glm::vec3 radiiPlaneContainedAxis1Scaled = radiiPlaneContainedAxis1 * newCloneParentTransform.scale;
+		glm::vec3 radiiPlaneContainedAxis2Scaled = radiiPlaneContainedAxis2 * newCloneParentTransform.scale;
+		float newCloneRadiusScaleFactor;
+		if (glm::length2(radiiPlaneContainedAxis1Scaled) > glm::length2(radiiPlaneContainedAxis2Scaled))
+			newCloneRadiusScaleFactor = glm::length(radiiPlaneContainedAxis1Scaled);
+		else
+			newCloneRadiusScaleFactor = glm::length(radiiPlaneContainedAxis2Scaled);
+
+		CollisionCapsule* collisionCapsuleCloned = collisionPrimitivesFactory.genCollisionCapsule(
+			c1 * newCloneParentTransform.scale, 
+			v * newCloneParentTransform.scale,
+			r * newCloneRadiusScaleFactor);
+		
+		collisionCapsuleCloned->rotate(newCloneParentTransform.rot);
+		collisionCapsuleCloned->translate(newCloneParentTransform.translate);
+
+		return collisionCapsuleCloned;
 	}
 
 	void CollisionCapsule::destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) {
@@ -1774,8 +1811,8 @@ namespace Corium3D {
 
 	glm::vec2 CollisionRect::getArbitraryV() const {
 		return c + r[0]*s.x + r[1]*s.y;
-	}
-
+	}	
+	
 	inline unsigned char calcOutCode(glm::vec2 const& vertex, glm::vec2 const& rectMin, glm::vec2 const& rectMax) {
 		return ((vertex.x < rectMin.x)) | ((rectMax.x < vertex.x) << 1) |
 			   ((vertex.y < rectMin.y) << 2) | ((rectMax.y < vertex.y) << 3);
@@ -1836,10 +1873,14 @@ namespace Corium3D {
 	}
 
 	CollisionRect::CollisionRect(glm::vec2 const& center, glm::vec2 extent) :
-		c(center), r{ {1.0f, 0.0f}, {0.0f, 1.0f} }, s{ abs(extent.x), abs(extent.y) } {}
+		c(center), r{ {1.0f, 0.0f}, {0.0f, 1.0f} }, s{ abs(extent.x), abs(extent.y) }, offset(center) {}
 
-	CollisionPerimeter* CollisionRect::clone(CollisionPrimitivesFactory& collisionPrimitivesFactory) const {
-		return collisionPrimitivesFactory.genCollisionRect(c, s);
+	CollisionPerimeter* CollisionRect::clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const {		
+		CollisionRect* collisionRectCloned = collisionPrimitivesFactory.genCollisionRect(c * glm::vec2(newCloneParentTransform.scale), s * glm::vec2(newCloneParentTransform.scale));
+		collisionRectCloned->rotate(rotQuatToRotComplex(newCloneParentTransform.rot));
+		collisionRectCloned->translate(newCloneParentTransform.translate);
+
+		return collisionRectCloned;
 	}
 
 	void CollisionRect::destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) {
@@ -2151,7 +2192,7 @@ namespace Corium3D {
 		// if (manifoldOut.pointsNr > 2) {}	
 	}
 
-	CollisionCircle::CollisionCircle(glm::vec2 const& center, float radius) : c(center), r(radius) {}
+	CollisionCircle::CollisionCircle(glm::vec2 const& center, float radius) : c(center), r(radius), offset(center) {}
 
 	bool CollisionCircle::testCollision(CollisionCircle* other, ContactManifold& manifoldOut) {
 		vec2 centersVec = other->c - c;
@@ -2254,15 +2295,20 @@ namespace Corium3D {
 			return false;
 	}
 
-	CollisionPerimeter* CollisionCircle::clone(CollisionPrimitivesFactory& collisionPrimitivesFactory) const {
-		return collisionPrimitivesFactory.genCollisionCircle(c, r);
+	CollisionPerimeter* CollisionCircle::clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const {
+		CollisionCircle* collisionCircleCloned = collisionPrimitivesFactory.genCollisionCircle(
+			c * glm::vec2(newCloneParentTransform.scale), r * std::max(newCloneParentTransform.scale.x, newCloneParentTransform.scale.y));
+		collisionCircleCloned->rotate(rotQuatToRotComplex(newCloneParentTransform.rot));
+		collisionCircleCloned->translate(newCloneParentTransform.translate);
+
+		return collisionCircleCloned;
 	}
 
 	void CollisionCircle::destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) {
 		collisionPrimitivesFactory.destroyCollisionCircle(this);
 	}
 
-	CollisionStadium::CollisionStadium(glm::vec2 const& center1, glm::vec2 const& axisVec, float radius) : c1(center1), v(axisVec), r(radius) {}
+	CollisionStadium::CollisionStadium(glm::vec2 const& center1, glm::vec2 const& axisVec, float radius) : c1(center1), v(axisVec), r(radius), offset(center1 + 0.5f * axisVec) {}
 
 	bool CollisionStadium::testCollision(CollisionStadium* other) {
 		vec2 w = other->c1 - c1;
@@ -2622,8 +2668,17 @@ namespace Corium3D {
 		return false;
 	}
 
-	CollisionPerimeter* CollisionStadium::clone(CollisionPrimitivesFactory& collisionPrimitivesFactory) const {
-		return collisionPrimitivesFactory.genCollisionStadium(c1, v, r);
+	CollisionPerimeter* CollisionStadium::clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const {
+		glm::vec2 radiusVec = glm::normalize(glm::vec2(-v.y, v.x));		
+		CollisionStadium* collisionStadiumCloned = collisionPrimitivesFactory.genCollisionStadium(
+			c1 * glm::vec2(newCloneParentTransform.scale),
+			v * glm::vec2(newCloneParentTransform.scale),
+			r * glm::length(radiusVec * glm::vec2(newCloneParentTransform.scale)));
+
+		collisionStadiumCloned->rotate(rotQuatToRotComplex(newCloneParentTransform.rot));
+		collisionStadiumCloned->translate(newCloneParentTransform.translate);
+
+		return collisionStadiumCloned;
 	}
 
 	void CollisionStadium::destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) {

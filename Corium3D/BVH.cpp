@@ -653,13 +653,12 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 		}
 
 		// find collisions between mobile and static game elements
-		/*
+		
 		leftSubtreeIt = staticNodesRoot;
 		rightSubtreeIt = mobileNodesRoot;
-		while (rightSubtreeIt)
-			runStacklessAlgoIteration(collisionsDuos, &leftSubtreeIt, &rightSubtreeIt);
-		*/
-
+		while (rightSubtreeIt && leftSubtreeIt)
+			runStacklessAlgoIteration<TAABB, TDataNode>(&leftSubtreeIt, &rightSubtreeIt, collisionsBuffers);
+		
 		/* ================================================================================================
 		/*										SEARCH TREE PRINTER
 		/* ================================================================================================
@@ -1111,9 +1110,7 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 	void BVH::Node3D::refitBVs() {
 		Node<AABB3DRotatable>::refitBVs();
 		boundingSphere = BoundingSphere::calcCombinedBoundingSphere(static_cast<Node3D*>(getChild(0))->boundingSphere, static_cast<Node3D*>(getChild(1))->boundingSphere);	
-	}
-
-	const glm::vec3 FATTENING_VEC = glm::vec3(FATTENING_FACTOR, FATTENING_FACTOR, FATTENING_FACTOR);
+	}	
 
 	BVH::DataNode3D::DataNode3D(AABB3DRotatable const& aabb, BoundingSphere const& boundingSphere, unsigned int _modelIdx, unsigned int _instanceIdx, CollisionVolume& _collisionVolume) :
 		Node3D(aabb, boundingSphere), modelIdx(_modelIdx), instanceIdx(_instanceIdx), collisionPrimitive(_collisionVolume) {}
@@ -1121,17 +1118,17 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 	BVH::DataNode3D::DataNode3D(DataNode3D const& dataNode) : Node3D(dataNode), modelIdx(dataNode.modelIdx), instanceIdx(dataNode.instanceIdx), collisionPrimitive(dataNode.collisionPrimitive) {}
 
 	BVH::MobileGameLmntDataNode3D::MobileGameLmntDataNode3D(AABB3DRotatable const& aabb, BoundingSphere const& boundingSphere, unsigned int modelIdx, unsigned int instanceIdx, CollisionVolume& collisionVolume, PhysicsEngine::MobilityInterface const& _mobilityInterface) :
-			BVH::DataNode3D(AABB3DRotatable::calcScaledAABB(aabb, FATTENING_VEC), boundingSphere, modelIdx, instanceIdx, collisionVolume), aabbFattened(aabb), mobilityInterface(_mobilityInterface) {}
+			BVH::DataNode3D(AABB3DRotatable::calcScaledAABB(aabb, FATTENING_FACTOR), boundingSphere, modelIdx, instanceIdx, collisionVolume), aabbFattened(aabb), mobilityInterface(_mobilityInterface) {}
 
 	BVH::MobileGameLmntDataNode3D::MobileGameLmntDataNode3D(MobileGameLmntDataNode3D const& node) : BVH::DataNode3D(node),
 		mobilityInterface(node.mobilityInterface), aabbFattened(node.aabbFattened) {}
 
-	void BVH::MobileGameLmntDataNode3D::updateBVs(Transform3D const& transformDelta) {
+	void BVH::MobileGameLmntDataNode3D::updateBVs(Transform3DUS const& transformDelta) {
 		static_cast<AABB3DRotatable&>(aabb).transform(transformDelta);
-		boundingSphere.transform(transformDelta.translate, transformDelta.scale);
+		boundingSphere.transform(transformDelta);
 		collisionPrimitive.transform(transformDelta);
 		if (!aabbFattened.doesContain(aabb))
-			aabbFattened = AABB3DRotatable::calcScaledAABB(static_cast<AABB3DRotatable&>(aabb), FATTENING_VEC);
+			aabbFattened = AABB3DRotatable::calcScaledAABB(static_cast<AABB3DRotatable&>(aabb), FATTENING_FACTOR);
 	}
 
 	void BVH::MobileGameLmntDataNode3D::translateBVs(glm::vec3 const& translate) {
@@ -1139,27 +1136,27 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 		boundingSphere.translate(translate);
 		collisionPrimitive.translate(translate);
 		if (!aabbFattened.doesContain(aabb))
-			aabbFattened = AABB3DRotatable::calcScaledAABB(static_cast<AABB3DRotatable&>(aabb), FATTENING_VEC);
+			aabbFattened = AABB3DRotatable::calcScaledAABB(static_cast<AABB3DRotatable&>(aabb), FATTENING_FACTOR);
 	}
 
-	void BVH::MobileGameLmntDataNode3D::scaleBVs(glm::vec3 const& scale) {
-		static_cast<AABB3DRotatable&>(aabb).scale(scale);
-		boundingSphere.scale(scale);
-		collisionPrimitive.scale(scale);
+	void BVH::MobileGameLmntDataNode3D::scaleBVs(float scaleFactor) {
+		static_cast<AABB3DRotatable&>(aabb).scale(scaleFactor);
+		boundingSphere.scale(scaleFactor);
+		collisionPrimitive.scale(scaleFactor);
 		if (!aabbFattened.doesContain(aabb))
-			aabbFattened = AABB3DRotatable::calcScaledAABB(static_cast<AABB3DRotatable&>(aabb), FATTENING_VEC);
+			aabbFattened = AABB3DRotatable::calcScaledAABB(static_cast<AABB3DRotatable&>(aabb), FATTENING_FACTOR);
 	}
 
 	void BVH::MobileGameLmntDataNode3D::rotateBVs(glm::quat const& rot) {
 		static_cast<AABB3DRotatable&>(aabb).rotate(rot);
 		collisionPrimitive.rotate(rot);
 		if (!aabbFattened.doesContain(aabb))
-			aabbFattened = AABB3DRotatable::calcScaledAABB(static_cast<AABB3DRotatable&>(aabb), FATTENING_VEC);
+			aabbFattened = AABB3DRotatable::calcScaledAABB(static_cast<AABB3DRotatable&>(aabb), FATTENING_FACTOR);
 	}
 
 	void BVH::MobileGameLmntDataNode3D::refitBVs() {
 		Node3D::refitBVs();
-		aabbFattened = AABB3DRotatable::calcScaledAABB(static_cast<AABB3DRotatable&>(aabb), FATTENING_VEC);
+		aabbFattened = AABB3DRotatable::calcScaledAABB(static_cast<AABB3DRotatable&>(aabb), FATTENING_FACTOR);
 	}
 
 	BVH::DataNode2D::DataNode2D(AABB2DRotatable const& aabb, unsigned int _modelIdx, unsigned int _instanceIdx, CollisionPerimeter& _collisionPerimeter) :
@@ -1174,37 +1171,37 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 	BVH::MobileGameLmntDataNode2D::MobileGameLmntDataNode2D(MobileGameLmntDataNode2D const& node) :
 		DataNode2D(node.aabb, node.modelIdx, node.instanceIdx, node.collisionPrimitive), mobilityInterface(node.mobilityInterface) {}
 
-	void BVH::MobileGameLmntDataNode2D::updateBPs(Transform2D const& transformDelta) {
+	void BVH::MobileGameLmntDataNode2D::updateBPs(Transform2DUS const& transformDelta) {
 		static_cast<AABB2DRotatable&>(aabb).transform(transformDelta);	
 		collisionPrimitive.transform(transformDelta);
 		if (!aabbFattened.doesContain(aabb))
-			aabbFattened = AABB2DRotatable::calcScaledAABB(static_cast<AABB2DRotatable&>(aabb), FATTENING_VEC);
+			aabbFattened = AABB2DRotatable::calcScaledAABB(static_cast<AABB2DRotatable&>(aabb), FATTENING_FACTOR);
 	}
 
 	void BVH::MobileGameLmntDataNode2D::translateBPs(glm::vec2 const& translate) {
 		static_cast<AABB2DRotatable&>(aabb).translate(translate);	
 		collisionPrimitive.translate(translate);
 		if (!aabbFattened.doesContain(aabb))
-			aabbFattened = AABB2DRotatable::calcScaledAABB(static_cast<AABB2DRotatable&>(aabb), FATTENING_VEC);
+			aabbFattened = AABB2DRotatable::calcScaledAABB(static_cast<AABB2DRotatable&>(aabb), FATTENING_FACTOR);
 	}
 
-	void BVH::MobileGameLmntDataNode2D::scaleBPs(glm::vec2 const& scale) {
-		static_cast<AABB2DRotatable&>(aabb).scale(scale);	
-		collisionPrimitive.scale(scale);
+	void BVH::MobileGameLmntDataNode2D::scaleBPs(float scaleFactor) {
+		static_cast<AABB2DRotatable&>(aabb).scale(scaleFactor);
+		collisionPrimitive.scale(scaleFactor);
 		if (!aabbFattened.doesContain(aabb))
-			aabbFattened = AABB2DRotatable::calcScaledAABB(static_cast<AABB2DRotatable&>(aabb), FATTENING_VEC);
+			aabbFattened = AABB2DRotatable::calcScaledAABB(static_cast<AABB2DRotatable&>(aabb), FATTENING_FACTOR);
 	}
 
 	void BVH::MobileGameLmntDataNode2D::rotateBPs(std::complex<float> const& rot) {
 		static_cast<AABB2DRotatable&>(aabb).rotate(rot);
 		collisionPrimitive.rotate(rot);
 		if (!aabbFattened.doesContain(aabb))
-			aabbFattened = AABB2DRotatable::calcScaledAABB(static_cast<AABB2DRotatable&>(aabb), FATTENING_VEC);
+			aabbFattened = AABB2DRotatable::calcScaledAABB(static_cast<AABB2DRotatable&>(aabb), FATTENING_FACTOR);
 	}
 
 	void BVH::MobileGameLmntDataNode2D::refitBPs() {
 		Node2D::refitBVs();
-		aabbFattened = AABB2DRotatable::calcScaledAABB(static_cast<AABB2DRotatable&>(aabb), FATTENING_VEC);
+		aabbFattened = AABB2DRotatable::calcScaledAABB(static_cast<AABB2DRotatable&>(aabb), FATTENING_FACTOR);
 	}
 
 	template <class V>

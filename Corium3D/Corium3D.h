@@ -102,7 +102,7 @@ namespace Corium3D {
 		enum Component { State = 1, Graphics = 2, Mobility = 4 };
 
 		typedef void (GameLmnt::* StateUpdater)();
-		typedef std::function<void(Transform3D const&)> OnMovementMadeCallback;
+		typedef std::function<void(Transform3DUS const&)> OnMovementMadeCallback;
 		typedef std::function<void(GameLmnt*, GameLmnt*)> ProximityHandlingMethod;
 		typedef std::function<bool()> OnRayHit;
 
@@ -151,7 +151,7 @@ namespace Corium3D {
 
 	public:
 		void translate(glm::vec3 const& translate);
-		void scale(glm::vec3 const& scale);
+		void scale(float scaleFactor);
 		void rot(float rot, glm::vec3 const& rotAx);
 		void rot(glm::quat const& rot);
 		void setLinVel(glm::vec3 const& _linVel);

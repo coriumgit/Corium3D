@@ -17,12 +17,13 @@ namespace Corium3D {
 	class PhysicsEngine {
 	public:
 		class MobilityInterface;
-		typedef std::function<void(Transform3D const&)> OnMovementMadeCallback3D;
-		typedef std::function<void(Transform2D const&)> OnMovementMadeCallback2D;
+		typedef std::function<void(Transform3DUS const&)> OnMovementMadeCallback3D;
+		typedef std::function<void(Transform2DUS const&)> OnMovementMadeCallback2D;
 
 		PhysicsEngine(unsigned int mobilityInterfacesNrMax, float secsPerUpdate);
 		PhysicsEngine(PhysicsEngine const&) = delete;
-		MobilityInterface* addMobileGameLmnt(Transform3D const& initTransform,
+		MobilityInterface* addMobileGameLmnt(
+			Transform3D const& initTransform,
 			OnMovementMadeCallback3D* listeners3D, unsigned int listeners3DNr,
 			std::complex<float> initTransform2DRot,
 			OnMovementMadeCallback2D* listeners2D, unsigned int listeners2DNr);
@@ -43,7 +44,7 @@ namespace Corium3D {
 		friend class Corium3DUtils::ObjPoolIteratable<MobilityInterface>;
 
 		void translate(glm::vec3 const& translate) { transform.translate += translate; }
-		void scale(glm::vec3 const& scale) { transform.scale *= scale; }
+		void scale(float scaleFactor) { transform.scale *= scaleFactor; }
 		void rot(float rot, glm::vec3 const& rotAx) { transform.rot = glm::angleAxis(rot * (float)M_PI / 180.0f, glm::normalize(rotAx)) * transform.rot; }
 		void rot(glm::quat const& rot) { transform.rot = rot * transform.rot; }
 		void rot2D(float rot) { transform2DRot = std::polar(1.0f, rot * (float)M_PI / 180.0f) * transform2DRot; }
@@ -98,7 +99,7 @@ namespace Corium3D {
 		float angVelMag2D = 0.0f; // angular velocity 2D magnitude
 
 		Transform3D transform;
-		Transform3D transformDeltaPerUpdate;
+		Transform3DUS transformDeltaPerUpdate;
 		std::complex<float> transform2DRot = std::complex<float>(1.0f, 0.0f);
 		std::complex<float> transform2DRotDeltaPerUpdate = std::complex<float>(1.0f, 0.0f);
 
@@ -119,9 +120,8 @@ namespace Corium3D {
 		~MobilityInterface();
 		void update(float time);
 		void update();
-		void setTranslate(glm::vec3 const& translate) { transform.translate = translate; }
-		// TODO: revert to uniformScale(float scale)	
-		void setScale(glm::vec3 const& scale) { transform.scale = scale; }
+		void setTranslate(glm::vec3 const& translate) { transform.translate = translate; }		
+		// void setScale(float scaleFactor) { transform.scale = scaleFactor; }
 		void setRot(float rot, glm::vec3 const& rotAx) { transform.rot = glm::angleAxis(rot * (float)M_PI / 180.0f, glm::normalize(rotAx)); }
 		void setRot(glm::quat const& rot) { transform.rot = rot; }
 		void setRot2D(float rot) { transform2DRot = std::polar(1.0f, rot * (float)M_PI / 180.0f); }

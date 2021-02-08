@@ -237,7 +237,7 @@ namespace Corium3D {
 		void changeVerticesColors(unsigned int meshIdx, unsigned int colorsArrIdx);
 		void changeAnimation(unsigned int animationIdx);
 		void translate(glm::vec3 const& translate) { mobilityInterface->translate(translate); }
-		void scale(glm::vec3 const& scale) { mobilityInterface->scale(scale); }
+		void scale(float scaleFactor) { mobilityInterface->scale(scaleFactor); }
 		void rot(float rot, glm::vec3 const& rotAx) { mobilityInterface->rot(rot, rotAx); }
 		void rot(glm::quat const& rot) { mobilityInterface->rot(rot); }
 		void setLinVel(glm::vec3 const& linVel) { mobilityInterface->setLinVel(linVel); }
@@ -275,8 +275,8 @@ namespace Corium3D {
 		Renderer::InstanceAnimationInterface* instanceAnimationInterface = NULL;
 		MobilityAPI* mobilityAPI = NULL;
 
-		void updateBvhNodeBVs(Transform3D const& transformDelta);
-		void updateBvhNodeBPs(Transform2D const& transformDelta);		
+		void updateBvhNodeBVs(Transform3DUS const& transformDelta);
+		void updateBvhNodeBPs(Transform2DUS const& transformDelta);		
 	};
 	
 	class Corium3DEngine::GuiAPI::GuiApiImpl {
@@ -890,12 +890,14 @@ namespace Corium3D {
 			owningGameLmnt(_owningGameLmnt), corium3DEngineImpl(_corium3DEngineImpl) {		
 		modelIdx = corium3DEngineImpl.modelSceneModelIdxsMap[modelIdx];
 		components |= corium3DEngineImpl.staticModelsNr <= modelIdx ? Component::Mobility : 0;
-		if (initTransform)
-			initTransform->rot = normalize(initTransform->rot);
+		
 		std::complex<float> initCollisionPerimeterRotComplex;
-		if (corium3DEngineImpl.modelsPrimalCollisionPerimetersPtrs[modelIdx])
-			initCollisionPerimeterRotComplex = std::polar(1.0f, initCollisionPerimeterRot);
-
+		if (initTransform) {
+			initTransform->rot = normalize(initTransform->rot);
+			if (corium3DEngineImpl.modelsPrimalCollisionPerimetersPtrs[modelIdx])
+				initCollisionPerimeterRotComplex = rotQuatToRotComplex(initTransform->rot);
+		}		
+		
 		//if (components & Component::State)
 		//	stateUpdater = corium3DEngineImpl.stateUpdatersPool->acquire(stateUpdater);
 
@@ -924,23 +926,20 @@ namespace Corium3D {
 		if (components & Component::Graphics) {			
 			instanceIdx = corium3DEngineImpl.modelsInstancesIdxPools[modelIdx]->acquire();
 
-			collisionVolume = static_cast<CollisionVolume*>(corium3DEngineImpl.collisionPrimitivesFactory->genCollisionPrimitive<glm::vec3>(*(corium3DEngineImpl.modelsPrimalCollisionVolumesPtrs[modelIdx])));
-			collisionVolume->transform(*(initTransform));
-			if (corium3DEngineImpl.modelsPrimalCollisionPerimetersPtrs[modelIdx]) {
-				collisionPerimeter = static_cast<CollisionPerimeter*>(corium3DEngineImpl.collisionPrimitivesFactory->genCollisionPrimitive<glm::vec2>(*(corium3DEngineImpl.modelsPrimalCollisionPerimetersPtrs[modelIdx])));
-				collisionPerimeter->transform(Transform2D({ initTransform->translate, initTransform->scale, initCollisionPerimeterRotComplex }));
-			}
+			collisionVolume = static_cast<CollisionVolume*>(corium3DEngineImpl.collisionPrimitivesFactory->genCollisionPrimitive<glm::vec3>(*(corium3DEngineImpl.modelsPrimalCollisionVolumesPtrs[modelIdx]), *initTransform));			
+			if (corium3DEngineImpl.modelsPrimalCollisionPerimetersPtrs[modelIdx])
+				collisionPerimeter = static_cast<CollisionPerimeter*>(corium3DEngineImpl.collisionPrimitivesFactory->genCollisionPrimitive<glm::vec2>(*(corium3DEngineImpl.modelsPrimalCollisionPerimetersPtrs[modelIdx]), *initTransform));							
 
 			if (components & Component::Mobility) {						
-				mobileGameLmntBvhDataNode3D = corium3DEngineImpl.bvh->insert(AABB3DRotatable::calcTransformedAABB(corium3DEngineImpl.modelsPrimalAABB3Ds[modelIdx], *(initTransform)),				
-					BoundingSphere::calcTransformedBoundingSphere(corium3DEngineImpl.modelsPrimalBoundingSpheres[modelIdx], initTransform->translate, initTransform->scale),
-					modelIdx, instanceIdx, *collisionVolume, *mobilityInterface);
+				mobileGameLmntBvhDataNode3D = corium3DEngineImpl.bvh->insert(AABB3DRotatable::calcTransformedAABB(corium3DEngineImpl.modelsPrimalAABB3Ds[modelIdx], *initTransform),				
+					BoundingSphere::calcTransformedBoundingSphere(corium3DEngineImpl.modelsPrimalBoundingSpheres[modelIdx], *initTransform),
+																  modelIdx, instanceIdx, *collisionVolume, *mobilityInterface);
 				if (corium3DEngineImpl.modelsPrimalCollisionPerimetersPtrs[modelIdx])
 					mobileGameLmntBvhDataNode2D = corium3DEngineImpl.bvh->insert(AABB2DRotatable::calcTransformedAABB(corium3DEngineImpl.modelsPrimalAABB2Ds[modelIdx], Transform2D({ initTransform->translate, initTransform->scale, initCollisionPerimeterRotComplex })), modelIdx, instanceIdx, *collisionPerimeter, *mobilityInterface);
 			}
 			else {						
-				staticGameLmntBvhDataNode3D = corium3DEngineImpl.bvh->insert(AABB3DRotatable::calcTransformedAABB(corium3DEngineImpl.modelsPrimalAABB3Ds[modelIdx], *(initTransform)),
-					BoundingSphere::calcTransformedBoundingSphere(corium3DEngineImpl.modelsPrimalBoundingSpheres[modelIdx], initTransform->translate, initTransform->scale),
+				staticGameLmntBvhDataNode3D = corium3DEngineImpl.bvh->insert(AABB3DRotatable::calcTransformedAABB(corium3DEngineImpl.modelsPrimalAABB3Ds[modelIdx], *initTransform),
+					BoundingSphere::calcTransformedBoundingSphere(corium3DEngineImpl.modelsPrimalBoundingSpheres[modelIdx], *initTransform),
 					modelIdx, instanceIdx, *collisionVolume);
 				if (corium3DEngineImpl.modelsPrimalCollisionPerimetersPtrs[modelIdx])
 					staticGameLmntBvhDataNode2D = corium3DEngineImpl.bvh->insert(AABB2DRotatable::calcTransformedAABB(corium3DEngineImpl.modelsPrimalAABB2Ds[modelIdx], Transform2D({ initTransform->translate, initTransform->scale, initCollisionPerimeterRotComplex })), modelIdx, instanceIdx, *collisionPerimeter);
@@ -990,11 +989,11 @@ namespace Corium3D {
 		}	
 	}
 
-	void Corium3DEngine::GameLmnt::GameLmntImpl::updateBvhNodeBVs(Transform3D const& transformDelta) {
+	void Corium3DEngine::GameLmnt::GameLmntImpl::updateBvhNodeBVs(Transform3DUS const& transformDelta) {
 		corium3DEngineImpl.bvh->updateNodeBPs(mobileGameLmntBvhDataNode3D, transformDelta);	
 	}
 
-	void Corium3DEngine::GameLmnt::GameLmntImpl::updateBvhNodeBPs(Transform2D const& transformDelta) {
+	void Corium3DEngine::GameLmnt::GameLmntImpl::updateBvhNodeBPs(Transform2DUS const& transformDelta) {
 		corium3DEngineImpl.bvh->updateNodeBPs(mobileGameLmntBvhDataNode2D, transformDelta);
 	}
 
@@ -1018,8 +1017,8 @@ namespace Corium3D {
 		gameLmntImpl.translate(translate);
 	}
 
-	void Corium3DEngine::GameLmnt::MobilityAPI::scale(glm::vec3 const& scale) {
-		gameLmntImpl.scale(scale);
+	void Corium3DEngine::GameLmnt::MobilityAPI::scale(float scaleFactor) {
+		gameLmntImpl.scale(scaleFactor);
 	}
 
 	void Corium3DEngine::GameLmnt::MobilityAPI::rot(float rot, glm::vec3 const& rotAx) {
