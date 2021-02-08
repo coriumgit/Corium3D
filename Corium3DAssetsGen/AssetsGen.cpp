@@ -520,8 +520,8 @@ namespace Corium3D {
 		glm::vec3 axisVecMarshaled = marshalVector3D(axisVec);
 		modelDesc->colliderData.collisionPrimitive3dData.collisionCapsuleData = { center1Marshaled, axisVecMarshaled, radius };
 
-		modelDesc->colliderData.aabb3DMinVertex = center1Marshaled + axisVecMarshaled + radius;
-		modelDesc->colliderData.aabb3DMaxVertex = center1Marshaled - radius;
+		modelDesc->colliderData.aabb3DMinVertex = center1Marshaled - radius;
+		modelDesc->colliderData.aabb3DMaxVertex = center1Marshaled + axisVecMarshaled + radius;
 	}
 
 	void AssetsGen::ModelAssetGen::clearCollisionPrimitive2D()
@@ -558,8 +558,8 @@ namespace Corium3D {
 		glm::vec2 axisVecMarshaled = marshalVector(axisVec);
 		modelDesc->colliderData.collisionPrimitive2dData.collisionStadiumData = { center1Marshaled, axisVecMarshaled, radius };		
 
-		modelDesc->colliderData.aabb2DMinVertex = center1Marshaled + axisVecMarshaled + radius;
-		modelDesc->colliderData.aabb2DMaxVertex = center1Marshaled - radius;
+		modelDesc->colliderData.aabb2DMinVertex = center1Marshaled - radius;
+		modelDesc->colliderData.aabb2DMaxVertex = center1Marshaled + axisVecMarshaled + radius;
 	}
 
 	ModelDesc const* AssetsGen::ModelAssetGen::getAssetsFileReadyModelDesc(unsigned int modelIdx)
