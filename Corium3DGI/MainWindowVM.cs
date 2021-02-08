@@ -232,7 +232,7 @@ namespace Corium3DGI
         {
             ICorium3DGIView view = (ICorium3DGIView)sender;
             modelViewportContainer = view.ModelViewportContainer;
-            sceneViewportContainer = view.SceneViewportContainer;
+            sceneViewportContainer = view.SceneViewportContainer;            
             sceneNameTxtBox = view.SceneNameTxtBox;
         }
 
@@ -269,14 +269,14 @@ namespace Corium3DGI
         private void exposeModelViewport()
         {
             modelViewportContainer.Visibility = Visibility.Visible;
-            sceneViewportContainer.Visibility = Visibility.Hidden;
-            SelectedSceneModelInstance = null;
+            sceneViewportContainer.Visibility = Visibility.Hidden;            
+            //SelectedSceneModelInstance = null;
         }
 
         private void exposeSceneViewport()
         {
             modelViewportContainer.Visibility = Visibility.Hidden;
-            sceneViewportContainer.Visibility = Visibility.Visible;
+            sceneViewportContainer.Visibility = Visibility.Visible;            
         }
 
         private void importModel()
