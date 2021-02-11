@@ -32,26 +32,19 @@ namespace CoriumDirectX {
 	
 	inline DxRenderer::Scene::TransformScaleConstraint marshalScaleConstraint(DxVisualizer::IScene::TransformScaleConstraint constraint) {
 		switch (constraint) {			
-			case DxVisualizer::IScene::TransformScaleConstraint::None:
-				return DxRenderer::Scene::TransformScaleConstraint::None;
-			case DxVisualizer::IScene::TransformScaleConstraint::Ignore:
-				return DxRenderer::Scene::TransformScaleConstraint::Ignore;
 			case DxVisualizer::IScene::TransformScaleConstraint::MaxDimGrp:
 				return DxRenderer::Scene::TransformScaleConstraint::MaxDimGrp;
 			case DxVisualizer::IScene::TransformScaleConstraint::FollowMaxDimGrp:
 				return DxRenderer::Scene::TransformScaleConstraint::FollowMaxDimGrp;
+			case DxVisualizer::IScene::TransformScaleConstraint::Factor:
+				return DxRenderer::Scene::TransformScaleConstraint::Factor;
+			case DxVisualizer::IScene::TransformScaleConstraint::Ignore:
+				return DxRenderer::Scene::TransformScaleConstraint::Ignore;
+			case DxVisualizer::IScene::TransformScaleConstraint::None:
+				return DxRenderer::Scene::TransformScaleConstraint::None;									
 		}
-	}
+	}	
 	
-	inline DxRenderer::Scene::TransformRotConstraint marshalRotConstraint(DxVisualizer::IScene::TransformRotConstraint constraint) {
-		switch (constraint) {
-			case DxVisualizer::IScene::TransformRotConstraint::None:
-				return DxRenderer::Scene::TransformRotConstraint::None;
-			case DxVisualizer::IScene::TransformRotConstraint::Ignore:
-				return DxRenderer::Scene::TransformRotConstraint::Ignore;		
-		}
-	}
-
 	/*
 	DxVisualizer::Scene::SceneModelInstance::SceneModelInstance(DxRenderer::Scene* sceneRef, unsigned int modelID, DxRenderer::Transform const& transformInit, IScene::SelectionHandler^ selectionHandler) {					
 		DxRenderer::Scene::SceneModelInstance::SelectionHandler selectionHandlerMarshaled;
@@ -127,17 +120,14 @@ namespace CoriumDirectX {
 		DxVisualizer::Scene::SceneModelInstance(_constrainedTransformInstanceRef) {}
 
 	void DxVisualizer::Scene::ConstrainedTransformInstance::setScaleConstraints(
-		IScene::TransformScaleConstraint xScaleConstraint,
-		IScene::TransformScaleConstraint yScaleConstraint,
-		IScene::TransformScaleConstraint zScaleConstraint)
+		IScene::TransformScaleConstraint xConstraint, float xFactor,
+		IScene::TransformScaleConstraint yConstraint, float yFactor,
+		IScene::TransformScaleConstraint zConstraint, float zFactor)
 	{
-		static_cast<DxRenderer::Scene::ConstrainedTransformInstance*>(sceneModelInstanceRef)->setScaleConstraints(marshalScaleConstraint(xScaleConstraint), marshalScaleConstraint(yScaleConstraint), marshalScaleConstraint(zScaleConstraint));
-	}
-
-	void DxVisualizer::Scene::ConstrainedTransformInstance::setRotConstraints(IScene::TransformRotConstraint rotConstraint)
-	{
-		static_cast<DxRenderer::Scene::ConstrainedTransformInstance*>(sceneModelInstanceRef)->setRotConstraints(marshalRotConstraint(rotConstraint));
-	}
+		static_cast<DxRenderer::Scene::ConstrainedTransformInstance*>(sceneModelInstanceRef)->setScaleConstraints(marshalScaleConstraint(xConstraint), xFactor, 
+																												  marshalScaleConstraint(yConstraint), yFactor, 
+																												  marshalScaleConstraint(zConstraint), zFactor);
+	}	
 
 	/*
 	void DxVisualizer::Scene::ConstrainedTransformInstance::setRotConstraints(
@@ -153,10 +143,11 @@ namespace CoriumDirectX {
 		DxVisualizer::Scene::SceneModelInstance(_constrainedTransform2dInstanceRef) {}
 	
 	void DxVisualizer::Scene::ConstrainedTransform2dInstance::setScaleConstraints(
-		IScene::TransformScaleConstraint xScaleConstraint,
-		IScene::TransformScaleConstraint yScaleConstraint)
+		IScene::TransformScaleConstraint xConstraint, float xFactor,
+		IScene::TransformScaleConstraint yConstraint, float yFactor)
 	{
-		static_cast<DxRenderer::Scene::ConstrainedTransform2dInstance*>(sceneModelInstanceRef)->setScaleConstraints(marshalScaleConstraint(xScaleConstraint), marshalScaleConstraint(yScaleConstraint));
+		static_cast<DxRenderer::Scene::ConstrainedTransform2dInstance*>(sceneModelInstanceRef)->setScaleConstraints(marshalScaleConstraint(xConstraint), xFactor,
+																													marshalScaleConstraint(yConstraint), yFactor);
 	}
 
 	DxVisualizer::Scene::Scene(DxRenderer* dxRenderer, DxRenderer::Scene::TransformCallbackHandlers const& transformCallbackHandlers, [System::Runtime::InteropServices::Out] DxVisualizer::MouseCallbacks^% mouseCallbacksManaged) :

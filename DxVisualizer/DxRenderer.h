@@ -114,45 +114,41 @@ namespace CoriumDirectX {
                 bool isInstanceDescendant(SceneModelInstance* instance);
             };            
             
-            enum class TransformScaleConstraint { MaxDimGrp, FollowMaxDimGrp, Ignore, None };
-            enum class TransformRotConstraint { Ignore, None };
-
+            enum class TransformScaleConstraint { MaxDimGrp, FollowMaxDimGrp, Factor, Ignore, None };                        
             class ConstrainedTransformInstance : public DxRenderer::Scene::SceneModelInstance {
             public:
                 friend Scene;                
                 
-                void setScaleConstraints(TransformScaleConstraint xScaleConstraint, TransformScaleConstraint yScaleConstraint, TransformScaleConstraint zScaleConstraint);
-                void setRotConstraints(TransformRotConstraint rotConstraint);
-                //void setRotConstraints(TransformRotConstraint xRotConstraint, TransformRotConstraint yRotConstraint, TransformRotConstraint zRotConstraint);                
+                void setScaleConstraints(TransformScaleConstraint xConstraint, float xFactor, TransformScaleConstraint yConstraint, float yFactor, TransformScaleConstraint zConstraint, float zFactor);                
 
             private:
                 ConstrainedTransformInstance(Scene& scene, UINT modelID, DirectX::CXMVECTOR instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler);                                
                 ~ConstrainedTransformInstance() {}
                 void recompWorldTransformat() override;
-
                 
                 TransformScaleConstraint xScaleConstraint = TransformScaleConstraint::None;
+                float xScaleConstraintFactor = 1.0f;
                 TransformScaleConstraint yScaleConstraint = TransformScaleConstraint::None;
+                float yScaleConstraintFactor = 1.0f;
                 TransformScaleConstraint zScaleConstraint = TransformScaleConstraint::None;
-                TransformRotConstraint rotConstraint = TransformRotConstraint::None;
-                //TransformRotConstraint xRotConstraint = TransformRotConstraint::None;
-                //TransformRotConstraint yRotConstraint = TransformRotConstraint::None;
-                //TransformRotConstraint zRotConstraint = TransformRotConstraint::None;
+                float zScaleConstraintFactor = 1.0f;                
             };
             
             class ConstrainedTransform2dInstance : public DxRenderer::Scene::SceneModelInstance {
             public:
                 friend Scene;                
 
-                void setScaleConstraints(TransformScaleConstraint xScaleConstraint, TransformScaleConstraint yScaleConstraint);                
-
+                void setScaleConstraints(TransformScaleConstraint xConstraint, float xFactor, TransformScaleConstraint yConstraint, float yFactor);
+                
             private:
                 ConstrainedTransform2dInstance(Scene& scene, UINT modelID, DirectX::CXMVECTOR instanceColorMask, Transform const& transformInit, SceneModelInstance::SelectionHandler selectionHandler);
                 ~ConstrainedTransform2dInstance() {}
                 void recompWorldTransformat() override;
 
                 TransformScaleConstraint xScaleConstraint = TransformScaleConstraint::None;
-                TransformScaleConstraint yScaleConstraint = TransformScaleConstraint::None;                
+                float xScaleFactor = 1.0f;
+                TransformScaleConstraint yScaleConstraint = TransformScaleConstraint::None;   
+                float yScaleFactor = 1.0f;                
             };
 
             struct TransformCallbackHandlers {			            

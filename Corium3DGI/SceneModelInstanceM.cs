@@ -30,9 +30,9 @@ namespace Corium3DGI
 
                 if (iDxSceneModelInstanceCollider3D != null)
                 {
+                    iDxSceneModelInstanceCollider3D[0].assignParent(iDxSceneModelInstance, false);
                     foreach (DxVisualizer.IScene.ISceneModelInstance instance in iDxSceneModelInstanceCollider3D)
-                    {
-                        instance.assignParent(iDxSceneModelInstance, false);
+                    {                        
                         if (!isShown)
                             instance.hide();
                     }
@@ -52,9 +52,9 @@ namespace Corium3DGI
 
                 if (iDxSceneModelInstanceCollider2D != null)
                 {
+                    iDxSceneModelInstanceCollider2D[0].assignParent(iDxSceneModelInstance, false);
                     foreach (DxVisualizer.IScene.ISceneModelInstance instance in iDxSceneModelInstanceCollider2D)
-                    {
-                        instance.assignParent(iDxSceneModelInstance, false);
+                    {                        
                         if (!isShown)
                             instance.hide();
                     }
@@ -145,15 +145,6 @@ namespace Corium3DGI
             Translate.Y = translation.Y;
             Translate.Z = translation.Z;
             Translate.PropertyChanged += eventHandlers.transformPanelTranslationEditHandler;
-            //onTranslatePropertyChanged(null, null);
-            /*
-            iDxSceneModelInstance.setTranslation(translation);
-            if (TranslationSet != null)
-            {
-                foreach (OnTranslationSet handler in TranslationSet.GetInvocationList())
-                    handler.Invoke(translation);
-            }
-            */
         }
 
         public void translateDisplayedTranslation(float x, float y, float z)
@@ -169,15 +160,6 @@ namespace Corium3DGI
             Scale.Y = scale.Y;
             Scale.Z = scale.Z;
             Scale.PropertyChanged += eventHandlers.transformPanelScaleEditHandler;
-            //onScalePropertyChanged(null, null);
-            /*
-            iDxSceneModelInstance.setScale(scale);
-            if (ScaleSet != null)
-            {
-                foreach (OnScaleSet handler in ScaleSet.GetInvocationList())
-                    handler.Invoke(scale);
-            }
-            */
         }
 
         public void scaleDisplayedScale(float x, float y, float z)
@@ -199,16 +181,6 @@ namespace Corium3DGI
 
             RotQuat = rot;
             sceneModelInstanceAssetData.setRotInit(rot);            
-
-            //onRotPropertyChanged(null, null);
-            /*
-            iDxSceneModelInstance.setRotation(rot.Axis, (float)rot.Angle);
-            if (RotSet != null)
-            {
-                foreach (OnRotSet handler in RotSet.GetInvocationList())
-                    handler.Invoke(rot);
-            }
-            */
         }
 
         public void rotateDisplayedRotation(float axX, float axY, float axZ, float ang)

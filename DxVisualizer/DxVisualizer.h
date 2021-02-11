@@ -32,17 +32,13 @@ namespace CoriumDirectX {
 				void unparent();
 			};								
 
-			enum class TransformScaleConstraint { MaxDimGrp, FollowMaxDimGrp, Ignore, None };
-			enum class TransformRotConstraint { Ignore, None };
-
+			enum class TransformScaleConstraint { MaxDimGrp, FollowMaxDimGrp, Factor, Ignore, None };			
 			interface class IConstrainedTransformInstance : ISceneModelInstance {				
-				void setScaleConstraints(TransformScaleConstraint xScaleConstraint, TransformScaleConstraint yScaleConstraint, TransformScaleConstraint zScaleConstraint);
-				void setRotConstraints(TransformRotConstraint rotConstraint);
-				//void setRotConstraints(TransformRotConstraint xRotConstraint, TransformRotConstraint yRotConstraint, TransformRotConstraint zRotConstraint);
+				void setScaleConstraints(TransformScaleConstraint xConstraint, float xFactor, TransformScaleConstraint yConstraint, float yFactor, TransformScaleConstraint zConstraint, float zFactor);				
 			};
 
 			interface class IConstrainedTransform2dInstance : ISceneModelInstance {
-				void setScaleConstraints(TransformScaleConstraint xScaleConstraint, TransformScaleConstraint yScaleConstraint);				
+				void setScaleConstraints(TransformScaleConstraint xConstraint, float xFactor, TransformScaleConstraint yConstraint, float yFactor);
 			};
 
 			enum class TransformReferenceFrame { Local, World };
@@ -127,21 +123,17 @@ namespace CoriumDirectX {
 			public:
 				ConstrainedTransformInstance(DxRenderer::Scene::ConstrainedTransformInstance* constrainedTransformInstanceRef);
 				~ConstrainedTransformInstance() {}
-				virtual void setScaleConstraints(IScene::TransformScaleConstraint xScaleConstraint, 
-												 IScene::TransformScaleConstraint yScaleConstraint, 
-												 IScene::TransformScaleConstraint zScaleConstraint) = IScene::IConstrainedTransformInstance::setScaleConstraints;
-				virtual void setRotConstraints(IScene::TransformRotConstraint rotConstraint) = IScene::IConstrainedTransformInstance::setRotConstraints;
-				//virtual void setRotConstraints(IScene::IConstrainedTransformInstance::TransformRotConstraint xRotConstraint, 
-				//							   IScene::IConstrainedTransformInstance::TransformRotConstraint yRotConstraint, 
-				//							   IScene::IConstrainedTransformInstance::TransformRotConstraint zRotConstraint) = IScene::IConstrainedTransformInstance::setRotConstraints;
+				virtual void setScaleConstraints(IScene::TransformScaleConstraint xConstraint, float xFactor,
+												 IScene::TransformScaleConstraint yConstraint, float yFactor,
+												 IScene::TransformScaleConstraint zConstraint, float zFactor) = IScene::IConstrainedTransformInstance::setScaleConstraints;				
 			};
 			
 			ref class ConstrainedTransform2dInstance : public DxVisualizer::Scene::SceneModelInstance, IScene::IConstrainedTransform2dInstance {
 			public:
 				ConstrainedTransform2dInstance(DxRenderer::Scene::ConstrainedTransform2dInstance* constrainedTransform2dInstanceRef);
 				~ConstrainedTransform2dInstance() {}
-				virtual void setScaleConstraints(IScene::TransformScaleConstraint xScaleConstraint,
-												 IScene::TransformScaleConstraint yScaleConstraint) = IScene::IConstrainedTransform2dInstance::setScaleConstraints;								
+				virtual void setScaleConstraints(IScene::TransformScaleConstraint xScaleConstraint, float xScaleFactor,
+												 IScene::TransformScaleConstraint yScaleConstraint, float yScaleFactor) = IScene::IConstrainedTransform2dInstance::setScaleConstraints;
 			};
 
 			Scene(DxRenderer* renderer, DxRenderer::Scene::TransformCallbackHandlers const& transformCallbackHandlers, [System::Runtime::InteropServices::Out] DxVisualizer::MouseCallbacks^% mouseCallbacks);

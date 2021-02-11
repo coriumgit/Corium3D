@@ -105,8 +105,9 @@ namespace Corium3DGI
                 {
                     if (selectedSceneModelInstance != null)
                     {
+                        clearFocus();
                         selectedSceneModelInstance.dim();
-                        selectedSceneModelInstance.removeFromTransformGrp();
+                        selectedSceneModelInstance.removeFromTransformGrp();                        
                     }
 
                     selectedSceneModelInstance = value;
@@ -114,7 +115,8 @@ namespace Corium3DGI
                     {
                         selectedSceneModelInstance.highlight();
                         selectedSceneModelInstance.addToTransformGrp();
-                    }
+                    }                                            
+
                     OnPropertyChanged("SelectedSceneModelInstance");
                 }
             }
@@ -268,15 +270,21 @@ namespace Corium3DGI
 
         private void exposeModelViewport()
         {
-            modelViewportContainer.Visibility = Visibility.Visible;
-            sceneViewportContainer.Visibility = Visibility.Hidden;            
-            //SelectedSceneModelInstance = null;
+            if (modelViewportContainer.Visibility != Visibility.Visible)
+            {
+                modelViewportContainer.Visibility = Visibility.Visible;
+                sceneViewportContainer.Visibility = Visibility.Hidden;                
+                SelectedSceneModelInstance = null;
+            }
         }
 
         private void exposeSceneViewport()
         {
-            modelViewportContainer.Visibility = Visibility.Hidden;
-            sceneViewportContainer.Visibility = Visibility.Visible;            
+            if (sceneViewportContainer.Visibility != Visibility.Visible)
+            {
+                sceneViewportContainer.Visibility = Visibility.Visible;
+                modelViewportContainer.Visibility = Visibility.Hidden;                
+            }
         }
 
         private void importModel()
@@ -488,6 +496,9 @@ namespace Corium3DGI
 
         private void mouseDownSceneViewport(MouseButtonEventArgs e)
         {
+            if (SelectedScene == null)
+                return;
+
             if (e.LeftButton == MouseButtonState.Pressed)
             {
                 Mouse.Capture((UIElement)e.OriginalSource);
@@ -514,6 +525,9 @@ namespace Corium3DGI
 
         private void mouseUpSceneViewport(MouseButtonEventArgs e)
         {
+            if (SelectedScene == null)
+                return;
+
             if (cameraAction == CameraAction.ROTATE && e.RightButton == MouseButtonState.Released || cameraAction == CameraAction.PAN && e.MiddleButton == MouseButtonState.Released)
             {
                 cameraAction = CameraAction.REST;                
@@ -603,7 +617,13 @@ namespace Corium3DGI
         }
         private void clearFocus()
         {
-            Keyboard.ClearFocus();            
+            Control currentControl = Keyboard.FocusedElement as Control;
+            if (currentControl != null)
+            {
+                // Force focus away from the current control to update its binding source.
+                currentControl.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+                currentControl.Focus();
+            }            
         }
 
         private void captureFrame()

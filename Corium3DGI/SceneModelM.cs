@@ -184,43 +184,37 @@ namespace Corium3DGI
 
         private void onCollisionBoxCenterChanged(Vector3D center)
         {
-            addCollider3dDxModelsToTransformGrp();
+            addCollider3dDxModelToTransformGrp(0);
             SceneMRef.transformGrpSetTranslation(center, DxVisualizer.IScene.TransformReferenceFrame.Local);
-            removeCollider3dDxModelsFromTransformGrp();
+            removeCollider3dDxModelFromTransformGrp(0);
         }
 
         private void onCollisionBoxScaleChanged(Vector3D scale)
         {
-            addCollider3dDxModelsToTransformGrp();
+            addCollider3dDxModelToTransformGrp(0);
             SceneMRef.transformGrpSetScale(scale, DxVisualizer.IScene.TransformReferenceFrame.Local);
-            removeCollider3dDxModelsFromTransformGrp();
+            removeCollider3dDxModelFromTransformGrp(0);
         }
 
         private void onCollisionSphereCenterChanged(Vector3D center)
         {
-            addCollider3dDxModelsToTransformGrp();
+            addCollider3dDxModelToTransformGrp(0);
             SceneMRef.transformGrpSetTranslation(center, DxVisualizer.IScene.TransformReferenceFrame.Local);
-            removeCollider3dDxModelsFromTransformGrp();
+            removeCollider3dDxModelFromTransformGrp(0);
         }
 
         private void onCollisionSphereRadiusChanged(float radius)
         {
-            addCollider3dDxModelsToTransformGrp();
+            addCollider3dDxModelToTransformGrp(0);
             SceneMRef.transformGrpSetScale(new Vector3D(radius, radius, radius), DxVisualizer.IScene.TransformReferenceFrame.Local);
-            removeCollider3dDxModelsFromTransformGrp();
+            removeCollider3dDxModelFromTransformGrp(0);
         }
 
         private void onCollisionCapsuleCenterChanged(CollisionCapsule capsule)
-        {            
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-                instance.IDxSceneModelInstanceCollider3D[0].addToTransformGrp();
-            
+        {
+            addCollider3dDxModelToTransformGrp(0);
             SceneMRef.transformGrpSetTranslation((Vector3D)capsule.Center.Point3DCpy, DxVisualizer.IScene.TransformReferenceFrame.Local);
-
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)            
-                instance.IDxSceneModelInstanceCollider3D[0].removeFromTransformGrp();
-
-            resetPosDxCapsuleHemispheres(capsule);            
+            removeCollider3dDxModelFromTransformGrp(0);
         }
 
         private void onCollisionCapsuleAxisVecChanged(CollisionCapsule capsule)
@@ -230,8 +224,8 @@ namespace Corium3DGI
             Vector3D axisVec = capsule.AxisVec.Vector3DCpy;
             if (axisVec.LengthSquared < EPSILON)
                 return;
-            
-            addCollider3dDxModelsToTransformGrp();
+
+            addCollider3dDxModelToTransformGrp(0);
 
             Vector3D upVector = new Vector3D(0, 1, 0);
             Vector3D rotationAxis = Vector3D.CrossProduct(upVector, axisVec);            
@@ -243,109 +237,61 @@ namespace Corium3DGI
             else
                 SceneMRef.transformGrpSetRotation(upVector, 0.0f, DxVisualizer.IScene.TransformReferenceFrame.Local);
 
-            removeCollider3dDxModelsFromTransformGrp();
-
-            resetPosDxCapsuleHemispheres(capsule);                   
+            removeCollider3dDxModelFromTransformGrp(0);
         }
 
         private void onCollisionCapsuleHeightChanged(CollisionCapsule capsule)
         {
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-                instance.IDxSceneModelInstanceCollider3D[0].addToTransformGrp();
-            
-            SceneMRef.transformGrpSetScale(new Vector3D(capsule.Radius, capsule.Height, capsule.Radius), DxVisualizer.IScene.TransformReferenceFrame.Local);
+            updateCollisionCapsuleConstraints(capsule);
 
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)            
-                instance.IDxSceneModelInstanceCollider3D[0].removeFromTransformGrp();                
-            
-            resetPosDxCapsuleHemispheres(capsule);
+            addCollider3dDxModelToTransformGrp(0);
+            SceneMRef.transformGrpSetScale(new Vector3D(capsule.Radius, capsule.Height, capsule.Radius), DxVisualizer.IScene.TransformReferenceFrame.Local);
+            removeCollider3dDxModelFromTransformGrp(0);
         }
 
         private void onCollisionCapsuleRadiusChanged(CollisionCapsule capsule)
         {
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)            
-                instance.IDxSceneModelInstanceCollider3D[0].addToTransformGrp();
-            
+            updateCollisionCapsuleConstraints(capsule);
+
+            addCollider3dDxModelToTransformGrp(0);
             SceneMRef.transformGrpSetScale(new Vector3D(capsule.Radius, capsule.Height, capsule.Radius), DxVisualizer.IScene.TransformReferenceFrame.Local);
-
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-            {
-                instance.IDxSceneModelInstanceCollider3D[0].removeFromTransformGrp();
-                instance.IDxSceneModelInstanceCollider3D[1].addToTransformGrp();
-                instance.IDxSceneModelInstanceCollider3D[2].addToTransformGrp();
-            }
-            
-            SceneMRef.transformGrpSetScale(new Vector3D(capsule.Radius, capsule.Radius, capsule.Radius), DxVisualizer.IScene.TransformReferenceFrame.Local);
-
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-            {
-                instance.IDxSceneModelInstanceCollider3D[1].removeFromTransformGrp();
-                instance.IDxSceneModelInstanceCollider3D[2].removeFromTransformGrp();
-            }
-        }
-
-        private void resetPosDxCapsuleHemispheres(CollisionCapsule capsule)
-        {
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-                instance.IDxSceneModelInstanceCollider3D[1].addToTransformGrp();
-
-            Vector3D center = (Vector3D)capsule.Center.Point3DCpy;
-            Vector3D axisVec = capsule.AxisVec.Vector3DCpy;
-            float height = capsule.Height;
-            SceneMRef.transformGrpSetTranslation(center + 0.5f * height * axisVec, DxVisualizer.IScene.TransformReferenceFrame.Local);
-
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-            {
-                instance.IDxSceneModelInstanceCollider3D[1].removeFromTransformGrp();
-                instance.IDxSceneModelInstanceCollider3D[2].addToTransformGrp();
-            }
-
-            SceneMRef.transformGrpSetTranslation(center - 0.5f * height * axisVec, DxVisualizer.IScene.TransformReferenceFrame.Local);
-
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-                instance.IDxSceneModelInstanceCollider3D[2].removeFromTransformGrp();
-        }
+            removeCollider3dDxModelFromTransformGrp(0);           
+        }        
 
         private void onCollisionRectCenterChanged(Vector center)
         {
-            addCollider2dDxModelsToTransformGrp();
+            addCollider2dDxModelToTransformGrp(0);
             SceneMRef.transformGrpSetTranslation(new Vector3D(center.X, center.Y, 0.0f), DxVisualizer.IScene.TransformReferenceFrame.Local);
-            removeCollider2dDxModelsFromTransformGrp();
+            removeCollider2dDxModelFromTransformGrp(0);
         }
 
         private void onCollisionRectScaleChanged(Vector scale)
         {
-            addCollider2dDxModelsToTransformGrp();
+            addCollider2dDxModelToTransformGrp(0);
             SceneMRef.transformGrpSetScale(new Vector3D(scale.X, scale.Y, 1.0f), DxVisualizer.IScene.TransformReferenceFrame.Local);
-            removeCollider2dDxModelsFromTransformGrp();
+            removeCollider2dDxModelFromTransformGrp(0);
         }
 
         private void onCollisionCircleCenterChanged(Vector center)
         {
-            addCollider2dDxModelsToTransformGrp();
+            addCollider2dDxModelToTransformGrp(0);
             SceneMRef.transformGrpSetTranslation(new Vector3D(center.X, center.Y, 0.0f), DxVisualizer.IScene.TransformReferenceFrame.Local);
-            removeCollider2dDxModelsFromTransformGrp();
+            removeCollider2dDxModelFromTransformGrp(0);
         }
 
         private void onCollisionCircleRadiusChanged(float radius)
         {
-            addCollider2dDxModelsToTransformGrp();
+            addCollider2dDxModelToTransformGrp(0);
             SceneMRef.transformGrpSetScale(new Vector3D(radius, radius, 1.0f), DxVisualizer.IScene.TransformReferenceFrame.Local);
-            removeCollider2dDxModelsFromTransformGrp();
+            removeCollider2dDxModelFromTransformGrp(0);
         }
         
         private void onCollisionStadiumCenterChanged(CollisionStadium stadium)
         {
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-                instance.IDxSceneModelInstanceCollider2D[0].addToTransformGrp();
-
+            addCollider2dDxModelToTransformGrp(0);
             Point stadiumCenter = stadium.Center.PointCpy;
             SceneMRef.transformGrpSetTranslation(new Vector3D(stadiumCenter.X, stadiumCenter.Y, 0.0f), DxVisualizer.IScene.TransformReferenceFrame.Local);
-
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-                instance.IDxSceneModelInstanceCollider2D[0].removeFromTransformGrp();
-
-            resetPosDxStadiumSemicircles(stadium);
+            removeCollider2dDxModelFromTransformGrp(0);
         }
 
         private void onCollisionStadiumAxisVecChanged(CollisionStadium stadium)
@@ -356,7 +302,7 @@ namespace Corium3DGI
             if (axisVec.LengthSquared < EPSILON)
                 return;
 
-            addCollider2dDxModelsToTransformGrp();
+            addCollider2dDxModelToTransformGrp(0);
 
             Vector3D upVector = new Vector3D(0, 1, 0);
             Vector3D rotationAxis = Vector3D.CrossProduct(upVector, axisVec);
@@ -368,45 +314,25 @@ namespace Corium3DGI
             else
                 SceneMRef.transformGrpSetRotation(upVector, 0.0f, DxVisualizer.IScene.TransformReferenceFrame.Local);
 
-            removeCollider2dDxModelsFromTransformGrp();
-
-            resetPosDxStadiumSemicircles(stadium);
+            removeCollider2dDxModelFromTransformGrp(0);
         }
 
         private void onCollisionStadiumHeightChanged(CollisionStadium stadium)
         {
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-                instance.IDxSceneModelInstanceCollider2D[0].addToTransformGrp();
+            updateCollisionStadiumCylinderStateConstraints(stadium);
 
+            addCollider2dDxModelToTransformGrp(0);
             SceneMRef.transformGrpSetScale(new Vector3D(stadium.Radius, stadium.Height, 1.0f), DxVisualizer.IScene.TransformReferenceFrame.Local);
-
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-                instance.IDxSceneModelInstanceCollider2D[0].removeFromTransformGrp();
-
-            resetPosDxStadiumSemicircles(stadium);
+            removeCollider2dDxModelFromTransformGrp(0);            
         }
 
         private void onCollisionStadiumRadiusChanged(CollisionStadium stadium)
         {
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-                instance.IDxSceneModelInstanceCollider2D[0].addToTransformGrp();
+            updateCollisionStadiumCylinderStateConstraints(stadium);
 
+            addCollider2dDxModelToTransformGrp(0);
             SceneMRef.transformGrpSetScale(new Vector3D(stadium.Radius, stadium.Height, 1.0f), DxVisualizer.IScene.TransformReferenceFrame.Local);
-
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-            {
-                instance.IDxSceneModelInstanceCollider2D[0].removeFromTransformGrp();
-                instance.IDxSceneModelInstanceCollider2D[1].addToTransformGrp();
-                instance.IDxSceneModelInstanceCollider2D[2].addToTransformGrp();
-            }
-
-            SceneMRef.transformGrpSetScale(new Vector3D(stadium.Radius, stadium.Radius, 1.0f), DxVisualizer.IScene.TransformReferenceFrame.Local);
-
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-            {
-                instance.IDxSceneModelInstanceCollider2D[1].removeFromTransformGrp();
-                instance.IDxSceneModelInstanceCollider2D[2].removeFromTransformGrp();
-            }
+            removeCollider2dDxModelFromTransformGrp(0);
         }
 
         private void resetPosDxStadiumSemicircles(CollisionStadium stadium)
@@ -431,39 +357,48 @@ namespace Corium3DGI
                 instance.IDxSceneModelInstanceCollider2D[2].removeFromTransformGrp();
         }
 
-        private void addCollider3dDxModelsToTransformGrp()
+        private void addCollider3dDxModelToTransformGrp(int modelIdx)
         {
-            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-            {
-                foreach (DxVisualizer.IScene.ISceneModelInstance dxColliderModel in instance.IDxSceneModelInstanceCollider3D)
-                    dxColliderModel.addToTransformGrp();
-            }                
+            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)            
+                instance.IDxSceneModelInstanceCollider3D[modelIdx].addToTransformGrp();                            
         }
 
-        private void removeCollider3dDxModelsFromTransformGrp()
+        private void removeCollider3dDxModelFromTransformGrp(int modelIdx)
+        {
+            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
+                instance.IDxSceneModelInstanceCollider3D[modelIdx].removeFromTransformGrp();
+        }
+
+        private void updateCollisionCapsuleConstraints(CollisionCapsule capsule)
         {
             foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
             {
-                foreach (DxVisualizer.IScene.ISceneModelInstance dxColliderModel in instance.IDxSceneModelInstanceCollider3D)
-                    dxColliderModel.removeFromTransformGrp();
+                ((DxVisualizer.IScene.IConstrainedTransformInstance)instance.IDxSceneModelInstanceCollider3D[0]).setScaleConstraints(
+                    DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp, 0.0f,
+                    DxVisualizer.IScene.TransformScaleConstraint.Factor, capsule.Height / capsule.Radius,
+                    DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp, 0.0f);
             }
         }
 
-        private void addCollider2dDxModelsToTransformGrp()
+        private void addCollider2dDxModelToTransformGrp(int modelIdx)
         {
             foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
-            {
-                foreach (DxVisualizer.IScene.ISceneModelInstance dxColliderModel in instance.IDxSceneModelInstanceCollider2D)
-                    dxColliderModel.addToTransformGrp();
-            }
+                instance.IDxSceneModelInstanceCollider2D[modelIdx].addToTransformGrp();
         }
 
-        private void removeCollider2dDxModelsFromTransformGrp()
+        private void removeCollider2dDxModelFromTransformGrp(int modelIdx)
+        {
+            foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
+                instance.IDxSceneModelInstanceCollider2D[modelIdx].removeFromTransformGrp();
+        }
+
+        private void updateCollisionStadiumCylinderStateConstraints(CollisionStadium stadium)
         {
             foreach (SceneModelInstanceM instance in SceneModelInstanceMs)
             {
-                foreach (DxVisualizer.IScene.ISceneModelInstance dxColliderModel in instance.IDxSceneModelInstanceCollider2D)
-                    dxColliderModel.removeFromTransformGrp();
+                ((DxVisualizer.IScene.IConstrainedTransform2dInstance)instance.IDxSceneModelInstanceCollider2D[0]).setScaleConstraints(
+                    DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp, 0.0f,
+                    DxVisualizer.IScene.TransformScaleConstraint.Factor, stadium.Height / stadium.Radius);
             }
         }
     }

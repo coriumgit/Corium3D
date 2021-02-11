@@ -155,28 +155,29 @@ namespace Corium3DGI
             Vector3D axisVec3D = new Vector3D(axisVec.VectorCpy.X, axisVec.VectorCpy.Y, 0.0f);
             DxVisualizer.IScene.IConstrainedTransform2dInstance cylinderDxInstance =
                 sceneM.createDxConstrained2dInstance(dxModelIDs[0], Color.FromArgb(50, 255, 255, 0),
-                                                     center3D,
-                                                     new Vector3D(radius, height, 1.0f),
+                                                     center3D, new Vector3D(radius, height, 1.0f),
                                                      axisVecQuat.Axis, (float)axisVecQuat.Angle, null);
-            cylinderDxInstance.setScaleConstraints(DxVisualizer.IScene.TransformScaleConstraint.None, 
-                                                   DxVisualizer.IScene.TransformScaleConstraint.None);
+            cylinderDxInstance.setScaleConstraints(DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp, 0.0f,
+                                                   DxVisualizer.IScene.TransformScaleConstraint.Factor, height / radius);
 
             DxVisualizer.IScene.IConstrainedTransform2dInstance topSemicircleDxInstance =
                 sceneM.createDxConstrained2dInstance(dxModelIDs[1], Color.FromArgb(50, 255, 255, 0),
-                                                     center3D + (0.5f * height * axisVec3D),
-                                                     new Vector3D(radius, radius, 1.0f),
-                                                     axisVecQuat.Axis, (float)axisVecQuat.Angle, null);
-            topSemicircleDxInstance.setScaleConstraints(DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp, 
-                                                        DxVisualizer.IScene.TransformScaleConstraint.FollowMaxDimGrp);
+                                                     new Vector3D(0.0f, 0.5f, 0.0f),
+                                                     new Vector3D(1.0f, 1.0f, 1.0f),
+                                                     new Vector3D(1.0f, 0.0f, 0.0f), 0.0f, null);
+            topSemicircleDxInstance.setScaleConstraints(DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp, 0.0f, 
+                                                        DxVisualizer.IScene.TransformScaleConstraint.FollowMaxDimGrp, 0.0f);
+            topSemicircleDxInstance.assignParent(cylinderDxInstance, false);
 
             DxVisualizer.IScene.IConstrainedTransform2dInstance bottomSemicircleDxInstance =
                 sceneM.createDxConstrained2dInstance(dxModelIDs[2], Color.FromArgb(50, 255, 255, 0),
-                                                     center3D - (0.5f * height * axisVec3D),
-                                                     new Vector3D(radius, radius, 1.0f),
-                                                     axisVecQuat.Axis, (float)axisVecQuat.Angle, null);
-            bottomSemicircleDxInstance.setScaleConstraints(DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp, 
-                                                           DxVisualizer.IScene.TransformScaleConstraint.FollowMaxDimGrp);
-            
+                                                     new Vector3D(0.0f, -0.5f, 0.0f),
+                                                     new Vector3D(1.0f, 1.0f, 1.0f),
+                                                     new Vector3D(1.0f, 0.0f, 0.0f), 0.0f, null);
+            bottomSemicircleDxInstance.setScaleConstraints(DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp, 0.0f, 
+                                                           DxVisualizer.IScene.TransformScaleConstraint.FollowMaxDimGrp, 0.0f);
+            bottomSemicircleDxInstance.assignParent(cylinderDxInstance, false);
+
             return new DxVisualizer.IScene.ISceneModelInstance[] { cylinderDxInstance, topSemicircleDxInstance, bottomSemicircleDxInstance };
         }
 

@@ -82,8 +82,8 @@ namespace Corium3DGI
                                                      new Vector3D(center.PointCpy.X, center.PointCpy.Y, 0.0f),
                                                      new Vector3D(radius, radius, 1.0f),
                                                      new Vector3D(0.0f, 0.0f, 1.0f), 0.0f, null);
-            circleDxInstance.setScaleConstraints(DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp,
-                                                 DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp);
+            circleDxInstance.setScaleConstraints(DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp, 0.0f,
+                                                 DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp, 0.0f);
 
             return new DxVisualizer.IScene.ISceneModelInstance[] { circleDxInstance };
         }

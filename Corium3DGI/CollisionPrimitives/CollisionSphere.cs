@@ -81,9 +81,9 @@ namespace Corium3DGI
                                                             (Vector3D)center.Point3DCpy, 
                                                             new Vector3D(radius, radius, radius), 
                                                             new Vector3D(0.0f, 0.0f, 1.0f), 0.0f, null);
-            sphereDxInstance.setScaleConstraints(DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp,
-                                                DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp,
-                                                DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp);
+            sphereDxInstance.setScaleConstraints(DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp, 0.0f,
+                                                 DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp, 0.0f,
+                                                 DxVisualizer.IScene.TransformScaleConstraint.MaxDimGrp, 0.0f);
 
             return new DxVisualizer.IScene.ISceneModelInstance[] { sphereDxInstance };            
         }
