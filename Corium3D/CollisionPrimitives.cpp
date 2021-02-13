@@ -1420,16 +1420,18 @@ namespace Corium3D {
 		glm::vec3 radiiPlaneContainedAxis2 = glm::normalize(glm::cross(radiiPlaneContainedAxis1, v));
 		glm::vec3 radiiPlaneContainedAxis1Scaled = radiiPlaneContainedAxis1 * newCloneParentTransform.scale;
 		glm::vec3 radiiPlaneContainedAxis2Scaled = radiiPlaneContainedAxis2 * newCloneParentTransform.scale;
-		float newCloneRadiusScaleFactor;
+		float newCloneRadiusScaled;
 		if (glm::length2(radiiPlaneContainedAxis1Scaled) > glm::length2(radiiPlaneContainedAxis2Scaled))
-			newCloneRadiusScaleFactor = glm::length(radiiPlaneContainedAxis1Scaled);
+			newCloneRadiusScaled = r * glm::length(radiiPlaneContainedAxis1Scaled);
 		else
-			newCloneRadiusScaleFactor = glm::length(radiiPlaneContainedAxis2Scaled);
+			newCloneRadiusScaled = r * glm::length(radiiPlaneContainedAxis2Scaled);
 
+		float vScaledLen = glm::length(v * newCloneParentTransform.scale);
+		glm::vec3 newCloneVScaled = v * newCloneParentTransform.scale * (std::max)(EPSILON_ZERO, vScaledLen + 2 * r * glm::length(newCloneParentTransform.scale * glm::normalize(v)) - 2 * newCloneRadiusScaled) / vScaledLen;
 		CollisionCapsule* collisionCapsuleCloned = collisionPrimitivesFactory.genCollisionCapsule(
-			c1 * newCloneParentTransform.scale, 
-			v * newCloneParentTransform.scale,
-			r * newCloneRadiusScaleFactor);
+			(c1 + 0.5f * v) * newCloneParentTransform.scale - 0.5f * newCloneVScaled,
+			newCloneVScaled,
+			newCloneRadiusScaled);
 		
 		collisionCapsuleCloned->rotate(newCloneParentTransform.rot);
 		collisionCapsuleCloned->translate(newCloneParentTransform.translate);
@@ -2668,12 +2670,15 @@ namespace Corium3D {
 		return false;
 	}
 
-	CollisionPerimeter* CollisionStadium::clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const {
-		glm::vec2 radiusVec = glm::normalize(glm::vec2(-v.y, v.x));		
+	CollisionPerimeter* CollisionStadium::clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const {								
+		glm::vec2 scale2D = glm::vec2(newCloneParentTransform.scale);
+		float newCloneRadiusScaled = r * glm::length(scale2D * glm::normalize(glm::vec2(-v.y, v.x)));
+		float vScaledLen = glm::length(scale2D * v);
+		glm::vec2 newCloneVScaled = v * scale2D * (std::max)(EPSILON_ZERO, vScaledLen + 2 * r * glm::length(scale2D * glm::normalize(v)) - 2 * newCloneRadiusScaled) / vScaledLen;
 		CollisionStadium* collisionStadiumCloned = collisionPrimitivesFactory.genCollisionStadium(
-			c1 * glm::vec2(newCloneParentTransform.scale),
-			v * glm::vec2(newCloneParentTransform.scale),
-			r * glm::length(radiusVec * glm::vec2(newCloneParentTransform.scale)));
+			(c1 + 0.5f * v) * scale2D - 0.5f * newCloneVScaled,
+			newCloneVScaled,
+			newCloneRadiusScaled);
 
 		collisionStadiumCloned->rotate(rotQuatToRotComplex(newCloneParentTransform.rot));
 		collisionStadiumCloned->translate(newCloneParentTransform.translate);
