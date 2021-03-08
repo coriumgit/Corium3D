@@ -15,8 +15,8 @@ bool TheCube::receiveRay() {
 TheSphere::TheSphere(Corium3DEngine& corium3DEngine, Transform3D& initTransform, float initCollisionPrimitiveRot, glm::vec3& linVel, float angVelMag, glm::vec3& angVelAx, ProximityHandlingMethods* proximityHandlingMethods) :
 	GameLmnt(corium3DEngine, Component::Graphics, NULL, NULL, 1, &initTransform, initCollisionPrimitiveRot, proximityHandlingMethods, std::bind(&TheSphere::receiveRay, this)) 
 {
-	accessMobilityAPI()->setLinVel(linVel);
-	accessMobilityAPI()->setAngVel(angVelMag, angVelAx);
+	//accessMobilityAPI()->setLinVel(linVel);
+	//accessMobilityAPI()->setAngVel(angVelMag, angVelAx);
 }
 
 bool TheSphere::receiveRay() {
