@@ -10,7 +10,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 <hr style="border:2px solid gray"/> 
 
 ### GLEW license
-<hr style="border:1px solid gray"/> 
+<hr style="border:2px solid gray"/> 
 The OpenGL Extension Wrangler Library
 Copyright (C) 2002-2007, Milan Ikits <milan ikits[]ieee org>
 Copyright (C) 2002-2007, Marcelo E. Magallon <mmagallo[]debian org>
@@ -71,8 +71,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 
-#### The MIT License
-#
+##### The MIT License
+<hr style="border:1px solid gray"/> 
 Copyright (c) 2005 - G-Truc Creation
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
