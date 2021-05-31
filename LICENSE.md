@@ -39,11 +39,10 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 
-#### OpenGL Mathematics (GLM)
+#### OpenGL Mathematics (GLM) license
 ----------------------------------
 GLM is licensed under The Happy Bunny License or MIT License
 
-================================================================================
 The Happy Bunny License (Modified MIT License)
 --------------------------------------------------------------------------------
 Copyright (c) 2005 - G-Truc Creation
@@ -70,7 +69,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
-================================================================================
+
 The MIT License
 --------------------------------------------------------------------------------
 Copyright (c) 2005 - G-Truc Creation
