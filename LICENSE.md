@@ -8,6 +8,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ## Third Party Licenses
 -------------------------------------------------------------------
+
 ### GLEW license
 ----------------------------------
 The OpenGL Extension Wrangler Library
