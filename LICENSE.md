@@ -43,7 +43,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 ----------------------------------
 GLM is licensed under The Happy Bunny License or MIT License
 
-The Happy Bunny License (Modified MIT License)
+##### The Happy Bunny License (Modified MIT License)
 --------------------------------------------------------------------------------
 Copyright (c) 2005 - G-Truc Creation
 
@@ -70,7 +70,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 
-The MIT License
+##### The MIT License
 --------------------------------------------------------------------------------
 Copyright (c) 2005 - G-Truc Creation
 
