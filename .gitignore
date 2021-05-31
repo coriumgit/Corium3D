@@ -344,3 +344,4 @@ UnitTests/pch.h
 UnitTests/UnitTests.cpp
 UnitTests/UnitTests.vcxproj
 UnitTests/UnitTests.vcxproj.filters
+Corium3D/output.txt
