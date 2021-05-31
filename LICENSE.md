@@ -8,7 +8,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ### Third Party Licenses
 ---------------------------
-### GLEW license
+#### GLEW license
 #
 The OpenGL Extension Wrangler Library
 Copyright (C) 2002-2007, Milan Ikits <milan ikits[]ieee org>
@@ -39,12 +39,12 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 
-### OpenGL Mathematics (GLM) license
-----------------------------------
+#### OpenGL Mathematics (GLM) license
+#
 GLM is licensed under The Happy Bunny License or MIT License
 
-#### The Happy Bunny License (Modified MIT License)
---------------------------------------------------------------------------------
+##### The Happy Bunny License (Modified MIT License)
+#
 Copyright (c) 2005 - G-Truc Creation
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -71,7 +71,7 @@ THE SOFTWARE.
 
 
 #### The MIT License
---------------------------------------------------------------------------------
+#
 Copyright (c) 2005 - G-Truc Creation
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
