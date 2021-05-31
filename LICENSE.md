@@ -93,7 +93,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ### glTF-SDK license
----------------------------------
+********************************
 Copyright (c) Microsoft Corporation. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -115,7 +115,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE
 
 ### Open Asset Import Library license
------------------------------------------
+********************************
 Copyright (c) 2006-2010, Assimp Development Team
 All rights reserved.
 
