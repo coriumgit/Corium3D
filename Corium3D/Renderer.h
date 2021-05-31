@@ -62,7 +62,7 @@ namespace Corium3D {
 		void translateCameraPivot(glm::vec3 const& translation);
 		void rotCamera(float rotAng, glm::vec3 const& rotAx);
 		void panCamera(glm::vec2 const& panVec);
-		void rotCameraAroundViewportContainedAx(float rotAng, glm::vec2& rotAx);
+		void rotCameraAroundViewportContainedAx(float rotAng, glm::vec2 const& rotAx);
 		void translateCameraInViewDirection(float translation);
 		void zoom(float factor);
 		glm::vec3 const& getCameraPos() const { return cameraPos; }

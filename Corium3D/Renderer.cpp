@@ -494,7 +494,7 @@ namespace Corium3D {
 		translateCamera(glm::mat3(glm::cross(cameraLookDirection, cameraUp), cameraUp, cameraLookDirection)*glm::vec3(panVec, 0.0f));
 	}
 
-	void Renderer::rotCameraAroundViewportContainedAx(float rotAng, glm::vec2& rotAx) {
+	void Renderer::rotCameraAroundViewportContainedAx(float rotAng, glm::vec2 const& rotAx) {
 		if (abs(rotAx.x) > EPSILON || abs(rotAx.y) > EPSILON)
 			rotCamera(rotAng, glm::mat3(cameraRight, cameraUp, cameraLookDirection)*glm::vec3(rotAx, 0.0f));	
 	}
@@ -957,7 +957,7 @@ namespace Corium3D {
 		return glm::vec3(vec.x, vec.y, vec.z);
 	}
 
-	void loadMeshesTransformsArrRecurse(aiScene const* scene, glm::mat4* meshesTransformsArr, aiNode const* node, glm::mat4& parentTransform) {
+	void loadMeshesTransformsArrRecurse(aiScene const* scene, glm::mat4* meshesTransformsArr, aiNode const* node, glm::mat4 const& parentTransform) {
 		glm::mat4 nodeTransform = parentTransform * assimp2glm(node->mTransformation);
 		for (unsigned int meshIdx = 0; meshIdx < node->mNumMeshes; meshIdx++)
 			meshesTransformsArr[node->mMeshes[meshIdx]] = nodeTransform;

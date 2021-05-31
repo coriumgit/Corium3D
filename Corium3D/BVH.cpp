@@ -417,8 +417,8 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 			return rayCollisionData;	
 
 	#else
-		AABB3D sceneAABB(*(staticNodes3DRoot->aabb));
-		sceneAABB.combine(*(mobileNodes3DRoot->aabb));	
+		AABB3D sceneAABB(staticNodes3DRoot->aabb);
+		sceneAABB.combine(mobileNodes3DRoot->aabb);	
 	#endif
 		
 		// if origin + direction is outside box return empty	

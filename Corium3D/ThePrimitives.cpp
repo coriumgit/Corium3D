@@ -1,6 +1,6 @@
 #include "ThePrimitives.h"
 
-TheCube::TheCube(Corium3DEngine& corium3DEngine, Transform3D& initTransform, float initCollisionPrimitiveRot, glm::vec3& linVel, float angVelMag, glm::vec3& angVelAx, ProximityHandlingMethods* proximityHandlingMethods) :
+TheCube::TheCube(Corium3DEngine& corium3DEngine, Transform3D const& initTransform, float initCollisionPrimitiveRot, glm::vec3 const& linVel, float angVelMag, glm::vec3 const& angVelAx, ProximityHandlingMethods* proximityHandlingMethods) :
 	GameLmnt(corium3DEngine, Component::Graphics, NULL, NULL, 0, &initTransform, initCollisionPrimitiveRot, proximityHandlingMethods, std::bind(&TheCube::receiveRay, this))
 {
 	accessMobilityAPI()->setLinVel(linVel);
@@ -12,7 +12,7 @@ bool TheCube::receiveRay() {
 	return true;
 }
 
-TheSphere::TheSphere(Corium3DEngine& corium3DEngine, Transform3D& initTransform, float initCollisionPrimitiveRot, glm::vec3& linVel, float angVelMag, glm::vec3& angVelAx, ProximityHandlingMethods* proximityHandlingMethods) :
+TheSphere::TheSphere(Corium3DEngine& corium3DEngine, Transform3D const& initTransform, float initCollisionPrimitiveRot, glm::vec3 const& linVel, float angVelMag, glm::vec3 const& angVelAx, ProximityHandlingMethods* proximityHandlingMethods) :
 	GameLmnt(corium3DEngine, Component::Graphics, NULL, NULL, 1, &initTransform, initCollisionPrimitiveRot, proximityHandlingMethods, std::bind(&TheSphere::receiveRay, this)) 
 {
 	//accessMobilityAPI()->setLinVel(linVel);
@@ -24,7 +24,7 @@ bool TheSphere::receiveRay() {
 	return true;
 }
 
-TheCapsule::TheCapsule(Corium3DEngine& corium3DEngine, Transform3D& initTransform, float initCollisionPrimitiveRot, glm::vec3& linVel, float angVelMag, glm::vec3& angVelAx, ProximityHandlingMethods* proximityHandlingMethods) :
+TheCapsule::TheCapsule(Corium3DEngine& corium3DEngine, Transform3D const& initTransform, float initCollisionPrimitiveRot, glm::vec3 const& linVel, float angVelMag, glm::vec3 const& angVelAx, ProximityHandlingMethods* proximityHandlingMethods) :
 	GameLmnt(corium3DEngine, Component::Graphics, NULL, NULL, 2, &initTransform, initCollisionPrimitiveRot, proximityHandlingMethods, std::bind(&TheCapsule::receiveRay, this))
 {
 	//accessMobilityAPI()->setLinVel(linVel);
@@ -36,7 +36,7 @@ bool TheCapsule::receiveRay() {
 	return true;
 }
 
-TheCone::TheCone(Corium3DEngine& corium3DEngine, Transform3D& initTransform, float initCollisionPrimitiveRot, glm::vec3& linVel, float angVelMag, glm::vec3& angVelAx, ProximityHandlingMethods* proximityHandlingMethods) :
+TheCone::TheCone(Corium3DEngine& corium3DEngine, Transform3D const& initTransform, float initCollisionPrimitiveRot, glm::vec3 const& linVel, float angVelMag, glm::vec3 const& angVelAx, ProximityHandlingMethods* proximityHandlingMethods) :
 	GameLmnt(corium3DEngine, Component::Graphics, NULL, NULL, 3, &initTransform, initCollisionPrimitiveRot, proximityHandlingMethods, std::bind(&TheCone::receiveRay, this)) 
 {
 	//accessMobilityAPI()->setLinVel(linVel);

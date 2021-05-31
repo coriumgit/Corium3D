@@ -10,25 +10,25 @@ using namespace Corium3D;
 
 class TheCube : public Corium3DEngine::GameLmnt {
 public:
-	TheCube(Corium3DEngine& corium3D, Transform3D& initTransform, float initCollisionPrimitiveRot, glm::vec3& linVel, float angVelMag, glm::vec3& angVelAx, ProximityHandlingMethods* proximityHandlingMethods);
+	TheCube(Corium3DEngine& corium3D, Transform3D const& initTransform, float initCollisionPrimitiveRot, glm::vec3 const& linVel, float angVelMag, glm::vec3 const& angVelAx, ProximityHandlingMethods* proximityHandlingMethods);
 	bool receiveRay();
 };
 
 class TheSphere : public Corium3DEngine::GameLmnt {
 public:
-	TheSphere(Corium3DEngine& corium3DEngine, Transform3D& initTransform, float initCollisionPrimitiveRot, glm::vec3& linVel, float angVelMag, glm::vec3& angVelAx, ProximityHandlingMethods* proximityHandlingMethods);
+	TheSphere(Corium3DEngine& corium3DEngine, Transform3D const& initTransform, float initCollisionPrimitiveRot, glm::vec3 const& linVel, float angVelMag, glm::vec3 const& angVelAx, ProximityHandlingMethods* proximityHandlingMethods);
 	bool receiveRay();
 };
 
 class TheCapsule : public  Corium3DEngine::GameLmnt {
 public:
-	TheCapsule(Corium3DEngine& corium3D, Transform3D& initTransform, float initCollisionPrimitiveRot, glm::vec3& linVel, float angVelMag, glm::vec3& angVelAx, ProximityHandlingMethods* proximityHandlingMethods);
+	TheCapsule(Corium3DEngine& corium3D, Transform3D const& initTransform, float initCollisionPrimitiveRot, glm::vec3 const& linVel, float angVelMag, glm::vec3 const& angVelAx, ProximityHandlingMethods* proximityHandlingMethods);
 	bool receiveRay();
 };
 
 class TheCone : public  Corium3DEngine::GameLmnt {
 public:
-	TheCone(Corium3DEngine& corium3D, Transform3D& initTransform, float initCollisionPrimitiveRot, glm::vec3& linVel, float angVelMag, glm::vec3& angVelAx, ProximityHandlingMethods* proximityHandlingMethods);
+	TheCone(Corium3DEngine& corium3D, Transform3D const& initTransform, float initCollisionPrimitiveRot, glm::vec3 const& linVel, float angVelMag, glm::vec3 const& angVelAx, ProximityHandlingMethods* proximityHandlingMethods);
 	bool receiveRay();
 };
 

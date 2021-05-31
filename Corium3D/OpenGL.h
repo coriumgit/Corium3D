@@ -25,9 +25,17 @@
 
 namespace Corium3D {
 
-#define CHECK_GL_ERROR(func_name) do { if (DEBUG && checkGlError(func_name)) return 0; } while (0)
+#ifdef DEBUG
+	#define CHECK_GL_ERROR(func_name) do { if (checkGlError(func_name)) return 0; } while (0)
+#else
+	#define CHECK_GL_ERROR(func_name) do {} while (0)
+#endif
 
-#define CHECK_FRAMEBUFFER_STATUS(target) do{ if (DEBUG && !checkFramebufferStatus(target)) return 0; } while(0)
+#ifdef DEBUG
+	#define CHECK_FRAMEBUFFER_STATUS(target) do{ if (!checkFramebufferStatus(target)) return 0; } while(0)
+#else
+	#define CHECK_FRAMEBUFFER_STATUS(func_name) do {} while (0)
+#endif
 
 	bool createGlProg(const GLchar* vertexShaderCode, const GLchar* fragShaderCode,
 		GLuint* progOut, GLuint* vertexShaderOut, GLuint* fragShaderOut);

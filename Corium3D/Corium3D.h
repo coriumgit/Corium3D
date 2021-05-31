@@ -120,7 +120,7 @@ namespace Corium3D {
 				 StateUpdater stateUpdater,
 				 OnMovementMadeCallback onMovementMadeCallback,
 				 unsigned int modelIdx,
-				 Transform3D* initTransform,
+				 Transform3D const* initTransform,
 				 float initCollisionPerimeterRot,
 				 ProximityHandlingMethods* proximityHandlingMethods,
 				 OnRayHit onRayHitCallback);
@@ -224,7 +224,7 @@ namespace Corium3D {
 		void translate(glm::vec3 const& translation);
 		void rotate(float rotAng, glm::vec3 const& rotAx);
 		void pan(glm::vec2 const& panVec);
-		void rotAroundViewportContainedAx(float rotAng, glm::vec2& rotAx);
+		void rotAroundViewportContainedAx(float rotAng, glm::vec2 const& rotAx);
 		void translateInViewDirection(float translation);
 		void zoom(float factor);
 		bool shootRay(glm::vec2 const& cursorPos);
