@@ -86,7 +86,7 @@ namespace Corium3D {
 	void readSceneAssets(std::string const& assetsFileFullPath, unsigned int sceneIdx, SceneData& outSceneData, std::vector<ModelDesc>& outModelDescs, std::vector<unsigned int>& outModelSceneModelIdxsMap)
 	{
 		std::ifstream assetsFile(assetsFileFullPath, std::ios::binary);
-#if DEBUG || _DEBUG
+#ifdef DEBUG
 		if (!assetsFile.is_open())
 			throw std::ios_base::failure(assetsFileFullPath + " failed to open.");
 #endif	
@@ -122,7 +122,7 @@ namespace Corium3D {
 	void writeAssetsFile(std::string const& assetsFileFullPath, std::vector<ModelDesc const*> const& modelDescs, std::vector<SceneData const*> const& scenesData)
 	{
 		std::ofstream assetsFile(assetsFileFullPath, std::ios::binary);
-#if DEBUG || _DEBUG
+#ifdef DEBUG
 		if (!assetsFile.is_open())
 			throw std::ios_base::failure(assetsFileFullPath + " failed to open.");
 #endif	
@@ -306,7 +306,7 @@ namespace Corium3D {
 			
 	void readFileToStr(std::string const& fileName, std::string& strOut) {
 		std::ifstream file(fileName);
-#if DEBUG || _DEBUG
+#ifdef DEBUG
 		if (!file.is_open())
 			throw std::ios_base::failure(fileName + std::string(" failed to open !"));
 #endif

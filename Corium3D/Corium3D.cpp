@@ -523,9 +523,10 @@ namespace Corium3D {
 		ServiceLocator::getLogger().logd("Corium3DEngine", "onWindowFocusChanged called.");	
 		loopMutex.lock();
 		hasFocus = _hasFocus;
-		if (hasFocus)		
-			waitCond.notify_one();	
-		loopMutex.unlock();
+		if (hasFocus)					
+			waitCond.notify_one();
+		
+		loopMutex.unlock();		
 	}
 
 	void Corium3DEngine::Corium3DEngineImpl::signalDetachedFromWindow() {
@@ -563,8 +564,21 @@ namespace Corium3D {
 		unloadScene();
 		
 		SceneData sceneData;
-		std::vector<ModelDesc> modelDescs;
+		std::vector<ModelDesc> modelDescs;		
+#ifdef DEBUG
+		try
+		{
+			readSceneAssets(modelsScenesFullPath, sceneIdx, sceneData, modelDescs, modelSceneModelIdxsMap);
+		}
+		catch (std::ios_base::failure const& e)
+		{
+			ServiceLocator::getLogger().logd("loadScene", "failed to read scene assets");
+			throw e;
+		}
+#else
 		readSceneAssets(modelsScenesFullPath, sceneIdx, sceneData, modelDescs, modelSceneModelIdxsMap);
+#endif
+
 		staticModelsNr = sceneData.staticModelsNr;
 		sceneModelsNr = sceneData.sceneModelsData.size();
 		
@@ -674,7 +688,7 @@ namespace Corium3D {
 		for (unsigned int keyboardInputCallbackIdx = 0; keyboardInputCallbackIdx < KeyboardInputID::__KEYBOARD_INPUT_IDS_NR__; keyboardInputCallbackIdx++)
 			keyboardInputStartCallbacks[keyboardInputCallbackIdx] = keyboardInputEndCallbacks[keyboardInputCallbackIdx] = NULL;
 		cursorInputCallbacks = new CursorInputCallback[CursorInputID::__CURSOR_INPUT_IDS_NR__];		
-
+		
 		return instancesTransformsInit;
 	}
 
@@ -686,11 +700,11 @@ namespace Corium3D {
 		return *cameraAPI;
 	}
 
-	bool Corium3DEngine::Corium3DEngineImpl::loop() {	
-		eglMutex.lock();
+	bool Corium3DEngine::Corium3DEngineImpl::loop() {			
+		eglMutex.lock();		
 		double previous = ServiceLocator::getTimer().getCurrentTime();
 		double lag = 0.0;
-		bool isSurfaceSzChanged;	 
+		bool isSurfaceSzChanged;	 		
 		std::unique_lock<std::mutex> loopMutexLock(loopMutex, std::defer_lock);
 		while (isGameOn) {		
 			loopMutexLock.lock();
@@ -737,7 +751,7 @@ namespace Corium3D {
 			//resolveCollisions3D();
 			resolveCollisions2D();
 
-	#if !DEBUG
+	#ifndef DEBUG
 			renderer->render(lag);
 	#else
 			if (!renderer->render(lag)) {

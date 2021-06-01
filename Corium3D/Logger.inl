@@ -18,12 +18,12 @@ namespace Corium3DUtils {
 #endif
 
 	inline void Logger::logd(const char* logTag, const char* logFmt, ...) const {
-		if (DEBUG) {
+#ifdef DEBUG
 			va_list argptr;
 			va_start(argptr, logFmt);
 			logd_func(logTag, logFmt, argptr);
 			va_end(argptr);
-		}
+#endif
 	}
 
 	inline void Logger::loge(const char* logTag, const char* logFmt, ...) const {

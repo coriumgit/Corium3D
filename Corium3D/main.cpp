@@ -49,7 +49,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 	//const char* modelsPaths[3] = { "../assets/cube.dae", "../assets/sphere.dae", "../assets/capsule.dae" }; // "../assets/simple_armature.dae"
 	Corium3DEngine::CallbackPtrs callbackPtrs = { corium3DOnlineCallback , systemKeyboardInputStartCallback, systemKeyboardInputEndCallback, systemCursorInputCallback };
 	const char* shadersFullPaths[2] = {"../assets/bonelessVertexShader.vs", "../assets/fragShader.fs"};
-	Corium3DEngine::AssetsFilesFullPaths assetsFilesFullPaths = { "../assets/Corium3dAssets/assets_meta1.assets", 
+	Corium3DEngine::AssetsFilesFullPaths assetsFilesFullPaths = { "../assets/Corium3dAssets/assets_meta.assets", 
 																  "../assets/txtTexAtlas.png",																  
 															  	  &shadersFullPaths[0], &shadersFullPaths[1], 1};	
 	corium3DEngine = new Corium3DEngine(callbackPtrs, assetsFilesFullPaths);
@@ -91,6 +91,7 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 			return 0;
 
 		case WM_SETFOCUS:
+
 			corium3DEngine->signalWindowFocusChanged(true);
 			return 0;
 

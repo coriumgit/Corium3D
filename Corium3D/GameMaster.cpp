@@ -97,7 +97,7 @@ glm::vec3  linVels[TEST_LMNTS_NR] = { glm::vec3(0.0f, 0.0f, 0.0f),
 #endif
 
 GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium3Dengine), cubesPool(TEST_LMNTS_NR_MAX), spheresPool(TEST_LMNTS_NR_MAX), capsulesPool(TEST_LMNTS_NR_MAX), conesPool(TEST_LMNTS_NR_MAX)
-{							
+{								
 	std::vector<std::vector<Transform3D>> transformsInit = corium3DEngine.loadScene(0);
 
 	// THE PRIMITIVES INSTANTIATION
@@ -108,6 +108,7 @@ GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium
 	Corium3DEngine::GameLmnt::ProximityHandlingMethods coloringCallbacksBuffer[] =
 		{ coloringCallbacks, coloringCallbacks, coloringCallbacks, coloringCallbacks };
 
+	ServiceLocator::getLogger().logd("GameMaster", "creating the primitives.");
 	for (unsigned int lmntIdx = 0; lmntIdx < transformsInit[0].size(); lmntIdx++)
 		cubes[lmntIdx] = cubesPool.acquire(corium3DEngine, transformsInit[0][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);	
 
