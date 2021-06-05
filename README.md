@@ -1,4 +1,4 @@
 # Corium3D
 
-An under construction game engine infrastructure. Implemented components so far:
+A game engine infrastructure under construction. Implemented components so far:
 
