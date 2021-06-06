@@ -26,9 +26,9 @@ namespace Corium3D {
 		typedef std::function<void(void)> Corium3DEngineOnlineCallback;		
 
 		struct CallbackPtrs {
-			//TODO: separate this:
+			//TODO: separate this: (In parameter for a callback to be called by Corium3D)
 			Corium3DEngineOnlineCallback& corium3DEngineOnlineCallback;
-			// from these:
+			// from these: (out parameter to be assigned by Corium3D with functions for the outside code to call
 			std::function<void(KeyboardInputID inputID)>& systemKeyboardInputStartCallbackPtr;
 			std::function<void(KeyboardInputID inputID)>& systemKeyboardInputEndCallbackPtr;
 			std::function<void(CursorInputID inputID, glm::vec2 const& cursorPos)>& systemCursorInputCallbackPtr;
@@ -41,9 +41,7 @@ namespace Corium3D {
 			const char** fragShadersFullPaths;
 			unsigned int shadersNr;
 		};				
-
-		// REMINDER: system functions of CallbacksPtrs -> [out] parameter to be assigned functions for the system inputs callbacks to call	
-		// TODO: separate corium3DEngineOnlineCallback from the [out] functions 
+		
 		Corium3DEngine(CallbackPtrs& callbacksPtrs, AssetsFilesFullPaths const& assetsFilesFullPaths);
 		Corium3DEngine(Corium3DEngine const& corium3DEngine) = delete;
 		~Corium3DEngine();
