@@ -1,8 +1,9 @@
 # Corium3D
 
+This here is a playground for all that is game engine coding, sided with a 3D scene editor implemented with Windows Presentation Foundation (WPF). By playground I mean 
 A game engine infrastructure under construction. Implemented components so far:
 
-* Core (VS Project - Corium3D):
+* Core (VS Project - Corium3D) components:
 	*	Collision detection:
 		*	Broad phase using dynamic BVHs of AABBs, Separating between static and mobile objects.
 		*	Narrow phase finds collisions in 3D of bounding boxes, spheres and capsules, and in 2D using bounding rectangles, circles, and stadiums, including contact manifolds.
@@ -15,14 +16,16 @@ A game engine infrastructure under construction. Implemented components so far:
 		*	Text widgets using image atlases and Image widgets.
 	*	Physics – Basic kinematics. 
 	*	Scenes – Engine orients around data preloading of preprocessed assets, and generation of object pools for everything in a scene.
-* Editor (VS Projects: Corium3DGI, Corium3DAssetsGen, DxVisualizer) - A GUI built with Windows Presentation Foundation:
-	* Importing of 3D models.
-	* Fitting 3D models with 3D collision primitives (box, sphere, capsule) and 2D collision primitives (rectangle, circle, stadium).
-	* Generating scenes - define models present in the scene and specify maximum instances number to facilitate object pooling.
-	*	DirectX11 rendered viewport: 
-		*	Graphically drag and drop initial models instances to levels and transform them via handles.
-		*	C++/CLI mediates WPF C# code and DirectX11 C++ code.
-		*	Highlight of selected objects via blur filters.
+	*	Input handling
+* Editor - GUI built with Windows Presentation Foundation (VS Project: Corium3DGI), MVVM designed. Implemented components:
+	* 	Importing and previewing of 3D models.
+	* 	Fitting 3D models with 3D collision primitives (box, sphere, capsule) and 2D collision primitives (rectangle, circle, stadium) visually in the preview.
+	* 	Scenes definition - declare models present in the scene, and add initial instances.
+	*	DirectX11 rendered viewport (VS Project: DxVisualizer): 
+		*	Graphically drag and drop initial models instances to levels.
+		*	Objects selection and highlight of selected objects via blur filters.
+		*	Objects transforms via handles.				
 		*	Utilizes space partitioning using a K-D Tree adapted to hold bounding spheres.
-	o	Generates the level’s assets.
+		*	C++/CLI mediates WPF C# code and DirectX11 C++ code.
+	* 	Generation of scenes' data files to be loaded in the game runtime (VS Project: Corium3DAssetsGen).
 
