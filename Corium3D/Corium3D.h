@@ -28,7 +28,7 @@ namespace Corium3D {
 		struct CallbackPtrs {
 			//TODO: separate this: (In parameter for a callback to be called by Corium3D)
 			Corium3DEngineOnlineCallback& corium3DEngineOnlineCallback;
-			// from these: (out parameter to be assigned by Corium3D with functions for the outside code to call
+			// from these: (out parameter to be assigned by Corium3D with functions for the outside code to call)
 			std::function<void(KeyboardInputID inputID)>& systemKeyboardInputStartCallbackPtr;
 			std::function<void(KeyboardInputID inputID)>& systemKeyboardInputEndCallbackPtr;
 			std::function<void(CursorInputID inputID, glm::vec2 const& cursorPos)>& systemCursorInputCallbackPtr;
