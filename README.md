@@ -1,9 +1,10 @@
 # Corium3D
 
-This here is a playground for all that is game engine coding, sided with a 3D scene editor implemented with Windows Presentation Foundation (WPF). By playground I mean 
-A game engine infrastructure under construction. Implemented components so far:
+A game engine infrastructure under construction. This is actually my hands-on study in game engine programming. My aim is to produce the main componentes that make up a game engine, And To each component I add functionality on the basis of how fun I find it to implement :)
 
 * Core (VS Project - Corium3D) components:
+	* 	Game loop.
+	*	Scenes – Engine orients around data preloading of preprocessed assets, and generation of object pools for everything in a scene.
 	*	Collision detection:
 		*	Broad phase using dynamic BVHs of AABBs, Separating between static and mobile objects.
 		*	Narrow phase finds collisions in 3D of bounding boxes, spheres and capsules, and in 2D using bounding rectangles, circles, and stadiums, including contact manifolds.
@@ -15,8 +16,8 @@ A game engine infrastructure under construction. Implemented components so far:
 		*	Skeletal animations.
 		*	Text widgets using image atlases and Image widgets.
 	*	Physics – Basic kinematics. 
-	*	Scenes – Engine orients around data preloading of preprocessed assets, and generation of object pools for everything in a scene.
-	*	Input handling
+	
+	*	Environment independent input handling.
 * Editor - GUI built with Windows Presentation Foundation (VS Project: Corium3DGI), MVVM designed. Implemented components:
 	* 	Importing and previewing of 3D models.
 	* 	Fitting 3D models with 3D collision primitives (box, sphere, capsule) and 2D collision primitives (rectangle, circle, stadium) visually in the preview.
