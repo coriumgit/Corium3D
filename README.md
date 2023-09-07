@@ -1,6 +1,6 @@
 # Corium3D
 
-A game engine infrastructure under construction. This is my hands-on study into game engine programming. My aim is to produce the main componentes that make up a game engine. For each component I broaden the functionality just on the basis of how fun I find it to implement :) 
+A collection of game engine components programmed from scratch. This is my hands-on study into game engine algorithms. My aim is to produce the main componentes that make up a game engine. For each component I broaden the functionality just on the basis of how fun I find it to implement :) 
 
 ### Implemented components so far
 --------------------------------------
