@@ -11,8 +11,8 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 void createGameMaster();
 Corium3DEngine::Corium3DEngineOnlineCallback corium3DOnlineCallback = createGameMaster;
 
-const unsigned int WINDOW_WIDTH = 500;
-const unsigned int WINDOW_HEIGHT = 500;
+const unsigned int WINDOW_WIDTH = 1024;
+const unsigned int WINDOW_HEIGHT = 800;
 
 unsigned int clientAreaWidth;
 unsigned int clientAreaHeight;
@@ -43,13 +43,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 	keyboardInputCodesMap[VK_UP] = Corium3D::KeyboardInputID::UP_ARROW;
 	keyboardInputCodesMap[VK_DOWN] = Corium3D::KeyboardInputID::DOWN_ARROW;	
 	keyboardInputCodesMap[0x41] = Corium3D::KeyboardInputID::A;
-	keyboardInputCodesMap[0x51] = Corium3D::KeyboardInputID::Q;
+	keyboardInputCodesMap[0x47] = Corium3D::KeyboardInputID::G;
+	keyboardInputCodesMap[0x51] = Corium3D::KeyboardInputID::Q;	
 	keyboardInputCodesMap[VK_SPACE] = Corium3D::KeyboardInputID::SPACE;
 
 	//const char* modelsPaths[3] = { "../assets/cube.dae", "../assets/sphere.dae", "../assets/capsule.dae" }; // "../assets/simple_armature.dae"
 	Corium3DEngine::CallbackPtrs callbackPtrs = { corium3DOnlineCallback , systemKeyboardInputStartCallback, systemKeyboardInputEndCallback, systemCursorInputCallback };
 	const char* shadersFullPaths[2] = {"../assets/bonelessVertexShader.vs", "../assets/fragShader.fs"};
-	Corium3DEngine::AssetsFilesFullPaths assetsFilesFullPaths = { "../assets/Corium3dAssets/assets_meta.assets", 
+	Corium3DEngine::AssetsFilesFullPaths assetsFilesFullPaths = { "../assets/SceneB.assets", 
 																  "../assets/txtTexAtlas.png",																  
 															  	  &shadersFullPaths[0], &shadersFullPaths[1], 1};	
 	corium3DEngine = new Corium3DEngine(callbackPtrs, assetsFilesFullPaths);

@@ -353,8 +353,8 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 	*/
 
 	BVH::CollisionsData<glm::vec3> const& BVH::getCollisionsData3D() {
-		//return doCollisionsSearch<AABB3DRotatable, DataNode3D, glm::vec3>(staticNodes3DRoot, mobileNodes3DRoot, collisionsBuffers3D);
-		return collisionsBuffers3D.collisionsData;
+		return doCollisionsSearch<AABB3DRotatable, DataNode3D, glm::vec3>(staticNodes3DRoot, mobileNodes3DRoot, collisionsBuffers3D);
+		//return collisionsBuffers3D.collisionsData;
 	}
 
 	/*
@@ -516,8 +516,8 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 
 	// Reminder: Right now CollisionData is only 3D (to simplify debugging)
 	BVH::CollisionsData<glm::vec2> const& BVH::getCollisionsData2D() {
-		return doCollisionsSearch<AABB2DRotatable, DataNode2D, glm::vec2>(staticNodes2DRoot, mobileNodes2DRoot, collisionsBuffers2D);
-		//return collisionsBuffers2D.collisionsData;
+		//return doCollisionsSearch<AABB2DRotatable, DataNode2D, glm::vec2>(staticNodes2DRoot, mobileNodes2DRoot, collisionsBuffers2D);
+		return collisionsBuffers2D.collisionsData;
 	}
 
 	template <class TAABB>
@@ -988,8 +988,8 @@ const float RAY_DESTINATION_EXTRA_FACTOR = 0.01f;
 		broadPhaseResBuffer.collisionPrimitivesDuos[broadPhaseResBuffer.collisionsNr][1] = &(node2->collisionPrimitive);
 		broadPhaseResBuffer.collisionsData[broadPhaseResBuffer.collisionsNr] =
 			CollisionData<V>(node1->modelIdx, node1->instanceIdx, node2->modelIdx, node2->instanceIdx);
-		node1->collisionData2D = node2->collisionData2D = &broadPhaseResBuffer.collisionsData[broadPhaseResBuffer.collisionsNr]; //temp: for debug
-		//node1->collisionData3D = node2->collisionData3D = &broadPhaseResBuffer.collisionsData[broadPhaseResBuffer.collisionsNr]; //temp: for debug
+		//node1->collisionData2D = node2->collisionData2D = &broadPhaseResBuffer.collisionsData[broadPhaseResBuffer.collisionsNr]; //temp: for debug
+		node1->collisionData3D = node2->collisionData3D = &broadPhaseResBuffer.collisionsData[broadPhaseResBuffer.collisionsNr]; //temp: for debug
 		broadPhaseResBuffer.collisionsNr++;
 	}
 

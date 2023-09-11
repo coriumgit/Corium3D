@@ -33,7 +33,7 @@ namespace Corium3D {
 
 	constexpr GLfloat CAMERA_FOV_INIT = (float)M_PI / 3;
 	const GLfloat FRUSTUM_NEAR_INIT = 1.0f;
-	const GLfloat FRUSTUM_FAR_INIT = 20.0f;
+	const GLfloat FRUSTUM_FAR_INIT = 1000.0f;
 
 	const glm::vec3 CAMERA_POS_INIT(0.0f, 0.0f, 0.0f);
 	const glm::vec3 CAMERA_PIVOT_INIT(0.0f, 0.0f, 0.0f);

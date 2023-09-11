@@ -238,14 +238,28 @@ namespace Corium3D {
 		glm::vec3 getArbitraryV() const override;
 		bool testSegCollision(glm::vec3 const& segOrigin, glm::vec3 const& segDest, float& segFactorOnCollisionOut) override;
 		bool testSegCollision(glm::vec3 const& segOrigin, glm::vec3 const& segDest) override;
-
-		// Visitor pattern: acceptors
-		bool testCollision(CollisionPrimitive* other) override { return other->testCollision(this); }
-		bool testCollision(CollisionPrimitive* other, ContactManifold& manifoldOut) override { return other->testCollision(this, manifoldOut); }
-
+		
 		glm::vec3 const& getC() const { return c; }
 		glm::vec3 const& getS() const { return s; }
 		glm::mat3 const& getR() const { return r; }
+
+		// Visitor pattern: visitors	
+		bool testCollision(CollisionBox* other) override;
+		bool testCollision(CollisionBox* other, ContactManifold& manifoldOut) override;
+		bool testCollision(CollisionSphere* sphere) override;
+		bool testCollision(CollisionSphere* sphere, ContactManifold& manifoldOut) override;
+		bool testCollision(CollisionCapsule* capsule) override;
+		bool testCollision(CollisionCapsule* capsule, ContactManifold& manifoldOut) override;
+		bool testCollision(CollisionRect* rect) override { return false; }
+		bool testCollision(CollisionRect* rect, ContactManifold& manifoldOut) override { return false; }
+		bool testCollision(CollisionCircle* circle) override { return false; }
+		bool testCollision(CollisionCircle* circle, ContactManifold& manifoldOut) override { return false; }
+		bool testCollision(CollisionStadium* stadium) override { return false; }
+		bool testCollision(CollisionStadium* stadium, ContactManifold& manifoldOut) override { return false; }
+		
+		// Visitor pattern: acceptors
+		bool testCollision(CollisionPrimitive* other) override { return other->testCollision(this); }
+		bool testCollision(CollisionPrimitive* other, ContactManifold& manifoldOut) override { return other->testCollision(this, manifoldOut); }
 
 	private:
 		struct FacePenetrationDesc {
@@ -282,21 +296,7 @@ namespace Corium3D {
 		inline glm::vec3 supportMapMinusDirection(glm::vec3 const& vec, unsigned int directionIdx);
 		inline void clipCapsuleVec(CollisionCapsule const* capsule, unsigned int facenAxIdx, glm::vec3 const& faceNormal, glm::vec3* clipPointsOut);		
 		//inline bool getSegmentIntersectionPointWithFace(glm::vec3 const& segmentC, glm::vec3 const& segmentV, glm::vec3 const& faceNormal, glm::vec3 const& faceCenter, glm::vec3 const& faceVec1, float faceHalfSide1Len, glm::vec3 const& faceVec2, float faceHalfSide2Len, glm::vec3& intersectionPointOut);	
-
-		// Visitor pattern: visitors	
-		bool testCollision(CollisionBox* other) override;
-		bool testCollision(CollisionBox* other, ContactManifold& manifoldOut) override;
-		bool testCollision(CollisionSphere* sphere) override;
-		bool testCollision(CollisionSphere* sphere, ContactManifold& manifoldOut) override;
-		bool testCollision(CollisionCapsule* capsule) override;
-		bool testCollision(CollisionCapsule* capsule, ContactManifold& manifoldOut) override;
-		bool testCollision(CollisionRect* rect) override { return false; }
-		bool testCollision(CollisionRect* rect, ContactManifold& manifoldOut) override { return false; }
-		bool testCollision(CollisionCircle* circle) override { return false; }
-		bool testCollision(CollisionCircle* circle, ContactManifold& manifoldOut) override { return false; }
-		bool testCollision(CollisionStadium* stadium) override { return false; }
-		bool testCollision(CollisionStadium* stadium, ContactManifold& manifoldOut) override { return false; }
-
+		
 		bool testFacesSeparation(CollisionBox& other, FacePenetrationDesc& penetrationDescOut);
 		bool testEdgesSeparation(CollisionBox& other, EdgePenetrationDesc& penetrationDescOut);
 		void createFaceContact(CollisionBox& other, unsigned int penetrationMinAxIdx, float penetration, ContactManifold& manifoldOut);
@@ -331,6 +331,20 @@ namespace Corium3D {
 		bool testSegCollision(glm::vec3 const& segOrigin, glm::vec3 const& segDest, float& segFactorOnCollisionOut) override;
 		bool testSegCollision(glm::vec3 const& segOrigin, glm::vec3 const& segDest) override;
 
+		// Visitor pattern: visitors
+		bool testCollision(CollisionBox* box) override { return box->testCollision(this); }
+		bool testCollision(CollisionBox* box, ContactManifold& manifoldOut) override { return box->testCollision(this, manifoldOut); }
+		bool testCollision(CollisionSphere* other) override { return glm::length2(other->c - c) <= (r + other->r) * (r + other->r); }
+		bool testCollision(CollisionSphere* other, ContactManifold& manifoldOut) override;
+		bool testCollision(CollisionCapsule* capsule) override;
+		bool testCollision(CollisionCapsule* capsule, ContactManifold& manifoldOut) override;
+		bool testCollision(CollisionRect* rect) override { return false; }
+		bool testCollision(CollisionRect* rect, ContactManifold& manifoldOut) override { return false; }
+		bool testCollision(CollisionCircle* circle) override { return false; }
+		bool testCollision(CollisionCircle* circle, ContactManifold& manifoldOut) override { return false; }
+		bool testCollision(CollisionStadium* stadium) override { return false; }
+		bool testCollision(CollisionStadium* stadium, ContactManifold& manifoldOut) override { return false; }
+
 		// Visitor pattern: acceptors
 		bool testCollision(CollisionPrimitive* other) override { return other->testCollision(this); }
 		bool testCollision(CollisionPrimitive* other, ContactManifold& manifoldOut) override { return other->testCollision(this, manifoldOut); }
@@ -344,21 +358,7 @@ namespace Corium3D {
 		CollisionSphere(glm::vec3 const& center, float radius);
 		~CollisionSphere() {}
 		CollisionVolume* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const override;
-		void destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) override;		
-
-		// Visitor pattern: visitors
-		bool testCollision(CollisionBox* box) override { return false; }
-		bool testCollision(CollisionBox* box, ContactManifold& manifoldOut) override { return false; }
-		bool testCollision(CollisionSphere* other) override { return glm::length2(other->c - c) <= (r + other->r) * (r + other->r); }
-		bool testCollision(CollisionSphere* other, ContactManifold& manifoldOut) override;
-		bool testCollision(CollisionCapsule* capsule) override;
-		bool testCollision(CollisionCapsule* capsule, ContactManifold& manifoldOut) override;
-		bool testCollision(CollisionRect* rect) override { return false; }
-		bool testCollision(CollisionRect* rect, ContactManifold& manifoldOut) override { return false; }
-		bool testCollision(CollisionCircle* circle) override { return false; }
-		bool testCollision(CollisionCircle* circle, ContactManifold& manifoldOut) override { return false; }
-		bool testCollision(CollisionStadium* stadium) override { return false; }
-		bool testCollision(CollisionStadium* stadium, ContactManifold& manifoldOut) override { return false; }
+		void destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) override;				
 	};
 
 	class CollisionCapsule : public CollisionVolume {
@@ -391,13 +391,27 @@ namespace Corium3D {
 		bool testSegCollision(glm::vec3 const& segOrigin, glm::vec3 const& segDest, float& segFactorOnCollisionOut) override;
 		bool testSegCollision(glm::vec3 const& segOrigin, glm::vec3 const& segDest) override;
 
-		// Visitor pattern: acceptors
-		bool testCollision(CollisionPrimitive* other) override { return other->testCollision(this); }
-		bool testCollision(CollisionPrimitive* other, ContactManifold& manifoldOut) override { return other->testCollision(this, manifoldOut); }
-
 		glm::vec3 const& getC1() const { return c1; }
 		glm::vec3 const& getV() const { return v; }
 		float getR() const { return r; }
+
+		// Visitor pattern: visitors
+		bool testCollision(CollisionBox* box) override { return box->testCollision(this); }
+		bool testCollision(CollisionBox* box, ContactManifold& manifoldOut) override { return box->testCollision(this, manifoldOut); }
+		bool testCollision(CollisionSphere* sphere) override { return sphere->testCollision(this); }
+		bool testCollision(CollisionSphere* sphere, ContactManifold& manifoldOut) override { return sphere->testCollision(this, manifoldOut); }
+		bool testCollision(CollisionCapsule* other) override;
+		bool testCollision(CollisionCapsule* other, ContactManifold& manifoldOut) override;
+		bool testCollision(CollisionRect* rect) override { return false; }
+		bool testCollision(CollisionRect* rect, ContactManifold& manifoldOut) override { return false; }
+		bool testCollision(CollisionCircle* circle) override { return false; }
+		bool testCollision(CollisionCircle* circle, ContactManifold& manifoldOut) override { return false; }
+		bool testCollision(CollisionStadium* stadium) override { return false; }
+		bool testCollision(CollisionStadium* stadium, ContactManifold& manifoldOut) override { return false; }
+
+		// Visitor pattern: acceptors
+		bool testCollision(CollisionPrimitive* other) override { return other->testCollision(this); }
+		bool testCollision(CollisionPrimitive* other, ContactManifold& manifoldOut) override { return other->testCollision(this, manifoldOut); }		
 
 	private:
 		glm::vec3 c1; // center 1
@@ -409,21 +423,7 @@ namespace Corium3D {
 		CollisionCapsule(glm::vec3 const& center1, glm::vec3 const& axisVec, float radius);
 		~CollisionCapsule() {}
 		CollisionVolume* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const override;
-		void destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) override;
-
-		// Visitor pattern: visitors
-		bool testCollision(CollisionBox* box) override { return false; }
-		bool testCollision(CollisionBox* box, ContactManifold& manifoldOut) override { return false; }
-		bool testCollision(CollisionSphere* sphere) override { return false; }
-		bool testCollision(CollisionSphere* sphere, ContactManifold& manifoldOut) override { return false; }
-		bool testCollision(CollisionCapsule* other) override;
-		bool testCollision(CollisionCapsule* other, ContactManifold& manifoldOut) override;
-		bool testCollision(CollisionRect* rect) override { return false; }
-		bool testCollision(CollisionRect* rect, ContactManifold& manifoldOut) override { return false; }
-		bool testCollision(CollisionCircle* circle) override { return false; }
-		bool testCollision(CollisionCircle* circle, ContactManifold& manifoldOut) override { return false; }
-		bool testCollision(CollisionStadium* stadium) override { return false; }
-		bool testCollision(CollisionStadium* stadium, ContactManifold& manifoldOut) override { return false; }
+		void destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) override;		
 	};
 
 	class CollisionCone : public CollisionVolume {
@@ -585,13 +585,27 @@ namespace Corium3D {
 		bool testSegCollision(glm::vec2 const& segOrigin, glm::vec2 const& segDest, float& segFactorOnCollisionOut) override;
 		bool testSegCollision(glm::vec2 const& segOrigin, glm::vec2 const& segDest) override;
 
-		// Visitor pattern: acceptors
-		bool testCollision(CollisionPrimitive* other) override { return other->testCollision(this); }
-		bool testCollision(CollisionPrimitive* other, ContactManifold& manifoldOut) override { return other->testCollision(this, manifoldOut); }
-
 		glm::vec2 const& getC() const { return c; }
 		glm::vec2 const& getS() const { return s; }
 		glm::mat2 const& getR() const { return r; }
+
+		// Visitor pattern: visitors	
+		bool testCollision(CollisionBox* collisionBox) override { return false; }
+		bool testCollision(CollisionBox* collisionBox, ContactManifold& manifoldOut) override { return false; }
+		bool testCollision(CollisionSphere* sphere) override { return false; }
+		bool testCollision(CollisionSphere* sphere, ContactManifold& manifoldOut) override { return false; }
+		bool testCollision(CollisionCapsule* capsule) override { return false; }
+		bool testCollision(CollisionCapsule* capsule, ContactManifold& manifoldOut) override { return false; }
+		bool testCollision(CollisionRect* other) override;
+		bool testCollision(CollisionRect* other, ContactManifold& manifoldOut) override;
+		bool testCollision(CollisionCircle* circle) override;
+		bool testCollision(CollisionCircle* circle, ContactManifold& manifoldOut) override;
+		bool testCollision(CollisionStadium* stadium) override;
+		bool testCollision(CollisionStadium* stadium, ContactManifold& manifoldOut) override;
+
+		// Visitor pattern: acceptors
+		bool testCollision(CollisionPrimitive* other) override { return other->testCollision(this); }
+		bool testCollision(CollisionPrimitive* other, ContactManifold& manifoldOut) override { return other->testCollision(this, manifoldOut); }		
 
 	private:
 		struct SidePenetrationDesc {
@@ -615,20 +629,6 @@ namespace Corium3D {
 		void destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) override;
 
 		inline void clipStadiumVec(CollisionStadium const* stadium, unsigned int sideAxIdx, glm::vec2 const& faceNormal, glm::vec2* clipPointsOut);
-
-		// Visitor pattern: visitors	
-		bool testCollision(CollisionBox* collisionBox) override { return false; }
-		bool testCollision(CollisionBox* collisionBox, ContactManifold& manifoldOut) override { return false; }
-		bool testCollision(CollisionSphere* sphere) override { return false; }
-		bool testCollision(CollisionSphere* sphere, ContactManifold& manifoldOut) override { return false; }
-		bool testCollision(CollisionCapsule* capsule) override { return false; }
-		bool testCollision(CollisionCapsule* capsule, ContactManifold& manifoldOut) override { return false; }
-		bool testCollision(CollisionRect* other) override;
-		bool testCollision(CollisionRect* other, ContactManifold& manifoldOut) override;
-		bool testCollision(CollisionCircle* circle) override;
-		bool testCollision(CollisionCircle* circle, ContactManifold& manifoldOut) override;
-		bool testCollision(CollisionStadium* stadium) override;
-		bool testCollision(CollisionStadium* stadium, ContactManifold& manifoldOut) override;
 
 		bool testSidesSeparation(CollisionRect& other, SidePenetrationDesc& penetrationDescOut);
 		void createSidesContact(CollisionRect& other, unsigned int penetrationMinAxIdx, float penetration, ContactManifold& manifoldOut);
@@ -662,23 +662,8 @@ namespace Corium3D {
 		bool testSegCollision(glm::vec2 const& segOrigin, glm::vec2 const& segDest, float& segFactorOnCollisionOut) override;
 		bool testSegCollision(glm::vec2 const& segOrigin, glm::vec2 const& segDest) override;
 
-		// Visitor pattern: acceptors
-		bool testCollision(CollisionPrimitive* other) override { return other->testCollision(this); }
-		bool testCollision(CollisionPrimitive* other, ContactManifold& manifoldOut) override { return other->testCollision(this, manifoldOut); }
-
 		glm::vec2 const& getC() const { return c; }
 		float getR() const { return r; }
-
-	private:
-		glm::vec2 c; // center
-		float r; // radius	
-		glm::vec2 offset; // offset translation from object center
-
-		CollisionCircle() {}
-		CollisionCircle(glm::vec2 const& center, float radius);
-		~CollisionCircle() {}
-		CollisionPerimeter* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const override;
-		void destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) override;
 
 		// Visitor pattern: visitors
 		bool testCollision(CollisionBox* box) override { return false; }
@@ -693,6 +678,21 @@ namespace Corium3D {
 		bool testCollision(CollisionCircle* other, ContactManifold& manifoldOut) override;
 		bool testCollision(CollisionStadium* stadium) override;
 		bool testCollision(CollisionStadium* stadium, ContactManifold& manifoldOut) override;
+
+		// Visitor pattern: acceptors
+		bool testCollision(CollisionPrimitive* other) override { return other->testCollision(this); }
+		bool testCollision(CollisionPrimitive* other, ContactManifold& manifoldOut) override { return other->testCollision(this, manifoldOut); }		
+
+	private:
+		glm::vec2 c; // center
+		float r; // radius	
+		glm::vec2 offset; // offset translation from object center
+
+		CollisionCircle() {}
+		CollisionCircle(glm::vec2 const& center, float radius);
+		~CollisionCircle() {}
+		CollisionPerimeter* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const override;
+		void destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) override;		
 	};
 
 	class CollisionStadium : public CollisionPerimeter {
@@ -735,6 +735,20 @@ namespace Corium3D {
 		glm::vec2 const& getV() const { return v; }
 		float getR() const { return r; }
 
+		// Visitor pattern: visitors
+		bool testCollision(CollisionBox* box) override { return false; }
+		bool testCollision(CollisionBox* box, ContactManifold& manifoldOut) override { return false; }
+		bool testCollision(CollisionSphere* collisionSphere) override { return false; }
+		bool testCollision(CollisionSphere* collisionSphere, ContactManifold& manifoldOut) override { return false; }
+		bool testCollision(CollisionCapsule* capsule) override { return false; }
+		bool testCollision(CollisionCapsule* capsule, ContactManifold& manifoldOut) override { return false; }
+		bool testCollision(CollisionRect* rect) override { return false; }
+		bool testCollision(CollisionRect* rect, ContactManifold& manifoldOut) override { return false; }
+		bool testCollision(CollisionCircle* other) override { return false; }
+		bool testCollision(CollisionCircle* other, ContactManifold& manifoldOut) { return false; }
+		bool testCollision(CollisionStadium* stadium) override;
+		bool testCollision(CollisionStadium* stadium, ContactManifold& manifoldOut) override;
+
 		// Visitor pattern: acceptors
 		bool testCollision(CollisionPrimitive* other) override { return other->testCollision(this); }
 		bool testCollision(CollisionPrimitive* other, ContactManifold& manifoldOut) override { return other->testCollision(this, manifoldOut); }
@@ -749,21 +763,7 @@ namespace Corium3D {
 		CollisionStadium(glm::vec2 const& center1, glm::vec2 const& axisVec, float radius);
 		~CollisionStadium() {}
 		CollisionPerimeter* clone(CollisionPrimitivesFactory& collisionPrimitivesFactory, Transform3D const& newCloneParentTransform) const override;
-		void destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) override;
-
-		// Visitor pattern: visitors
-		bool testCollision(CollisionBox* box) override { return false; }
-		bool testCollision(CollisionBox* box, ContactManifold& manifoldOut) override { return false; }
-		bool testCollision(CollisionSphere* collisionSphere) override { return false; }
-		bool testCollision(CollisionSphere* collisionSphere, ContactManifold& manifoldOut) override { return false; }
-		bool testCollision(CollisionCapsule* capsule) override { return false; }
-		bool testCollision(CollisionCapsule* capsule, ContactManifold& manifoldOut) override { return false; }
-		bool testCollision(CollisionRect* rect) override { return false; }
-		bool testCollision(CollisionRect* rect, ContactManifold& manifoldOut) override { return false; }
-		bool testCollision(CollisionCircle* other) override { return false; }
-		bool testCollision(CollisionCircle* other, ContactManifold& manifoldOut) { return false; }
-		bool testCollision(CollisionStadium* stadium) override;
-		bool testCollision(CollisionStadium* stadium, ContactManifold& manifoldOut) override;
+		void destroy(CollisionPrimitivesFactory& collisionPrimitivesFactory) override;		
 	};
 
 	template <class V>

@@ -1,7 +1,5 @@
 //
 // Created by omer on 30/12/2017.
-// REMINDER: will govern everything and evolve according to current demand
-
 #pragma once
 
 #include "SystemDefs.h"
@@ -153,6 +151,7 @@ namespace Corium3D {
 		void rot(float rot, glm::vec3 const& rotAx);
 		void rot(glm::quat const& rot);
 		void setLinVel(glm::vec3 const& _linVel);
+		glm::vec3 getLinVel() const;
 		void setAngVel(float _angVelMag, glm::vec3 const& _angVelAx);
 		void setLinAccel(glm::vec3 const& _linAccel);
 		void setAngAccel(glm::vec3 const& angAccel);

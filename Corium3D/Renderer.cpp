@@ -49,7 +49,7 @@ namespace Corium3D {
 		"out vec4 passColor; \n"
 
 		"void main(void) { \n"
-		"	passColor = vec4(1.0f, 1.0f, 1.0f, 1.0f); \n"
+		"	passColor = vec4(1.0f, 0.0f, 0.0f, 1.0f); \n"
 		"	gl_Position = uVpMat * aPos; \n"
 		"} \n";
 	
@@ -562,6 +562,7 @@ namespace Corium3D {
 				instanceAnimator->updateRendererBuffer();
 			visibleStaticModelsInstancesIdxs[modelIdx][visibleStaticModelsInstancesNrs[modelIdx]++] = instanceIdx;
 		
+
 			AABB3D const& aabb = node->getAABB();
 			glm::vec3 cubeMin = aabb.getMinVertex();
 			glm::vec3 cubeMax = aabb.getMaxVertex();
@@ -724,7 +725,7 @@ namespace Corium3D {
 				}
 			}		
 		}
-		visiblesDisplay.setTxt(visibles);
+		//visiblesDisplay.setTxt(visibles);
 
 		glBindBuffer(GL_ARRAY_BUFFER, debugVertexBuffer);
 		nodesIt2D->init(bvh->getMobileNodes2DRoot());
@@ -880,7 +881,7 @@ namespace Corium3D {
 			prevRenderTime = currRenderTime;
 			framesCount = 0;
 		}	
-		gui.render();
+		//gui.render();
 
 		return openGlContext->swapBuffers();    
 	}

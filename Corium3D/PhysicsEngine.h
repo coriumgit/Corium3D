@@ -53,6 +53,9 @@ namespace Corium3D {
 			linVel = _linVel;
 			transformDeltaPerUpdate.translate = linVel * secsPerUpdate + 0.5f * linAccel * secsPerUpdate * secsPerUpdate;
 		}
+		glm::vec3 getLinVel() const {			
+			return linVel;
+		}
 		void setAngVel(float _angVelMag, glm::vec3 const& _angVelAx) {
 			angVelMag = _angVelMag * (float)M_PI / 180.0f;
 			angVelAx = glm::normalize(_angVelAx);

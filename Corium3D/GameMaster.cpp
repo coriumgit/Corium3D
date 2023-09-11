@@ -28,9 +28,9 @@ Transform3D transforms[TEST_LMNTS_NR] = { { glm::vec3(0.0f, 0.0f, -7.0),   glm::
 											  //{ glm::vec3(5.0f, 3.0f, -7.0),   glm::vec3(0.6f, 0.6f, 0.6f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f) }
 };
 */
-glm::vec3  linVels[TEST_LMNTS_NR_MAX] = { glm::vec3(0.0f, 0.0f, 0.0f),
-									glm::vec3(0.0f, 0.0f, 0.0f),
-									glm::vec3(0.0f, 0.0f, 0.0f) 
+glm::vec3  linVels[TEST_LMNTS_NR_MAX] = { glm::vec3(0.0f, 0.0f, 0.0f)
+									//glm::vec3(0.0f, 1.0f, 0.0f),
+									//glm::vec3(0.0f, 0.0f, 0.0f) 
 									//glm::vec3(0.0f, 0.0f, 0.0f)
 									//glm::vec3(0.0f, 0.0f, 0.0f), 
 									//glm::vec3(0.0f, 0.1f, 0.0f)
@@ -46,9 +46,9 @@ glm::vec3  linVels[TEST_LMNTS_NR_MAX] = { glm::vec3(0.0f, 0.0f, 0.0f),
 									//glm::vec3(-1.0f, 0.1f, 0.0f)
 };
 
-float angVelMag[TEST_LMNTS_NR_MAX] = {  0.0f,
-								    0.0f,
-								    0.0f
+float angVelMag[TEST_LMNTS_NR_MAX] = {  0.0f
+								    //0.0f,
+								    //0.0f
 								    //0.0f,
 								    //0.0f, 
 							  	    //0.0f, 
@@ -59,9 +59,9 @@ float angVelMag[TEST_LMNTS_NR_MAX] = {  0.0f,
 };
 
 // REMINDER: angular velocity axis must not equal the zero vector
-glm::vec3 angVelAx[TEST_LMNTS_NR_MAX] = { glm::vec3(1.0f, 0.0f, 1.0f),
-									glm::vec3(1.0f, 0.0f, 0.0f),
-									glm::vec3(1.0f, 0.0f, 0.0f) 
+glm::vec3 angVelAx[TEST_LMNTS_NR_MAX] = { glm::vec3(1.0f, 0.0f, 1.0f)
+									//glm::vec3(1.0f, 0.0f, 0.0f),
+									//glm::vec3(1.0f, 0.0f, 0.0f) 
 									//glm::vec3(0.0f, -1.5f, 0.0f)
 									//glm::vec3(0.0f, 0.0f, 0.0f), 
 									//glm::vec3(0.0f, 0.1f, 0.0f)
@@ -96,7 +96,25 @@ glm::vec3  linVels[TEST_LMNTS_NR] = { glm::vec3(0.0f, 0.0f, 0.0f),
 									  glm::vec3(0.0f, 0.0f, 0.0f) }; 
 #endif
 
-GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium3Dengine), cubesPool(TEST_LMNTS_NR_MAX), spheresPool(TEST_LMNTS_NR_MAX), capsulesPool(TEST_LMNTS_NR_MAX), conesPool(TEST_LMNTS_NR_MAX)
+const float fl = 26.0f;
+const glm::vec3 BOX_MIN(-fl, -fl, -fl);
+const glm::vec3 BOX_MAX(fl, fl, fl);
+const glm::vec3 VEL_MIN(-0.57f, -0.57f, -0.57f);
+const glm::vec3 VEL_MAX( 0.57f,  0.57f,  0.57f);
+
+inline glm::vec3 randVec(glm::vec3 const& minVec, glm::vec3 const& maxVec)
+{
+	Corium3DUtils::Randomizer& randomizer = Corium3D::ServiceLocator().getRandomizer();
+	
+	return glm::vec3
+	(
+		randomizer.randF(minVec.x, maxVec.x),
+		randomizer.randF(minVec.y, maxVec.y),
+		randomizer.randF(minVec.z, maxVec.z)
+	);
+}
+
+GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium3Dengine), cubesPool(TEST_LMNTS_NR_MAX + 1), spheresPool(TEST_LMNTS_NR_MAX + 1), capsulesPool(TEST_LMNTS_NR_MAX + 1), conesPool(TEST_LMNTS_NR_MAX + 1)
 {								
 	std::vector<std::vector<Transform3D>> transformsInit = corium3DEngine.loadScene(0);
 
@@ -109,20 +127,49 @@ GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium
 		{ coloringCallbacks, coloringCallbacks, coloringCallbacks, coloringCallbacks };
 
 	ServiceLocator::getLogger().logd("GameMaster", "creating the primitives.");
-	for (unsigned int lmntIdx = 0; lmntIdx < transformsInit[0].size(); lmntIdx++)
-		cubes[lmntIdx] = cubesPool.acquire(corium3DEngine, transformsInit[0][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);	
+	
 
-	for (unsigned int lmntIdx = 0; lmntIdx < transformsInit[1].size(); lmntIdx++)
-		spheres[lmntIdx] = spheresPool.acquire(corium3DEngine, transformsInit[1][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);
+	//Scene C
+	//TheFrog* frogMan = new TheFrog(corium3DEngine, transformsInit[0][0], 0, glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, glm::vec3(1.0f, 0.0f, 1.0f), coloringCallbacksBuffer);
 
-	for (unsigned int lmntIdx = 0; lmntIdx < transformsInit[2].size(); lmntIdx++)
-		capsules[lmntIdx] = capsulesPool.acquire(corium3DEngine, transformsInit[2][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);
+	//Scene B
+	cubes[0] = cubesPool.acquire(corium3DEngine, transformsInit[0][0], 0, glm::vec3(0.0), 0.0f, glm::vec3(1.0), coloringCallbacksBuffer);
+	spheres[0] = spheresPool.acquire(corium3DEngine, transformsInit[1][0], 0, glm::vec3(0.0), 0.0f, glm::vec3(1.0), coloringCallbacksBuffer);
+	capsules[0] = capsulesPool.acquire(corium3DEngine, transformsInit[2][0], 0, glm::vec3(0.0), 0.0f, glm::vec3(1.0), coloringCallbacksBuffer);
 
-	//for (unsigned int lmntIdx = 0; lmntIdx < transformsInit[3].size(); lmntIdx++)
-	//	cones[lmntIdx] = conesPool.acquire(corium3DEngine, transformsInit[3][lmntIdx], 0, linVels[lmntIdx], angVelMag[lmntIdx], angVelAx[lmntIdx], coloringCallbacksBuffer);
+	//Scene A
+	/*	
+	for (int lmntIdx = 0; lmntIdx < TEST_LMNTS_NR_MAX; lmntIdx++)
+	{
+		double xy = 2.5 * (lmntIdx % (TEST_LMNTS_NR_MAX / 2) - TEST_LMNTS_NR_MAX / 4);
+		double z = lmntIdx < TEST_LMNTS_NR_MAX / 2 ? 0.0 : -4.0;
+		Transform3D transform = { glm::vec3(xy, xy, z), glm::vec3(1.0f, 1.0f, 1.0f), glm::quat(cos(0 / 4), sin(0 / 4), sin(0 / 4), sin(0 / 8)) };		
+		cubes[lmntIdx] = cubesPool.acquire(corium3DEngine, transform, 0, glm::vec3(0.0), 0.0f, glm::vec3(1.0), coloringCallbacksBuffer);
+	}
+	*/
+	
+	/*
+	for (unsigned int lmntIdx = 0; lmntIdx < TEST_LMNTS_NR_MAX; lmntIdx++)
+	{
+		Transform3D transform = { randVec(BOX_MIN, BOX_MAX), glm::vec3(1.0f, 1.0f, 1.0f), glm::quat(cos(0 / 4), sin(0 / 4), sin(0 / 4), sin(0 / 8)) };
+		cubes[lmntIdx] = cubesPool.acquire(corium3DEngine, transform, 0, randVec(VEL_MIN, VEL_MAX), 0.0f, glm::vec3(1.0), coloringCallbacksBuffer);
+	}
+
+	for (unsigned int lmntIdx = 0; lmntIdx < TEST_LMNTS_NR_MAX; lmntIdx++)
+	{
+		Transform3D transform = { randVec(BOX_MIN, BOX_MAX), glm::vec3(1.0f, 1.0f, 1.0f), glm::quat(cos(0 / 4), sin(0 / 4), sin(0 / 4), sin(0 / 8)) };
+		spheres[lmntIdx] = spheresPool.acquire(corium3DEngine, transform, 0, randVec(VEL_MIN, VEL_MAX), 0.0f, glm::vec3(1.0), coloringCallbacksBuffer);
+	}
+
+	for (unsigned int lmntIdx = 0; lmntIdx < TEST_LMNTS_NR_MAX; lmntIdx++)
+	{
+		Transform3D transform = { randVec(BOX_MIN, BOX_MAX), glm::vec3(1.0f, 1.0f, 1.0f), glm::quat(cos(0 / 4), sin(0 / 4), sin(0 / 4), sin(0 / 8)) };
+		capsules[lmntIdx] = capsulesPool.acquire(corium3DEngine, transform, 0, randVec(VEL_MIN, VEL_MAX), 0.0f, glm::vec3(1.0), coloringCallbacksBuffer);
+	}			
+	*/
 
 	// PLAYER INSTANTIATION
-	Transform3D playerTransform({ glm::vec3(5.0f, 0.0f, 0.0), glm::vec3(1.0f, 1.0f, 1.0f), glm::quat(cos(0 / 6), sin(0 / 4), sin(0 / 4), sin(0 / 6)) });		
+	Transform3D playerTransform({ glm::vec3(0.0f, 0.0f, 4.0), glm::vec3(1.0f, 1.0f, 1.0f), glm::quat(cos(0 / 6), sin(0 / 4), sin(0 / 4), sin(0 / 6)) });		
 	Corium3DEngine::GameLmnt::ProximityHandlingMethods playerProximityCallbacks {
 		std::bind(&GameMaster::playerCollisionCallback, this, std::placeholders::_1, std::placeholders::_2),
 		std::bind(&GameMaster::playerDetachmentCallback, this, std::placeholders::_1, std::placeholders::_2)
@@ -130,7 +177,7 @@ GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium
 	Corium3DEngine::GameLmnt::ProximityHandlingMethods playerProximityHandlingMethods[] =
 		{ playerProximityCallbacks, playerProximityCallbacks, playerProximityCallbacks, playerProximityCallbacks };
 	
-	player = new TheCube(corium3DEngine, playerTransform, 0, glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, glm::vec3(1.0f, 0.0f, 1.0f), playerProximityHandlingMethods);
+	player = new TheCapsule(corium3DEngine, playerTransform, 0, glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, glm::vec3(1.0f, 0.0f, 1.0f), playerProximityHandlingMethods);
 	playerMobilityAPI = player->accessMobilityAPI();
 	corium3DEngine.registerKeyboardInputStartCallback(KeyboardInputID::LEFT_ARROW, std::bind(&GameMaster::movePlayerLeft, this, std::placeholders::_1));
 	corium3DEngine.registerKeyboardInputStartCallback(KeyboardInputID::RIGHT_ARROW, std::bind(&GameMaster::movePlayerRight, this, std::placeholders::_1));
@@ -138,6 +185,7 @@ GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium
 	corium3DEngine.registerKeyboardInputStartCallback(KeyboardInputID::DOWN_ARROW, std::bind(&GameMaster::movePlayerDown, this, std::placeholders::_1));
 	corium3DEngine.registerKeyboardInputStartCallback(KeyboardInputID::Q, std::bind(&GameMaster::movePlayerFar, this, std::placeholders::_1));
 	corium3DEngine.registerKeyboardInputStartCallback(KeyboardInputID::A, std::bind(&GameMaster::movePlayerClose, this, std::placeholders::_1));
+	corium3DEngine.registerKeyboardInputStartCallback(KeyboardInputID::G, std::bind(&GameMaster::Gooo, this));
 	corium3DEngine.registerKeyboardInputEndCallback(KeyboardInputID::LEFT_ARROW, std::bind(&GameMaster::stopPlayerLeft, this, std::placeholders::_1));
 	corium3DEngine.registerKeyboardInputEndCallback(KeyboardInputID::RIGHT_ARROW, std::bind(&GameMaster::stopPlayerRight, this, std::placeholders::_1));
 	corium3DEngine.registerKeyboardInputEndCallback(KeyboardInputID::UP_ARROW, std::bind(&GameMaster::stopPlayerUp, this, std::placeholders::_1));
@@ -152,11 +200,11 @@ GameMaster::GameMaster(Corium3DEngine& _corium3Dengine) : corium3DEngine(_corium
 	corium3DEngine.registerCursorInputCallback(CursorInputID::WHEEL_ROTATED_BACKWARD, std::bind(&GameMaster::walkOut, this, std::placeholders::_1, std::placeholders::_2));
 	corium3DEngine.registerCursorInputCallback(CursorInputID::WHEEL_ROTATED_FORWARD, std::bind(&GameMaster::walkIn, this, std::placeholders::_1, std::placeholders::_2));
 	corium3DEngine.registerCursorInputCallback(CursorInputID::MOVE, std::bind(&GameMaster::transformCamera, this, std::placeholders::_1, std::placeholders::_2));
-	corium3DEngine.registerCursorInputCallback(CursorInputID::MIDDLE_DOWN, std::bind(&GameMaster::shootRay, this, std::placeholders::_1, std::placeholders::_2));
+	//corium3DEngine.registerCursorInputCallback(CursorInputID::MIDDLE_DOWN, std::bind(&GameMaster::shootRay, this, std::placeholders::_1, std::placeholders::_2));
 	corium3DEngine.accessGuiAPI(0).show();
 	
-	corium3DEngine.accessCameraAPI().translate(glm::vec3(0.0f, 0, 12.0f));
-	corium3DEngine.accessCameraAPI().rotate(0, glm::vec3(-1.0f, 0.0f, 0.0f));
+	corium3DEngine.accessCameraAPI().translate(glm::vec3(-36, 36, 36.0f));
+	corium3DEngine.accessCameraAPI().rotate(-45, glm::normalize(glm::vec3(1.0f, 1.0f, 0.0f)));
 }
 
 GameMaster::~GameMaster() {
@@ -257,7 +305,16 @@ void GameMaster::activateRotation(double timeStamp, glm::vec2 const& cursorPos) 
 
 void GameMaster::deactivateRotation(double timeStamp, glm::vec2 const& cursorPos) {
 	if (cameraTransformMode == CameraTransformMode::ROTATION)
-		cameraTransformMode = CameraTransformMode::NONE;
+		cameraTransformMode = CameraTransformMode::NONE;	
+}
+
+void GameMaster::Gooo() {
+	for (int cubeIdx = 0; cubeIdx < TEST_LMNTS_NR_MAX; ++cubeIdx)
+	{		
+		cubes[cubeIdx]->accessMobilityAPI()->setLinVel(-cubes[cubeIdx]->accessMobilityAPI()->getLinVel());
+		spheres[cubeIdx]->accessMobilityAPI()->setLinVel(-spheres[cubeIdx]->accessMobilityAPI()->getLinVel());
+		capsules[cubeIdx]->accessMobilityAPI()->setLinVel(-capsules[cubeIdx]->accessMobilityAPI()->getLinVel());
+	}
 }
 
 constexpr float ZOOM_FACTOR = 1.1;

@@ -9,6 +9,8 @@ namespace Corium3DUtils {
 		Randomizer(Timer timer);
 		int randI(unsigned int rangeMax);
 		int randI(unsigned int rangeMin, unsigned int rangeMax);
+		float randF(float rangeMax);
+		float randF(float rangeMin, float rangeMax);
 	};
 
 } // namespace Corium3DUtils

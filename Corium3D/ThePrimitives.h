@@ -32,3 +32,9 @@ public:
 	bool receiveRay();
 };
 
+class TheFrog : public  Corium3DEngine::GameLmnt {
+public:
+	TheFrog(Corium3DEngine& corium3D, Transform3D const& initTransform, float initCollisionPrimitiveRot, glm::vec3 const& linVel, float angVelMag, glm::vec3 const& angVelAx, ProximityHandlingMethods* proximityHandlingMethods);
+	bool receiveRay();
+};
+

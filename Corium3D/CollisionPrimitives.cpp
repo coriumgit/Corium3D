@@ -52,9 +52,9 @@ namespace Corium3D {
 	bool CollisionPrimitive<V>::GjkJohnsonsDistanceIterator::doesContain(V const& vec) {
 		for (unsigned int wIdx = 0; wIdx < W_sz; wIdx++) {
 			if (length2(vec - W[Iw[wIdx]]) < EPSILON_ZERO_SQRD) {
-				ServiceLocator::getLogger().logd("GJK", (string("Iteration: v = ") + to_string(vec) + string(" was contained. W: ")).c_str());
+				//ServiceLocator::getLogger().logd("GJK", (string("Iteration: v = ") + to_string(vec) + string(" was contained. W: ")).c_str());
 				for (unsigned int wIdx = 0; wIdx < W_sz; wIdx++) {			
-					ServiceLocator::getLogger().logd("GJK", (string("W[") + to_string(Iw[wIdx]) + string("] =") + to_string(W[Iw[wIdx]])).c_str());
+					//ServiceLocator::getLogger().logd("GJK", (string("W[") + to_string(Iw[wIdx]) + string("] =") + to_string(W[Iw[wIdx]])).c_str());
 				}
 				return true;
 			}
@@ -64,12 +64,12 @@ namespace Corium3D {
 		for (unsigned int yIdx = 0; yIdx < Y_sz; yIdx++) {
 			IyString += to_string(Iy[yIdx]) + string(" ");
 		}
-		ServiceLocator::getLogger().logd("GJK", (string("Iteration: Iy = ") + IyString).c_str());
+		//ServiceLocator::getLogger().logd("GJK", (string("Iteration: Iy = ") + IyString).c_str());
 		for (unsigned int yIdx = 0; yIdx < Y_sz; yIdx++) {		
 			if (length2(vec - W[Iy[yIdx]]) < EPSILON_ZERO_SQRD) {
-				ServiceLocator::getLogger().logd("GJK", (string("Iteration: v = ") + to_string(vec) + string(" was contained. Y: ")).c_str());
+				//ServiceLocator::getLogger().logd("GJK", (string("Iteration: v = ") + to_string(vec) + string(" was contained. Y: ")).c_str());
 				for (unsigned int wIdx = 0; wIdx < Y_sz; wIdx++) {
-					ServiceLocator::getLogger().logd("GJK", (string("Y[") + to_string(yIdx) + string("] =") + to_string(W[Iy[yIdx]].x)).c_str());
+					//ServiceLocator::getLogger().logd("GJK", (string("Y[") + to_string(yIdx) + string("] =") + to_string(W[Iy[yIdx]].x)).c_str());
 				}
 				return true;
 			}
@@ -129,12 +129,12 @@ namespace Corium3D {
 		out1.precision(20);
 		out2.precision(20);
 		do {
-			ServiceLocator::getLogger().logd("GJK", "-------------------------------------------------------------------------");
-			ServiceLocator::getLogger().logd("GJK", (string("Iteration: v = ") + to_string(v)).c_str());
+			//ServiceLocator::getLogger().logd("GJK", "-------------------------------------------------------------------------");
+			//ServiceLocator::getLogger().logd("GJK", (string("Iteration: v = ") + to_string(v)).c_str());
 			a = supportMap(-v);
 			b = other.supportMap(v);		
-			ServiceLocator::getLogger().logd("GJK", (string("Iteration: a = ") + to_string(a)).c_str());
-			ServiceLocator::getLogger().logd("GJK", (string("Iteration: b = ") + to_string(b)).c_str());
+			//ServiceLocator::getLogger().logd("GJK", (string("Iteration: a = ") + to_string(a)).c_str());
+			//ServiceLocator::getLogger().logd("GJK", (string("Iteration: b = ") + to_string(b)).c_str());
 			w = a - b;
 			float vwDot = dot(v, w);
 			if (vwDot > 0 && vwDot * vwDot / vNorm2 > marginsSumSqrd) {
@@ -148,25 +148,25 @@ namespace Corium3D {
 					gjkOut->closestPointThis = johnsoDistIt.getCollisionPointA();
 					gjkOut->closestPointOther = johnsoDistIt.getCollisionPointB();
 				}
-				out1.str(string());
-				out1 << std::fixed << vNorm2Bound - vwDot;
-				out2.str(string());
-				out2 << std::fixed << EPSILON_RELATIVE_SQRD * vNorm2Bound;
-				ServiceLocator::getLogger().logd("GJK", (string("SUCCEEDED: vNorm2Bound - vwDot = ") + out1.str() + string("; EPSILON*vNorm2Bound = ") + out2.str()).c_str());
+				//out1.str(string());
+				//out1 << std::fixed << vNorm2Bound - vwDot;
+				//out2.str(string());
+				//out2 << std::fixed << EPSILON_RELATIVE_SQRD * vNorm2Bound;
+				//ServiceLocator::getLogger().logd("GJK", (string("SUCCEEDED: vNorm2Bound - vwDot = ") + out1.str() + string("; EPSILON*vNorm2Bound = ") + out2.str()).c_str());
 				lastCollisionV = other.lastCollisionV = v;
 				float l= length(v);
-				ServiceLocator::getLogger().logd("GJK", (string("SUCCEEDED: objsMarginsSum - length(v) = ") + to_string(objsMarginsSum - length(v))).c_str());	
-				ServiceLocator::getLogger().logd("GJK", (string("SUCCEEDED: vOut = ") + to_string(v)).c_str());
-				if (gjkOut)
-					ServiceLocator::getLogger().logd("GJK", (string("SUCCEEDED: closestPointThis = ") + to_string(gjkOut->closestPointThis)).c_str());
+				//ServiceLocator::getLogger().logd("GJK", (string("SUCCEEDED: objsMarginsSum - length(v) = ") + to_string(objsMarginsSum - length(v))).c_str());	
+				//ServiceLocator::getLogger().logd("GJK", (string("SUCCEEDED: vOut = ") + to_string(v)).c_str());
+				//if (gjkOut)
+					//ServiceLocator::getLogger().logd("GJK", (string("SUCCEEDED: closestPointThis = ") + to_string(gjkOut->closestPointThis)).c_str());
 				return fmax(objsMarginsSum - length(v), 0.0f);
 			}
 			else {
-				out1.str(string());
-				out1 << std::fixed << vNorm2Bound - vwDot;
-				out2.str(string());
-				out2 << std::fixed << EPSILON_RELATIVE_SQRD * vNorm2Bound;
-				ServiceLocator::getLogger().logd("GJK", (string("Iteration: stop condition failed. vNorm2Bound - vwDot = ") + out1.str() + string("; EPSILON*vNorm2Bound = ") + out2.str()).c_str());
+				//out1.str(string());
+				//out1 << std::fixed << vNorm2Bound - vwDot;
+				//out2.str(string());
+				//out2 << std::fixed << EPSILON_RELATIVE_SQRD * vNorm2Bound;
+				//ServiceLocator::getLogger().logd("GJK", (string("Iteration: stop condition failed. vNorm2Bound - vwDot = ") + out1.str() + string("; EPSILON*vNorm2Bound = ") + out2.str()).c_str());
 			}
 
 			v = johnsoDistIt.iterate(a, b);
@@ -366,7 +366,7 @@ namespace Corium3D {
 			}
 		}
 		if (wasSubsetFound) {
-			ServiceLocator::getLogger().logd("GJK", string("EARLY SUCCESS: |W| = 0").c_str());
+			//ServiceLocator::getLogger().logd("GJK", string("EARLY SUCCESS: |W| = 0").c_str());
 			Y_sz = W_sz;
 			memcpy(Iy, Iw, Y_sz * sizeof(unsigned int));
 			Iw[0] = wAddedIw;
@@ -382,12 +382,12 @@ namespace Corium3D {
 			vec3 x = W[iw];
 			DiX[wAddedIw] = dot(d[iw], x);
 			if (1 < W_sz && DiX[wAddedIw] < EPSILON_ZERO) {
-				ServiceLocator::getLogger().logd("GJK", (to_string(iw) + string(" [|W| = 1] FAILURE: DiX[wAddedIw] = ") + to_string(DiX[wAddedIw])).c_str());
+				//ServiceLocator::getLogger().logd("GJK", (to_string(iw) + string(" [|W| = 1] FAILURE: DiX[wAddedIw] = ") + to_string(DiX[wAddedIw])).c_str());
 				continue;
 			}
 			DiX[iw] = -dot(d[iw], wAdded);
 			if (1 < W_sz && DiX[iw] < EPSILON_ZERO) {
-				ServiceLocator::getLogger().logd("GJK", (to_string(iw) + string(" [|W| = 1] FAILURE: DiX[") + to_string(iw) + string("] = ") + to_string(DiX[iw])).c_str());
+				//ServiceLocator::getLogger().logd("GJK", (to_string(iw) + string(" [|W| = 1] FAILURE: DiX[") + to_string(iw) + string("] = ") + to_string(DiX[iw])).c_str());
 				continue;
 			}
 
@@ -398,7 +398,7 @@ namespace Corium3D {
 				vec3 dMinus = -d[jw];
 				float s = DiX[wAddedIw] * dot(dMinus, wAdded) + DiX[iw] * dot(dMinus, x);
 				if (s > EPSILON_ZERO) {
-					ServiceLocator::getLogger().logd("GJK", (to_string(iw) + string(" [|W| = 1] FAILURE: sigma = ") + to_string(s)).c_str());
+					//ServiceLocator::getLogger().logd("GJK", (to_string(iw) + string(" [|W| = 1] FAILURE: sigma = ") + to_string(s)).c_str());
 					wasSubsetFound = false;
 					break;
 				}
@@ -408,7 +408,7 @@ namespace Corium3D {
 
 			if (wasSubsetFound) {
 				vec3 v = (DiX[wAddedIw] * wAdded + DiX[iw] * x) / (DiX[wAddedIw] + DiX[iw]);
-				ServiceLocator::getLogger().logd("GJK", (to_string(iw) + string(" [|W| = 1] SUCCESS: v = ") + to_string(v)).c_str());
+				//ServiceLocator::getLogger().logd("GJK", (to_string(iw) + string(" [|W| = 1] SUCCESS: v = ") + to_string(v)).c_str());
 				Iw[0] = wAddedIw; Iw[1] = iw;
 				W_sz = 2;
 				b = (1 << wAddedIw) | (1 << iw);
@@ -426,17 +426,17 @@ namespace Corium3D {
 			vec3 x2 = W[iw2];
 			DiX[wAddedIw] = determinant(mat2(dot(d[iw1], x1), dot(d[iw2], x1), dot(d[iw1], x2), dot(d[iw2], x2)));
 			if (2 < W_sz && DiX[wAddedIw] < EPSILON_ZERO) {
-				ServiceLocator::getLogger().logd("GJK", (to_string(iw1) + string(" and ") + to_string(iw2) + string(" [|W| = 2] FAILURE: DiX[wAddedIw] =") + to_string(DiX[wAddedIw])).c_str());
+				//ServiceLocator::getLogger().logd("GJK", (to_string(iw1) + string(" and ") + to_string(iw2) + string(" [|W| = 2] FAILURE: DiX[wAddedIw] =") + to_string(DiX[wAddedIw])).c_str());
 				continue;
 			}
 			DiX[iw1] = -determinant(mat2(dot(d[iw1], wAdded), dot(d[iw2], wAdded), dot(d[iw1], x2), dot(d[iw2], x2)));
 			if (2 < W_sz && DiX[iw1] < EPSILON_ZERO) {
-				ServiceLocator::getLogger().logd("GJK", (to_string(iw1) + string(" and ") + to_string(iw2) + string(" [|W| = 2] FAILURE: DiX[") + to_string(iw1) + string("] =") + to_string(DiX[iw1])).c_str());
+				//ServiceLocator::getLogger().logd("GJK", (to_string(iw1) + string(" and ") + to_string(iw2) + string(" [|W| = 2] FAILURE: DiX[") + to_string(iw1) + string("] =") + to_string(DiX[iw1])).c_str());
 				continue;
 			}
 			DiX[iw2] = determinant(mat2(dot(d[iw1], wAdded), dot(d[iw2], wAdded), dot(d[iw1], x1), dot(d[iw2], x1)));
 			if (2 < W_sz && DiX[iw2] < EPSILON_ZERO) {
-				ServiceLocator::getLogger().logd("GJK", (to_string(iw1) + string(" and ") + to_string(iw2) + string(" [|W| = 2] FAILURE: DiX[") + to_string(iw2) + string("] =") + to_string(DiX[iw2])).c_str());
+				//ServiceLocator::getLogger().logd("GJK", (to_string(iw1) + string(" and ") + to_string(iw2) + string(" [|W| = 2] FAILURE: DiX[") + to_string(iw2) + string("] =") + to_string(DiX[iw2])).c_str());
 				continue;
 			}
 
@@ -456,12 +456,12 @@ namespace Corium3D {
 			if (wasSubsetFound) {
 				vec3 v = (DiX[wAddedIw] * wAdded + DiX[iw1] * x1 + DiX[iw2] * x2) / (DiX[wAddedIw] + DiX[iw1] + DiX[iw2]);
 				if (W_sz == 3) {
-					ServiceLocator::getLogger().logd("GJK", (to_string(iw1) + string(" and ") + to_string(iw2) + string(" [|W| = 2] SUCCESS: sigma = ") + to_string(s)).c_str());
-					ServiceLocator::getLogger().logd("GJK", (string("v = ") + to_string(v)).c_str());
+					//ServiceLocator::getLogger().logd("GJK", (to_string(iw1) + string(" and ") + to_string(iw2) + string(" [|W| = 2] SUCCESS: sigma = ") + to_string(s)).c_str());
+					//ServiceLocator::getLogger().logd("GJK", (string("v = ") + to_string(v)).c_str());
 				}
 				else {
-					ServiceLocator::getLogger().logd("GJK", (to_string(iw1) + string(" and ") + to_string(iw2) + string(" [|W| = 2] SUCCESS: |W| = 2")).c_str());
-					ServiceLocator::getLogger().logd("GJK", (string("v = ") + to_string(v)).c_str());
+					//ServiceLocator::getLogger().logd("GJK", (to_string(iw1) + string(" and ") + to_string(iw2) + string(" [|W| = 2] SUCCESS: |W| = 2")).c_str());
+					//ServiceLocator::getLogger().logd("GJK", (string("v = ") + to_string(v)).c_str());
 				}
 				Iw[0] = wAddedIw; Iw[1] = iw1; Iw[2] = iw2;
 				W_sz = 3;
@@ -470,18 +470,18 @@ namespace Corium3D {
 				WNormSqrdMax = fmaxf(WNormsSqrd[wAddedIw], fmaxf(WNormsSqrd[iw1], WNormsSqrd[iw2]));
 				return (DiX[wAddedIw] * wAdded + DiX[iw1] * x1 + DiX[iw2] * x2) / (DiX[wAddedIw] + DiX[iw1] + DiX[iw2]);
 			}
-			ServiceLocator::getLogger().logd("GJK", (to_string(iw1) + string(" and ") + to_string(iw2) + string(" [|W| = 2] FAILURE: sigma = ") + to_string(s)).c_str());
+			//ServiceLocator::getLogger().logd("GJK", (to_string(iw1) + string(" and ") + to_string(iw2) + string(" [|W| = 2] FAILURE: sigma = ") + to_string(s)).c_str());
 		}
 
 		//W[3] = wAdded;
 		W_sz = 4;
 		//WNormsSqrd[3] = length2(wAdded);
 		//WNormSqrdMax = fmaxf(WNormSqrdMax, WNormsSqrd[3]);
-		ServiceLocator::getLogger().logd("GJK", string("FAILURE. W:").c_str());
+		//ServiceLocator::getLogger().logd("GJK", string("FAILURE. W:").c_str());
 		for (unsigned int wIdx = 0; wIdx < 3; wIdx++) {
-			ServiceLocator::getLogger().logd("GJK", (string("W[") + to_string(Iw[wIdx]) + string("] =") + to_string(W[Iw[wIdx]])).c_str());
+			//ServiceLocator::getLogger().logd("GJK", (string("W[") + to_string(Iw[wIdx]) + string("] =") + to_string(W[Iw[wIdx]])).c_str());
 		}
-		ServiceLocator::getLogger().logd("GJK", (string("W[added] =") + to_string(wAdded)).c_str());
+		//ServiceLocator::getLogger().logd("GJK", (string("W[added] =") + to_string(wAdded)).c_str());
 
 		return vec3(0.0f, 0.0f, 0.0f);
 	}
@@ -1741,7 +1741,7 @@ namespace Corium3D {
 			}
 		}
 		if (wasSubsetFound) {
-			ServiceLocator::getLogger().logd("GJK", string("EARLY SUCCESS: |W| = 0").c_str());
+			//ServiceLocator::getLogger().logd("GJK", string("EARLY SUCCESS: |W| = 0").c_str());
 			Y_sz = W_sz;
 			memcpy(Iy, Iw, Y_sz * sizeof(unsigned int));
 			Iw[0] = wAddedIw;
@@ -1757,12 +1757,12 @@ namespace Corium3D {
 			vec2 x = W[iw];
 			DiX[wAddedIw] = dot(d[iw], x);
 			if (1 < W_sz && DiX[wAddedIw] < EPSILON_ZERO) {
-				ServiceLocator::getLogger().logd("GJK", (to_string(iw) + string(" [|W| = 1] FAILURE: DiX[wAddedIw] = ") + to_string(DiX[wAddedIw])).c_str());
+				//ServiceLocator::getLogger().logd("GJK", (to_string(iw) + string(" [|W| = 1] FAILURE: DiX[wAddedIw] = ") + to_string(DiX[wAddedIw])).c_str());
 				continue;
 			}
 			DiX[iw] = -dot(d[iw], wAdded);
 			if (1 < W_sz && DiX[iw] < EPSILON_ZERO) {
-				ServiceLocator::getLogger().logd("GJK", (to_string(iw) + string(" [|W| = 1] FAILURE: DiX[") + to_string(iw) + string("] = ") + to_string(DiX[iw])).c_str());
+				//ServiceLocator::getLogger().logd("GJK", (to_string(iw) + string(" [|W| = 1] FAILURE: DiX[") + to_string(iw) + string("] = ") + to_string(DiX[iw])).c_str());
 				continue;
 			}
 
@@ -1773,7 +1773,7 @@ namespace Corium3D {
 				vec2 dMinus = -d[jw];
 				float s = DiX[wAddedIw] * dot(dMinus, wAdded) + DiX[iw] * dot(dMinus, x);
 				if (s > EPSILON_ZERO) {
-					ServiceLocator::getLogger().logd("GJK", (to_string(iw) + string(" [|W| = 1] FAILURE: sigma = ") + to_string(s)).c_str());
+					//ServiceLocator::getLogger().logd("GJK", (to_string(iw) + string(" [|W| = 1] FAILURE: sigma = ") + to_string(s)).c_str());
 					wasSubsetFound = false;
 					break;
 				}
@@ -1783,7 +1783,7 @@ namespace Corium3D {
 
 			if (wasSubsetFound) {
 				vec2 v = (DiX[wAddedIw] * wAdded + DiX[iw] * x) / (DiX[wAddedIw] + DiX[iw]);
-				ServiceLocator::getLogger().logd("GJK", (to_string(iw) + string(" [|W| = 1] SUCCESS: v = ") + to_string(v)).c_str());
+				//ServiceLocator::getLogger().logd("GJK", (to_string(iw) + string(" [|W| = 1] SUCCESS: v = ") + to_string(v)).c_str());
 				Iw[0] = wAddedIw; Iw[1] = iw;
 				W_sz = 2;
 				b = (1 << wAddedIw) | (1 << iw);
@@ -1797,11 +1797,11 @@ namespace Corium3D {
 		W_sz = 3;
 		//WNormsSqrd[2] = length2(wAdded);
 		//WNormSqrdMax = fmaxf(WNormSqrdMax, WNormsSqrd[2]);
-		ServiceLocator::getLogger().logd("GJK", string("FAILURE. W:").c_str());
+		//ServiceLocator::getLogger().logd("GJK", string("FAILURE. W:").c_str());
 		for (unsigned int wIdx = 0; wIdx < 2; wIdx++) {
-			ServiceLocator::getLogger().logd("GJK", (string("W[") + to_string(Iw[wIdx]) + string("] =") + to_string(W[Iw[wIdx]])).c_str());
+			//ServiceLocator::getLogger().logd("GJK", (string("W[") + to_string(Iw[wIdx]) + string("] =") + to_string(W[Iw[wIdx]])).c_str());
 		}
-		ServiceLocator::getLogger().logd("GJK", (string("W[added] =") + to_string(wAdded)).c_str());
+		//ServiceLocator::getLogger().logd("GJK", (string("W[added] =") + to_string(wAdded)).c_str());
 
 		return vec2(0.0f, 0.0f);
 	}

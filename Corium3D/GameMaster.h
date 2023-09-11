@@ -4,7 +4,7 @@
 #include "ThePrimitives.h"
 #include "ObjPool.h"
 
-#define TEST_LMNTS_NR_MAX 5
+#define TEST_LMNTS_NR_MAX 390
 	
 using namespace Corium3D;
 
@@ -24,7 +24,7 @@ private:
 	TheSphere* spheres[TEST_LMNTS_NR_MAX];
 	TheCapsule* capsules[TEST_LMNTS_NR_MAX];
 	TheCone* cones[TEST_LMNTS_NR_MAX];
-	TheCube* player;
+	TheCapsule* player;
 	Corium3DEngine::GameLmnt::MobilityAPI* playerMobilityAPI;
 	TheCube* other;
 
@@ -55,6 +55,7 @@ private:
 	void deactivatePanning(double timeStamp, glm::vec2 const& cursorPos);
 	void activateRotation(double timeStamp, glm::vec2 const& cursorPos);
 	void deactivateRotation(double timeStamp, glm::vec2 const& cursorPos);
+	void Gooo();
 	void walkIn(double timeStamp, glm::vec2 const& cursorPos);
 	void walkOut(double timeStamp, glm::vec2 const& cursorPos);
 	void transformCamera(double timeStamp, glm::vec2 const& cursorPos);

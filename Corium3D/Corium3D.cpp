@@ -241,6 +241,7 @@ namespace Corium3D {
 		void rot(float rot, glm::vec3 const& rotAx) { mobilityInterface->rot(rot, rotAx); }
 		void rot(glm::quat const& rot) { mobilityInterface->rot(rot); }
 		void setLinVel(glm::vec3 const& linVel) { mobilityInterface->setLinVel(linVel); }
+		glm::vec3 getLinVel() const { return mobilityInterface->getLinVel(); }
 		void setAngVel(float angVelMag, glm::vec3 const& angVelAx) { mobilityInterface->setAngVel(angVelMag, angVelAx); }
 		void setLinAccel(glm::vec3 const& linAccel) { mobilityInterface->setLinAccel(linAccel); }
 		void setAngAccel(glm::vec3 const& angAccel) { mobilityInterface->setAngAccel(angAccel); }
@@ -674,7 +675,7 @@ namespace Corium3D {
 			instancesTransformsInit[sceneModelData.modelIdx] = sceneModelData.instancesTransformsInit;
 		}
 
-		bvh = new BVH(staticInstancesNrOverallMax, mobileInstancesNrOverallMax, staticInstancesNrOverallMax, mobileInstancesNrOverallMax, 100, 100);
+		bvh = new BVH(staticInstancesNrOverallMax, mobileInstancesNrOverallMax, staticInstancesNrOverallMax, mobileInstancesNrOverallMax, 1000, 1000);
 		physicsEngine = new PhysicsEngine(mobileInstancesNrOverallMax + staticInstancesNrOverallMax, SECS_PER_UPDATE);
 		renderer->loadScene(std::move(modelDescs), staticModelsNr, sceneModelsNr - staticModelsNr, modelsInstancesNrsMaxima, *bvh);
 		stateUpdatersPool = new ObjPoolIteratable<GameLmnt::StateUpdater>(mobileInstancesNrOverallMax + staticInstancesNrOverallMax);
@@ -748,8 +749,8 @@ namespace Corium3D {
 				lag -= SECS_PER_UPDATE;
 			}
 			bvh->refitBPsDueToUpdate();
-			//resolveCollisions3D();
-			resolveCollisions2D();
+			resolveCollisions3D();
+			//resolveCollisions2D();
 
 	#ifndef DEBUG
 			renderer->render(lag);
@@ -1044,6 +1045,11 @@ namespace Corium3D {
 
 	void Corium3DEngine::GameLmnt::MobilityAPI::setLinVel(glm::vec3 const& linVel) {
 		gameLmntImpl.setLinVel(linVel);
+	}
+
+	glm::vec3 Corium3DEngine::GameLmnt::MobilityAPI::getLinVel() const
+	{
+		return gameLmntImpl.getLinVel();
 	}
 
 	void Corium3DEngine::GameLmnt::MobilityAPI::setAngVel(float angVelMag, glm::vec3 const& angVelAx) {
